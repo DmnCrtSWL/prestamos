@@ -146,21 +146,12 @@ const handleSubmit = async () => {
 
   isSubmitting.value = true
   try {
-    const response = await fetch('/api/users', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(formData)
-    })
+    // Local mock for creating user
+    await new Promise(resolve => setTimeout(resolve, 500))
+    console.log('Local mode: User created with data:', formData)
     
-    const data = await response.json()
-    
-    if (!response.ok) {
-        throw new Error(data.error || 'Error al guardar usuario')
-    }
-
-    alert('Usuario guardado exitosamente')
+    // Simulate success
+    alert('Usuario guardado exitosamente (Local)')
     router.push('/usuarios')
   } catch (error) {
     console.error(error)

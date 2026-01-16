@@ -30,7 +30,7 @@
         <!-- Input de Monto -->
         <div class="space-y-1.5">
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">
-            Monto a Prestar (Mínimo $10,000)
+            Monto a Prestar (Mínimo $1,000)
           </label>
           <div class="relative">
             <span class="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-3 text-gray-500 dark:border-gray-800 dark:text-gray-400">
@@ -39,14 +39,14 @@
             <input
               type="number"
               v-model="amount"
-              min="10000"
-              placeholder="10000.00"
+              min="1000"
+              placeholder="1000.00"
               class="dark:bg-dark-900 h-11 w-full rounded-lg border bg-transparent px-4 py-2.5 pl-[50px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
               :class="hasError ? 'border-error-500 focus:border-error-500 focus:ring-error-500/10' : 'border-gray-300 dark:border-gray-700'"
             />
           </div>
           <p v-if="hasError" class="text-xs text-error-500">
-            El monto mínimo es de $10,000
+            El monto mínimo es de $1,000
           </p>
         </div>
 
@@ -63,7 +63,7 @@
             </div>
 
             <div class="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800">
-              <span class="text-sm text-gray-500 dark:text-gray-400">Retención (Fija):</span>
+              <span class="text-sm text-gray-500 dark:text-gray-400">Gastos Administrativos (10%):</span>
               <span class="text-xl font-bold text-error-500">-{{ formatCurrency(retention) }}</span>
             </div>
 
@@ -137,15 +137,13 @@ const weeks = 12
 // Basado en el ejemplo: $10,000 préstamo -> $1,250 pago semanal -> Total $15,000
 // Esto implica un interés total del 50% sobre el monto solicitado ($5,000 extra)
 const TOTAL_INTEREST_RATE = 1.5 
-// Retención de gastos administrativos fija
-const FIXED_RETENTION = 1000
 
-const isValidAmount = computed(() => amount.value >= 10000)
-const hasError = computed(() => amount.value > 0 && amount.value < 10000)
+const isValidAmount = computed(() => amount.value >= 1000)
+const hasError = computed(() => amount.value > 0 && amount.value < 1000)
 
 const retention = computed(() => {
   if (!isValidAmount.value) return 0
-  return FIXED_RETENTION
+  return amount.value * 0.10 // 10% del monto
 })
 
 const netReceived = computed(() => {

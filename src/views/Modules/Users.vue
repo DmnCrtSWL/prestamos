@@ -133,12 +133,61 @@ const formatDate = (dateString) => {
 const fetchUsers = async () => {
   loading.value = true
   try {
-    const response = await fetch('/api/users')
-    if (!response.ok) throw new Error('Error al cargar usuarios')
-    users.value = await response.json()
+    // Simulating API call/disconnecting DB
+    await new Promise(resolve => setTimeout(resolve, 500))
+    users.value = [
+      {
+        id: 1,
+        name: 'Juan Pérez',
+        email: 'juan.perez@example.com',
+        phone: '55 1234 5678',
+        role: 'Administrador',
+        created_at: '2023-01-15T10:00:00Z'
+      },
+      {
+        id: 2,
+        name: 'María García',
+        email: 'maria.garcia@example.com',
+        phone: '55 2345 6789',
+        role: 'Usuario',
+        created_at: '2023-02-20T14:30:00Z'
+      },
+      {
+        id: 3,
+        name: 'Carlos López',
+        email: 'carlos.lopez@example.com',
+        phone: '55 3456 7890',
+        role: 'Usuario',
+        created_at: '2023-03-10T09:15:00Z'
+      },
+      {
+        id: 4,
+        name: 'Ana Martínez',
+        email: 'ana.martinez@example.com',
+        phone: '55 4567 8901',
+        role: 'Administrador',
+        created_at: '2023-04-05T16:45:00Z'
+      },
+      {
+        id: 5,
+        name: 'Luis Rodríguez',
+        email: 'luis.rodriguez@example.com',
+        phone: '55 5678 9012',
+        role: 'Usuario',
+        created_at: '2023-05-12T11:20:00Z'
+      },
+      {
+        id: 6,
+        name: 'Sofía Hernández',
+        email: 'sofia.hernandez@example.com',
+        phone: '55 6789 0123',
+        role: 'Usuario',
+        created_at: '2023-06-25T13:10:00Z'
+      }
+    ]
   } catch (error) {
     console.error(error)
-    alert('Error obteniendo usuarios')
+    alert('Error detallado: ' + error.message)
   } finally {
     loading.value = false
   }
@@ -147,10 +196,9 @@ const fetchUsers = async () => {
 const deleteUser = async (id) => {
   if (!confirm('¿Estás seguro de eliminar este usuario?')) return
   try {
-    const response = await fetch(`/api/users/${id}`, { method: 'DELETE' })
-    if (!response.ok) throw new Error('Error al eliminar')
+    // Local delete
     users.value = users.value.filter(u => u.id !== id)
-    alert('Usuario eliminado')
+    alert('Usuario eliminado (Local)')
   } catch (error) {
     console.error(error)
     alert('No se pudo eliminar el usuario')

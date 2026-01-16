@@ -248,16 +248,6 @@ const menuGroups = [
         path: "/",
       },
       {
-        icon: UserCircleIcon,
-        name: "Usuarios",
-        path: "/usuarios",
-      },
-      {
-        icon: BoxCubeIcon,
-        name: "Proveedores",
-        path: "/proveedores",
-      },
-      {
         icon: DocsIcon,
         name: "Clientes",
         path: "/clientes",
@@ -267,7 +257,16 @@ const menuGroups = [
         name: "Créditos",
         path: "/simulador",
       },
-
+      {
+        icon: UserCircleIcon,
+        name: "Usuarios",
+        path: "/usuarios",
+      },
+      {
+        icon: BoxCubeIcon,
+        name: "Proveedores",
+        path: "/proveedores",
+      },
     ],
   },
 ];

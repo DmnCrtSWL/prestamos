@@ -34,15 +34,9 @@
                   <ArrowUpDown class="h-4 w-4 text-gray-400" />
                 </div>
               </th>
-              <th class="px-5 py-3 text-left sm:px-6 cursor-pointer" @click="sortBy('phone')">
-                 <div class="flex items-center gap-1.5">
-                  <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Teléfono</p>
-                  <ArrowUpDown class="h-4 w-4 text-gray-400" />
-                </div>
-              </th>
-              <th class="px-5 py-3 text-left sm:px-6 cursor-pointer" @click="sortBy('email')">
-                 <div class="flex items-center gap-1.5">
-                  <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Correo</p>
+              <th class="px-5 py-3 text-left sm:px-6 cursor-pointer" @click="sortBy('lastContributionAmount')">
+                <div class="flex items-center gap-1.5">
+                  <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Monto última aportación</p>
                   <ArrowUpDown class="h-4 w-4 text-gray-400" />
                 </div>
               </th>
@@ -73,10 +67,7 @@
                 <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ provider.name }}</p>
               </td>
               <td class="px-5 py-4 sm:px-6">
-                <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ provider.phone }}</p>
-              </td>
-              <td class="px-5 py-4 sm:px-6">
-                <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ provider.email }}</p>
+                <p class="text-gray-500 text-theme-sm dark:text-gray-400 font-medium text-green-600">{{ formatCurrency(provider.lastContributionAmount) }}</p>
               </td>
               <td class="px-5 py-4 sm:px-6">
                 <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ provider.lastContributionDate }}</p>
@@ -134,14 +125,44 @@ const generateRandomRemaining = () => {
     return Math.floor(Math.random() * 490000) + 1000
 }
 
-const providers = ref(Array.from({ length: 6 }, (_, i) => ({
-    name: `Proveedor ${i + 1}`,
-    phone: `555-000-${1000 + i}`,
-    email: `proveedor${i + 1}@prestamos.com`,
-    contribution: 500000,
-    lastContributionDate: getRandomDate(new Date(2023, 0, 1), new Date()),
-    remainingAmount: generateRandomRemaining()
-})))
+const providers = ref([
+  {
+    name: 'Proveedor 1',
+    lastContributionAmount: 500000.00,
+    lastContributionDate: '10-01-2026',
+    remainingAmount: 480000.00
+  },
+  {
+    name: 'Proveedor 2',
+    lastContributionAmount: 495000.50,
+    lastContributionDate: '05-12-2025',
+    remainingAmount: 450000.00
+  },
+  {
+    name: 'Proveedor 3',
+    lastContributionAmount: 520000.00,
+    lastContributionDate: '20-11-2025',
+    remainingAmount: 510000.00
+  },
+  {
+    name: 'Proveedor 4',
+    lastContributionAmount: 480000.00,
+    lastContributionDate: '15-01-2026',
+    remainingAmount: 300000.00
+  },
+  {
+    name: 'Proveedor 5',
+    lastContributionAmount: 510000.25,
+    lastContributionDate: '01-12-2025',
+    remainingAmount: 505000.00
+  },
+  {
+    name: 'Proveedor 6',
+    lastContributionAmount: 490000.00,
+    lastContributionDate: '12-01-2026',
+    remainingAmount: 475000.00
+  }
+])
 
 const sortKey = ref('')
 const sortOrder = ref('asc')

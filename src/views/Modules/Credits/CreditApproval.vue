@@ -78,15 +78,12 @@
               <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                 <span class="block text-xs font-medium text-gray-500 dark:text-gray-400">Calificación del Cliente</span>
                 <div class="flex items-center gap-2 mt-1">
-                   <div class="flex">
-                      <Star 
-                        v-for="i in 5" 
-                        :key="i" 
-                        class="w-4 h-4" 
-                        :class="i <= clientRating.stars ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300 dark:text-gray-600'" 
-                      />
-                   </div>
-                   <span class="text-sm font-medium" :class="selectedClient ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400'">
+                  <component 
+                    :is="clientRating.icon" 
+                    class="w-6 h-6" 
+                    :class="clientRating.color"
+                  />
+                   <span class="text-sm font-medium" :class="clientRating.color">
                      {{ clientRating.text }}
                    </span>
                 </div>
@@ -230,7 +227,7 @@ import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import ComponentCard from '@/components/common/ComponentCard.vue'
 
-import { Printer, Star, AlertTriangle, CheckCircle } from 'lucide-vue-next'
+import { Printer, Smile, Meh, Frown } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -281,14 +278,14 @@ const filteredClients = computed(() => {
 })
 
 const clientRating = computed(() => {
-  if (!selectedClient.value) return { text: 'N/A', color: 'text-gray-400', icon: Star, stars: 0 }
+  if (!selectedClient.value) return { text: 'N/A', color: 'text-gray-400', icon: Meh } // Default neutral
   
   const status = selectedClient.value.status
-  if (status === 'En tiempo') return { text: 'Excelente', color: 'text-yellow-400', icon: CheckCircle, stars: 5 }
-  if (status === 'Moroso') return { text: 'Riesgo Alto', color: 'text-red-500', icon: AlertTriangle, stars: 1 }
-  if (status === 'Inactivo') return { text: 'Sin Historial', color: 'text-gray-500', icon: Star, stars: 0 }
+  if (status === 'En tiempo') return { text: 'Pago puntual', color: 'text-green-500', icon: Smile }
+  if (status === 'Moroso') return { text: 'Cliente moroso', color: 'text-red-500', icon: Frown }
   
-  return { text: 'Regular', color: 'text-yellow-400', icon: Star, stars: 3 }
+  // Default/Indifferent/Inactivo
+  return { text: 'Puede mejorar', color: 'text-yellow-500', icon: Meh }
 })
 
 const selectClient = (client) => {

@@ -8,15 +8,24 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
+console.log('--- STARTING APP ---');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('DB URL Defined?', !!process.env.DATABASE_URL);
+if (process.env.DATABASE_URL) {
+  console.log('DB URL Start:', process.env.DATABASE_URL.substring(0, 10) + '...');
+} else {
+  console.error('CRITICAL: DATABASE_URL is missing! pg will default to localhost.');
+}
+
 app.use(cors());
 app.use(express.json());
 
 // Configuración Pool
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL ? {
-    rejectUnauthorized: false
-  } : undefined
+  ssl: process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('localhost')
+    ? { rejectUnauthorized: false }
+    : undefined
 });
 
 // Health Check
@@ -55,8 +64,12 @@ app.get('/api/users', async (req, res) => {
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error al obtener usuarios' });
+    console.error('DATABASE ERROR:', err);
+    console.log('DB URL exists?', !!process.env.DATABASE_URL); // Debug info without exposing secret
+    res.status(500).json({
+      error: 'Error al obtener usuarios',
+      details: process.env.NODE_ENV === 'development' ? err.message : 'Check server logs'
+    });
   }
 });
 
