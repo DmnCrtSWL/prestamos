@@ -77,8 +77,8 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">INE Frontal</label>
               <div v-if="client.ine_front" class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <img :src="`${import.meta.env.VITE_API_URL.replace('/api', '')}${client.ine_front}`" alt="INE Frontal" class="w-full h-48 object-cover" />
-                <a :href="`${import.meta.env.VITE_API_URL.replace('/api', '')}${client.ine_front}`" target="_blank" class="block p-2 text-center text-sm text-blue-600 hover:bg-gray-50 dark:hover:bg-white/5">
+                <img :src="getFileUrl(client.ine_front)" alt="INE Frontal" class="w-full h-48 object-cover" />
+                <a :href="getFileUrl(client.ine_front)" target="_blank" class="block p-2 text-center text-sm text-blue-600 hover:bg-gray-50 dark:hover:bg-white/5">
                   Ver imagen completa
                 </a>
               </div>
@@ -88,8 +88,8 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">INE Reverso</label>
               <div v-if="client.ine_back" class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <img :src="`${import.meta.env.VITE_API_URL.replace('/api', '')}${client.ine_back}`" alt="INE Reverso" class="w-full h-48 object-cover" />
-                <a :href="`${import.meta.env.VITE_API_URL.replace('/api', '')}${client.ine_back}`" target="_blank" class="block p-2 text-center text-sm text-blue-600 hover:bg-gray-50 dark:hover:bg-white/5">
+                <img :src="getFileUrl(client.ine_back)" alt="INE Reverso" class="w-full h-48 object-cover" />
+                <a :href="getFileUrl(client.ine_back)" target="_blank" class="block p-2 text-center text-sm text-blue-600 hover:bg-gray-50 dark:hover:bg-white/5">
                   Ver imagen completa
                 </a>
               </div>
@@ -99,8 +99,8 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">Comprobante de Domicilio</label>
               <div v-if="client.comprobant" class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <img :src="`${import.meta.env.VITE_API_URL.replace('/api', '')}${client.comprobant}`" alt="Comprobante" class="w-full h-48 object-cover" />
-                <a :href="`${import.meta.env.VITE_API_URL.replace('/api', '')}${client.comprobant}`" target="_blank" class="block p-2 text-center text-sm text-blue-600 hover:bg-gray-50 dark:hover:bg-white/5">
+                <img :src="getFileUrl(client.comprobant)" alt="Comprobante" class="w-full h-48 object-cover" />
+                <a :href="getFileUrl(client.comprobant)" target="_blank" class="block p-2 text-center text-sm text-blue-600 hover:bg-gray-50 dark:hover:bg-white/5">
                   Ver imagen completa
                 </a>
               </div>
@@ -154,6 +154,11 @@ const fetchClient = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const getFileUrl = (path) => {
+    if (!path) return '#'
+    return `${import.meta.env.VITE_API_URL.replace('/api', '')}${path}`
 }
 
 onMounted(() => {
