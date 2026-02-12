@@ -94,7 +94,7 @@ const fetchProvider = async () => {
     if (!isEditing.value) return
     
     try {
-        const response = await fetch(`http://localhost:3000/api/providers/${route.params.id}`)
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/providers/${route.params.id}`)
         if (!response.ok) throw new Error('Error fetching provider')
         const data = await response.json()
         form.value = {
@@ -113,8 +113,8 @@ const submitForm = async () => {
     isLoading.value = true
     try {
         const url = isEditing.value 
-            ? `http://localhost:3000/api/providers/${route.params.id}`
-            : 'http://localhost:3000/api/providers'
+            ? `${import.meta.env.VITE_API_URL}/providers/${route.params.id}`
+            : `${import.meta.env.VITE_API_URL}/providers`
             
         const method = isEditing.value ? 'PUT' : 'POST'
         

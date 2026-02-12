@@ -349,7 +349,7 @@ const isLoadingClients = ref(false)
 const fetchClients = async () => {
   isLoadingClients.value = true
   try {
-    const response = await fetch('http://localhost:3000/api/clients')
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/clients`)
     if (!response.ok) {
       throw new Error('Error al cargar clientes')
     }
@@ -461,7 +461,7 @@ const confirmApproval = async () => {
       formData.append('guarantor_address_proof', avalData.addressProofFile)
     }
     
-    const response = await fetch('http://localhost:3000/api/credits', {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/credits`, {
       method: 'POST',
       body: formData
     })

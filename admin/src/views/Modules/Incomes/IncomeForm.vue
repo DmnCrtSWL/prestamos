@@ -151,7 +151,7 @@ const form = ref({
 const fetchActiveCredits = async () => {
   isLoadingCredits.value = true
   try {
-    const response = await fetch('http://localhost:3000/api/credits')
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/credits`)
     if (!response.ok) throw new Error('Error al cargar créditos')
     credits.value = await response.json()
   } catch (error) {
@@ -208,7 +208,7 @@ const submitIncome = async () => {
             amount: form.value.amount
         }
 
-        const response = await fetch('http://localhost:3000/api/incomes', {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/incomes`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

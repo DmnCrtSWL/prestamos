@@ -142,7 +142,7 @@ const loadUser = async () => {
   
   isLoading.value = true
   try {
-    const response = await fetch(`http://localhost:3000/api/users/${userId.value}`)
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/users/${userId.value}`)
     
     if (!response.ok) {
       throw new Error('Error al cargar usuario')
@@ -174,8 +174,8 @@ const handleSubmit = async () => {
   
   try {
     const url = isEditMode.value 
-      ? `http://localhost:3000/api/users/${userId.value}`
-      : 'http://localhost:3000/api/users'
+      ? `${import.meta.env.VITE_API_URL}/users/${userId.value}`
+      : `${import.meta.env.VITE_API_URL}/users`
     
     const method = isEditMode.value ? 'PUT' : 'POST'
     

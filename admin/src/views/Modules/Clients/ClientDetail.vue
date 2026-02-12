@@ -77,8 +77,8 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">INE Frontal</label>
               <div v-if="client.ine_front" class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <img :src="`http://localhost:3000${client.ine_front}`" alt="INE Frontal" class="w-full h-48 object-cover" />
-                <a :href="`http://localhost:3000${client.ine_front}`" target="_blank" class="block p-2 text-center text-sm text-blue-600 hover:bg-gray-50 dark:hover:bg-white/5">
+                <img :src="`${import.meta.env.VITE_API_URL.replace('/api', '')}${client.ine_front}`" alt="INE Frontal" class="w-full h-48 object-cover" />
+                <a :href="`${import.meta.env.VITE_API_URL.replace('/api', '')}${client.ine_front}`" target="_blank" class="block p-2 text-center text-sm text-blue-600 hover:bg-gray-50 dark:hover:bg-white/5">
                   Ver imagen completa
                 </a>
               </div>
@@ -88,8 +88,8 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">INE Reverso</label>
               <div v-if="client.ine_back" class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <img :src="`http://localhost:3000${client.ine_back}`" alt="INE Reverso" class="w-full h-48 object-cover" />
-                <a :href="`http://localhost:3000${client.ine_back}`" target="_blank" class="block p-2 text-center text-sm text-blue-600 hover:bg-gray-50 dark:hover:bg-white/5">
+                <img :src="`${import.meta.env.VITE_API_URL.replace('/api', '')}${client.ine_back}`" alt="INE Reverso" class="w-full h-48 object-cover" />
+                <a :href="`${import.meta.env.VITE_API_URL.replace('/api', '')}${client.ine_back}`" target="_blank" class="block p-2 text-center text-sm text-blue-600 hover:bg-gray-50 dark:hover:bg-white/5">
                   Ver imagen completa
                 </a>
               </div>
@@ -99,8 +99,8 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">Comprobante de Domicilio</label>
               <div v-if="client.comprobant" class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <img :src="`http://localhost:3000${client.comprobant}`" alt="Comprobante" class="w-full h-48 object-cover" />
-                <a :href="`http://localhost:3000${client.comprobant}`" target="_blank" class="block p-2 text-center text-sm text-blue-600 hover:bg-gray-50 dark:hover:bg-white/5">
+                <img :src="`${import.meta.env.VITE_API_URL.replace('/api', '')}${client.comprobant}`" alt="Comprobante" class="w-full h-48 object-cover" />
+                <a :href="`${import.meta.env.VITE_API_URL.replace('/api', '')}${client.comprobant}`" target="_blank" class="block p-2 text-center text-sm text-blue-600 hover:bg-gray-50 dark:hover:bg-white/5">
                   Ver imagen completa
                 </a>
               </div>
@@ -141,7 +141,7 @@ const fetchClient = async () => {
   error.value = ''
   
   try {
-    const response = await fetch(`http://localhost:3000/api/clients/${route.params.id}`)
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/clients/${route.params.id}`)
     
     if (!response.ok) {
       throw new Error('Cliente no encontrado')

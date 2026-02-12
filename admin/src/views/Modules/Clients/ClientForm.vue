@@ -198,7 +198,7 @@ const loadClientData = async () => {
   
   isLoading.value = true
   try {
-    const response = await fetch(`http://localhost:3000/api/clients/${clientId.value}`)
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/clients/${clientId.value}`)
     if (!response.ok) {
       throw new Error('Cliente no encontrado')
     }
@@ -251,8 +251,8 @@ const handleSubmit = async () => {
     }
     
     const url = isEditMode.value 
-      ? `http://localhost:3000/api/clients/${clientId.value}`
-      : 'http://localhost:3000/api/clients'
+      ? `${import.meta.env.VITE_API_URL}/clients/${clientId.value}`
+      : `${import.meta.env.VITE_API_URL}/clients`
     
     const method = isEditMode.value ? 'PUT' : 'POST'
     

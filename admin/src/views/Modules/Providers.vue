@@ -143,7 +143,7 @@ const deleteProvider = async (id) => {
     if (!confirm('¿Estás seguro de eliminar este proveedor?')) return
 
     try {
-        const response = await fetch(`http://localhost:3000/api/providers/${id}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/providers/${id}`, {
             method: 'DELETE'
         })
         if (!response.ok) throw new Error('Error al eliminar')
@@ -162,7 +162,7 @@ const deleteProvider = async (id) => {
 const fetchProviders = async () => {
     isLoading.value = true
     try {
-        const response = await fetch('http://localhost:3000/api/providers')
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/providers`)
         if (!response.ok) throw new Error('Error fetching providers')
         providers.value = await response.json()
     } catch (error) {

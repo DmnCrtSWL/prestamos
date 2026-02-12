@@ -144,7 +144,7 @@ const isLoading = ref(false)
 const fetchCredits = async () => {
   isLoading.value = true
   try {
-    const response = await fetch('http://localhost:3000/api/credits')
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/credits`)
     if (!response.ok) {
       throw new Error('Error al cargar créditos')
     }

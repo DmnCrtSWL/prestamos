@@ -156,7 +156,7 @@ const form = ref({
 const fetchCredit = async () => {
   isLoading.value = true
   try {
-    const response = await fetch(`http://localhost:3000/api/credits/${route.params.id}`)
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/credits/${route.params.id}`)
     if (!response.ok) throw new Error('Error al cargar crédito')
     credit.value = await response.json()
     
@@ -199,7 +199,7 @@ const updateCredit = async () => {
         if (form.value.guarantor_ine_back) formData.append('guarantor_ine_back', form.value.guarantor_ine_back)
         if (form.value.guarantor_address_proof) formData.append('guarantor_address_proof', form.value.guarantor_address_proof)
 
-        const response = await fetch(`http://localhost:3000/api/credits/${route.params.id}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/credits/${route.params.id}`, {
             method: 'PUT',
             body: formData
         })
@@ -222,6 +222,6 @@ const updateCredit = async () => {
 
 const getFileUrl = (path) => {
     if (!path) return '#'
-    return `http://localhost:3000${path}`
+    return `${import.meta.env.VITE_API_URL.replace('/api', '')}${path}`
 }
 </script>

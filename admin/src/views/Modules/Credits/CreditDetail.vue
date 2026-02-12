@@ -221,12 +221,12 @@ const fetchData = async () => {
   isLoading.value = true
   try {
      // Fetch Credit
-    const creditRes = await fetch(`http://localhost:3000/api/credits/${route.params.id}`)
+    const creditRes = await fetch(`${import.meta.env.VITE_API_URL}/credits/${route.params.id}`)
     if (!creditRes.ok) throw new Error('Error al cargar crédito')
     credit.value = await creditRes.json()
 
     // Fetch Incomes for this credit
-    const incomesRes = await fetch(`http://localhost:3000/api/incomes?credit_id=${route.params.id}`)
+    const incomesRes = await fetch(`${import.meta.env.VITE_API_URL}/incomes?credit_id=${route.params.id}`)
     if (incomesRes.ok) {
         incomes.value = await incomesRes.json()
     }
@@ -313,6 +313,6 @@ const getStatusLabel = (status) => {
 
 const getFileUrl = (path) => {
     if (!path) return '#'
-    return `http://localhost:3000${path}`
+    return `${import.meta.env.VITE_API_URL.replace('/api', '')}${path}`
 }
 </script>

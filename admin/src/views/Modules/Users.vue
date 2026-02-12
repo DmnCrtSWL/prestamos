@@ -115,7 +115,7 @@ const formatDate = (dateString) => {
 const fetchUsers = async () => {
   loading.value = true
   try {
-    const response = await fetch('http://localhost:3000/api/users')
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/users`)
     
     if (!response.ok) {
       throw new Error('Error al obtener usuarios')
@@ -140,7 +140,7 @@ const deleteUser = async (id) => {
   if (!confirm('¿Estás seguro de eliminar este usuario?')) return
   
   try {
-    const response = await fetch(`http://localhost:3000/api/users/${id}`, {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/users/${id}`, {
       method: 'DELETE'
     })
     

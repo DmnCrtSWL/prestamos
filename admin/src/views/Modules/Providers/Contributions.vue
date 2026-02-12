@@ -181,7 +181,7 @@ const form = ref({
 
 const fetchProvider = async () => {
     try {
-        const response = await fetch(`http://localhost:3000/api/providers/${providerId}`)
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/providers/${providerId}`)
         if (!response.ok) throw new Error('Error fetching provider')
         provider.value = await response.json()
     } catch (error) {
@@ -192,7 +192,7 @@ const fetchProvider = async () => {
 
 const fetchContributions = async () => {
     try {
-        const response = await fetch(`http://localhost:3000/api/providers/${providerId}/contributions`)
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/providers/${providerId}/contributions`)
         if (!response.ok) throw new Error('Error fetching contributions')
         contributions.value = await response.json()
     } catch (error) {
@@ -203,7 +203,7 @@ const fetchContributions = async () => {
 const submitContribution = async () => {
     isSubmitting.value = true
     try {
-        const response = await fetch(`http://localhost:3000/api/providers/${providerId}/contributions`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/providers/${providerId}/contributions`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(form.value)
@@ -230,7 +230,7 @@ const deleteContribution = async (id) => {
     if(!confirm('¿Eliminar esta aportación?')) return
 
     try {
-        const response = await fetch(`http://localhost:3000/api/providers/${providerId}/contributions/${id}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/providers/${providerId}/contributions/${id}`, {
             method: 'DELETE'
         })
          if (!response.ok) throw new Error('Error deleting contribution')

@@ -133,7 +133,7 @@ const formatDate = (dateString) => {
 const fetchClients = async () => {
   loading.value = true
   try {
-    const response = await fetch('http://localhost:3000/api/clients')
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/clients`)
     if (!response.ok) {
       throw new Error('Error al obtener clientes')
     }
@@ -152,7 +152,7 @@ const deleteClient = async (id) => {
   if (!confirm('¿Estás seguro de eliminar este cliente?')) return
   
   try {
-    const response = await fetch(`http://localhost:3000/api/clients/${id}`, {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/clients/${id}`, {
       method: 'DELETE'
     })
     

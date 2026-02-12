@@ -223,7 +223,7 @@ const createIncome = () => {
 const fetchIncomes = async () => {
     isLoading.value = true
     try {
-        let url = 'http://localhost:3000/api/incomes'
+        let url = `${import.meta.env.VITE_API_URL}/incomes`
         
         let queryParams = []
         
