@@ -221,6 +221,15 @@ const router = createRouter({
       },
     },
     {
+      path: '/debug',
+      name: 'Debug',
+      component: () => import('../views/DebugEnv.vue'),
+      meta: {
+        title: 'Debug',
+        hidden: true
+      }
+    },
+    {
       path: '/blank',
       name: 'Blank',
       component: () => import('../views/Pages/BlankPage.vue'),
