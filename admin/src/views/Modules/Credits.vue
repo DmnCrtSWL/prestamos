@@ -116,6 +116,15 @@
                   >
                     <Edit class="h-5 w-5" />
                   </button>
+
+                  <button
+                    @click="viewCreditFunding(credit)"
+                    class="text-green-600 hover:text-green-800 dark:text-green-500 dark:hover:text-green-400"
+                    :title="credit.funded_amount >= credit.loan_amount ? 'Fondeado' : 'Fondear Crédito'"
+                  >
+                    <Check v-if="credit.funded_amount >= credit.loan_amount" class="h-5 w-5" />
+                    <User v-else class="h-5 w-5" />
+                  </button>
                 </div>
               </td>
             </tr>
@@ -130,7 +139,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
-import { Search, ArrowUpDown, Eye, Edit } from 'lucide-vue-next'
+import { Search, ArrowUpDown, Eye, Edit, User, Check } from 'lucide-vue-next'
 
 const router = useRouter()
 
@@ -235,5 +244,9 @@ const viewCredit = (credit) => {
 
 const editCredit = (credit) => {
   router.push(`/creditos/${credit.id}/editar`)
+}
+
+const viewCreditFunding = (credit) => {
+  router.push(`/creditos/${credit.id}/fondear`)
 }
 </script>

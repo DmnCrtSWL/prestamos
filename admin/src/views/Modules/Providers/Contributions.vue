@@ -132,16 +132,28 @@
                              <p class="text-black dark:text-white">{{ formatDate(contribution.payment_date) }}</p>
                         </td>
                         <td class="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
-                            <p class="text-success font-bold dark:text-success">{{ formatCurrency(contribution.amount) }}</p>
+                            <p :class="[
+                                'font-bold',
+                                Number(contribution.amount) < 0 
+                                    ? 'text-red-500 dark:text-red-400' 
+                                    : 'text-success dark:text-success'
+                            ]">
+                                {{ formatCurrency(contribution.amount) }}
+                            </p>
                         </td>
                         <td class="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
                             <p class="text-black dark:text-white">{{ contribution.note || '-' }}</p>
                         </td>
                         <td class="border-b border-[#eee] py-5 px-4 dark:border-strokedark">
                             <div class="flex items-center space-x-3.5">
-                                <button class="hover:text-primary" @click="deleteContribution(contribution.id)">
+                                <button 
+                                    v-if="contribution.type === 'contribution'"
+                                    class="hover:text-primary" 
+                                    @click="deleteContribution(contribution.id)"
+                                >
                                      <TrashIcon class="w-5 h-5 text-red-600 transition-colors" />
                                 </button>
+                                <span v-else class="text-xs text-gray-400 italic">Sistema</span>
                             </div>
                         </td>
                     </tr>

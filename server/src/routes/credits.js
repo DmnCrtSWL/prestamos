@@ -132,6 +132,163 @@ router.post('/', upload.fields([
     }
 });
 
+// GET /api/credits/:id/funding-info - Get credit funding info and providers availability
+router.get('/:id/funding-info', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // 1. Get Credit Details
+        const creditQuery = `
+            SELECT 
+                c.id, c.loan_amount, c.status, c."user",
+                cl.name as client_name
+            FROM credits c
+            LEFT JOIN clients cl ON c.client_id = cl.id
+            WHERE c.id = $1 AND c.deleted_at IS NULL
+        `;
+        const creditResult = await pool.query(creditQuery, [id]);
+
+        if (creditResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Crédito no encontrado' });
+        }
+        const credit = creditResult.rows[0];
+
+        // 2. Get Providers with Calculated Availability
+        const providersQuery = `
+            SELECT 
+                p.id, 
+                p.name, 
+                p.initial_contribution,
+                COALESCE(contributions.total, 0) as total_contributions,
+                COALESCE(fundings.total, 0) as total_funded,
+                (p.initial_contribution + COALESCE(contributions.total, 0) - COALESCE(fundings.total, 0)) as available_amount
+            FROM providers p
+            LEFT JOIN (
+                SELECT provider_id, SUM(amount) as total
+                FROM provider_contributions
+                WHERE deleted_at IS NULL
+                GROUP BY provider_id
+            ) contributions ON p.id = contributions.provider_id
+            LEFT JOIN (
+                SELECT provider_id, SUM(amount) as total
+                FROM credit_fundings
+                GROUP BY provider_id
+            ) fundings ON p.id = fundings.provider_id
+            WHERE p.deleted_at IS NULL
+            ORDER BY available_amount DESC
+        `;
+        const providersResult = await pool.query(providersQuery);
+
+        // 3. Get Existing Fundings for this Credit
+        const fundingsQuery = `
+            SELECT cf.*, p.name as provider_name
+            FROM credit_fundings cf
+            JOIN providers p ON cf.provider_id = p.id
+            WHERE cf.credit_id = $1
+        `;
+        const fundingsResult = await pool.query(fundingsQuery, [id]);
+
+        res.json({
+            credit,
+            providers: providersResult.rows,
+            fundings: fundingsResult.rows
+        });
+    } catch (error) {
+        console.error('Error fetching funding info:', error);
+        res.status(500).json({ error: 'Error al obtener información de fondeo' });
+    }
+});
+
+// POST /api/credits/:id/fund - Fund a credit
+router.post('/:id/fund', async (req, res) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const { id } = req.params;
+        const { allocations } = req.body; // Array of { provider_id, amount }
+
+        if (!allocations || !Array.isArray(allocations) || allocations.length === 0) {
+            throw new Error('Se requieren asignaciones válidas');
+        }
+
+        // 1. Validate total amount matches credit loan amount
+        const creditQuery = 'SELECT loan_amount, status FROM credits WHERE id = $1 FOR UPDATE';
+        const creditResult = await client.query(creditQuery, [id]);
+
+        if (creditResult.rows.length === 0) {
+            throw new Error('Crédito no encontrado');
+        }
+
+        const credit = creditResult.rows[0];
+        const totalAllocated = allocations.reduce((sum, item) => sum + Number(item.amount), 0);
+
+        // Use a small epsilon for float comparison if needed
+        if (Math.abs(totalAllocated - Number(credit.loan_amount)) > 0.01) {
+            throw new Error(`El total asignado (${totalAllocated}) no coincide con el monto del préstamo (${credit.loan_amount})`);
+        }
+
+        // 2. Clear existing fundings for this credit (if re-funding or updating)
+        await client.query('DELETE FROM credit_fundings WHERE credit_id = $1', [id]);
+
+        // 3. Process each allocation
+        for (const allocation of allocations) {
+            const { provider_id, amount } = allocation;
+
+            // Check provider availability (excluding the amount currently being released if we were updating, but we just deleted it from DB so it's fine)
+            // But we need to be careful with concurrency. `credit_fundings` rows are gone, so the `fundings` subquery in main query won't count them.
+
+            const providerQuery = `
+                SELECT 
+                    p.id, 
+                    p.name,
+                    (p.initial_contribution + COALESCE(c.total, 0) - COALESCE(f.total, 0)) as available
+                FROM providers p
+                LEFT JOIN (
+                    SELECT provider_id, SUM(amount) as total
+                    FROM provider_contributions
+                    WHERE deleted_at IS NULL
+                    GROUP BY provider_id
+                ) c ON p.id = c.provider_id
+                LEFT JOIN (
+                    SELECT provider_id, SUM(amount) as total
+                    FROM credit_fundings
+                    GROUP BY provider_id
+                ) f ON p.id = f.provider_id
+                WHERE p.id = $1
+            `;
+            // Note: We are inside a transaction. The DELETE above is visible to us. 
+            // So 'f.total' will NOT include the funds for *this* credit (since we deleted them).
+            // So 'available' represents what is available to be taken.
+
+            const providerResult = await client.query(providerQuery, [provider_id]);
+            if (providerResult.rows.length === 0) {
+                throw new Error(`Proveedor ${provider_id} no encontrado`);
+            }
+
+            const provider = providerResult.rows[0];
+            if (Number(provider.available) < Number(amount)) {
+                throw new Error(`El proveedor ${provider.name} no tiene fondos suficientes. Disponible: ${provider.available}, Solicitado: ${amount}`);
+            }
+
+            // Insert funding
+            await client.query(
+                'INSERT INTO credit_fundings (credit_id, provider_id, amount) VALUES ($1, $2, $3)',
+                [id, provider_id, amount]
+            );
+        }
+
+        await client.query('COMMIT');
+        res.json({ message: 'Fondeo guardado exitosamente' });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error funding credit:', error);
+        res.status(500).json({ error: error.message });
+    } finally {
+        client.release();
+    }
+});
+
 // GET /api/credits - List all credits
 router.get('/', async (req, res) => {
     try {
@@ -142,9 +299,15 @@ router.get('/', async (req, res) => {
         c.*,
         cl.name as client_name,
         cl.phone as client_phone,
-        cl.curp as client_curp
+        cl.curp as client_curp,
+        COALESCE(fundings.total, 0) as funded_amount
       FROM credits c
       LEFT JOIN clients cl ON c.client_id = cl.id
+      LEFT JOIN (
+        SELECT credit_id, SUM(amount) as total
+        FROM credit_fundings
+        GROUP BY credit_id
+      ) fundings ON c.id = fundings.credit_id
       WHERE c.deleted_at IS NULL
     `;
 

@@ -255,6 +255,14 @@ const router = createRouter({
         title: 'Créditos',
       },
     },
+    {
+      path: '/creditos/:id/fondear',
+      name: 'CreditFunding',
+      component: () => import('../views/Modules/Credits/CreditFunding.vue'),
+      meta: {
+        title: 'Fondeo de Crédito',
+      },
+    },
 
     {
       path: '/creditos/aprobar',

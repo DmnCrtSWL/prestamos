@@ -26,20 +26,42 @@ router.get('/', async (req, res) => {
     }
 });
 
-// GET /api/providers/:id/contributions - List contributions
+// GET /api/providers/:id/contributions - List contributions and fundings
 router.get('/:id/contributions', async (req, res) => {
     try {
         const { id } = req.params;
         const query = `
-            SELECT * FROM provider_contributions 
+            SELECT 
+                id,
+                amount, 
+                payment_date, 
+                note,
+                created_at,
+                'contribution' as type
+            FROM provider_contributions 
             WHERE provider_id = $1 AND deleted_at IS NULL
-            ORDER BY payment_date DESC, created_at DESC
+            
+            UNION ALL
+            
+            SELECT 
+                cf.id,
+                -cf.amount as amount, -- Negative amount for deduction
+                cf.created_at::date as payment_date,
+                CONCAT('Fondeo Crédito #', c.id, ' - ', cl.name) as note,
+                cf.created_at,
+                'funding' as type
+            FROM credit_fundings cf
+            JOIN credits c ON cf.credit_id = c.id
+            JOIN clients cl ON c.client_id = cl.id
+            WHERE cf.provider_id = $1
+
+            ORDER BY created_at DESC
         `;
         const result = await pool.query(query, [id]);
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching contributions:', error);
-        res.status(500).json({ error: 'Error al obtener aportaciones' });
+        res.status(500).json({ error: 'Error al obtener historial' });
     }
 });
 
