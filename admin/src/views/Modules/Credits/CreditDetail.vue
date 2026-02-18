@@ -84,26 +84,39 @@
                <div class="mt-4">
                   <h4 class="mb-3 font-semibold text-black dark:text-white">Documentos</h4>
                   <div class="flex flex-col gap-2">
-                    <div v-if="credit.guarantor_ine_front">
-                        <a :href="getFileUrl(credit.guarantor_ine_front)" target="_blank" class="flex items-center gap-2 text-primary hover:underline">
-                            <FileText v-if="isPdf(credit.guarantor_ine_front)" class="h-4 w-4" />
-                            <span>INE Frente</span>
-                        </a>
-                    </div>
-                    <div v-if="credit.guarantor_ine_back">
-                         <a :href="getFileUrl(credit.guarantor_ine_back)" target="_blank" class="flex items-center gap-2 text-primary hover:underline">
-                            <FileText v-if="isPdf(credit.guarantor_ine_back)" class="h-4 w-4" />
-                            <span>INE Reverso</span>
-                        </a>
-                    </div>
-                    <div v-if="credit.guarantor_address_proof">
-                        <a :href="getFileUrl(credit.guarantor_address_proof)" target="_blank" class="flex items-center gap-2 text-primary hover:underline">
-                            <FileText v-if="isPdf(credit.guarantor_address_proof)" class="h-4 w-4" />
-                            <span>Comprobante de Domicilio</span>
-                        </a>
-                    </div>
+                    <a
+                      v-if="credit.guarantor_ine_front"
+                      :href="getFileUrl(credit.guarantor_ine_front)"
+                      target="_blank"
+                      class="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-medium text-blue-700 hover:bg-blue-100 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20 transition-colors"
+                    >
+                      <FileText class="h-4 w-4 shrink-0" />
+                      Ver INE Frontal
+                    </a>
+                    <a
+                      v-if="credit.guarantor_ine_back"
+                      :href="getFileUrl(credit.guarantor_ine_back)"
+                      target="_blank"
+                      class="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-medium text-blue-700 hover:bg-blue-100 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20 transition-colors"
+                    >
+                      <FileText class="h-4 w-4 shrink-0" />
+                      Ver INE Reverso
+                    </a>
+                    <a
+                      v-if="credit.guarantor_address_proof"
+                      :href="getFileUrl(credit.guarantor_address_proof)"
+                      target="_blank"
+                      class="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-medium text-blue-700 hover:bg-blue-100 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20 transition-colors"
+                    >
+                      <FileText class="h-4 w-4 shrink-0" />
+                      Ver Comprobante de Domicilio
+                    </a>
+                    <p v-if="!credit.guarantor_ine_front && !credit.guarantor_ine_back && !credit.guarantor_address_proof" class="text-sm text-gray-400 dark:text-gray-500">
+                      Sin documentos adjuntos
+                    </p>
                   </div>
                </div>
+
             </div>
           </div>
         </div>
