@@ -5,15 +5,7 @@
         Simulador de Préstamos
       </h2>
       <div class="flex flex-wrap gap-3">
-        <button
-          :disabled="!amount || !isValidAmount"
-          @click="generatePDF"
-          class="inline-flex items-center justify-center gap-2.5 rounded-full py-3 px-10 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
-          :class="!amount || !isValidAmount ? 'cursor-not-allowed bg-gray-400 opacity-50' : 'bg-blue-600'"
-        >
-          <Printer class="w-5 h-5" />
-          Imprimir
-        </button>
+
         <button
           :disabled="!amount || !isValidAmount"
           @click="handleContinue"
@@ -113,15 +105,7 @@
 
     <!-- Botones inferiors -->
     <div class="mt-6 flex flex-wrap gap-3 justify-end">
-      <button
-        :disabled="!amount || !isValidAmount"
-        @click="generatePDF"
-        class="inline-flex items-center justify-center gap-2.5 rounded-full py-3 px-10 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
-        :class="!amount || !isValidAmount ? 'cursor-not-allowed bg-gray-400 opacity-50' : 'bg-blue-600'"
-      >
-        <Printer class="w-5 h-5" />
-        Imprimir
-      </button>
+
       <button
         :disabled="!amount || !isValidAmount"
         @click="handleContinue"

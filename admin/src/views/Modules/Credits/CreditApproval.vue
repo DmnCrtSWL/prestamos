@@ -251,14 +251,26 @@
         </div>
 
 
+        <!-- Content -->
+        <p class="mb-6 text-sm text-gray-600 dark:text-gray-400">
+          Para aprobar el crédito es necesario imprimir el pagaré.
+        </p>
 
         <!-- Actions -->
         <div class="flex flex-col gap-3">
-
+          <button
+            type="button"
+            @click="printPagareFromModal"
+            class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-white/[0.03]"
+          >
+            <Printer class="h-4 w-4" />
+            Imprimir Pagaré
+          </button>
           <button
             type="button"
             @click="confirmApproval"
-            class="inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-green-700 focus:outline-hidden focus:ring-3 focus:ring-green-500/50"
+            :disabled="!pagarePrinted"
+            class="inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white shadow-theme-xs hover:bg-green-700 focus:outline-hidden focus:ring-3 focus:ring-green-500/50 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             Continuar
           </button>
