@@ -14,10 +14,17 @@ cloudinary.config({
 // Configure Multer Storage for Cloudinary
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
-    params: {
-        folder: 'prestamos-app',
-        allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'],
-        resource_type: 'auto',
+    params: async (req, file) => {
+        const isPdf = file.mimetype === 'application/pdf' || file.originalname.toLowerCase().endsWith('.pdf');
+
+        return {
+            folder: 'prestamos-app',
+            resource_type: 'auto',
+            // For PDFs, we strictly request 'pdf' format. For images, we allow the detected format.
+            format: isPdf ? 'pdf' : undefined,
+            allowed_formats: isPdf ? ['pdf'] : ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+            // Add public_id suffix to ensure uniqueness and prevent overwrites (optional but good practice)
+        };
     }
 });
 
