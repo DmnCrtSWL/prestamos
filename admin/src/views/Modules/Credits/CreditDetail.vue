@@ -84,9 +84,24 @@
                <div class="mt-4">
                   <h4 class="mb-3 font-semibold text-black dark:text-white">Documentos</h4>
                   <div class="flex flex-col gap-2">
-                    <a v-if="credit.guarantor_ine_front" :href="getFileUrl(credit.guarantor_ine_front)" target="_blank" class="text-primary hover:underline">INE Frente</a>
-                    <a v-if="credit.guarantor_ine_back" :href="getFileUrl(credit.guarantor_ine_back)" target="_blank" class="text-primary hover:underline">INE Reverso</a>
-                    <a v-if="credit.guarantor_address_proof" :href="getFileUrl(credit.guarantor_address_proof)" target="_blank" class="text-primary hover:underline">Comprobante de Domicilio</a>
+                    <div v-if="credit.guarantor_ine_front">
+                        <a :href="getFileUrl(credit.guarantor_ine_front)" target="_blank" class="flex items-center gap-2 text-primary hover:underline">
+                            <FileText v-if="isPdf(credit.guarantor_ine_front)" class="h-4 w-4" />
+                            <span>INE Frente</span>
+                        </a>
+                    </div>
+                    <div v-if="credit.guarantor_ine_back">
+                         <a :href="getFileUrl(credit.guarantor_ine_back)" target="_blank" class="flex items-center gap-2 text-primary hover:underline">
+                            <FileText v-if="isPdf(credit.guarantor_ine_back)" class="h-4 w-4" />
+                            <span>INE Reverso</span>
+                        </a>
+                    </div>
+                    <div v-if="credit.guarantor_address_proof">
+                        <a :href="getFileUrl(credit.guarantor_address_proof)" target="_blank" class="flex items-center gap-2 text-primary hover:underline">
+                            <FileText v-if="isPdf(credit.guarantor_address_proof)" class="h-4 w-4" />
+                            <span>Comprobante de Domicilio</span>
+                        </a>
+                    </div>
                   </div>
                </div>
             </div>
@@ -213,6 +228,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 
 const route = useRoute()
 const router = useRouter()
+import { FileText } from 'lucide-vue-next'
 const isLoading = ref(true)
 const credit = ref(null)
 const incomes = ref([])
@@ -315,5 +331,9 @@ const getFileUrl = (path) => {
     if (!path) return '#'
     if (path.startsWith('http')) return path
     return `${import.meta.env.VITE_API_URL.replace('/api', '')}${path}`
+}
+
+const isPdf = (path) => {
+    return path && path.toLowerCase().endsWith('.pdf')
 }
 </script>

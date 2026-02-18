@@ -77,9 +77,14 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">INE Frontal</label>
               <div v-if="client.ine_front" class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <img :src="getFileUrl(client.ine_front)" alt="INE Frontal" class="w-full h-48 object-cover" />
+                <div v-if="isPdf(client.ine_front)" class="flex h-48 items-center justify-center bg-gray-100 dark:bg-gray-800">
+                   <FileText class="h-16 w-16 text-gray-400" />
+                   <span class="ml-2 font-medium text-gray-500">Documento PDF</span>
+                </div>
+                <img v-else :src="getFileUrl(client.ine_front)" alt="INE Frontal" class="w-full h-48 object-cover" />
+                
                 <a :href="getFileUrl(client.ine_front)" target="_blank" class="block p-2 text-center text-sm text-blue-600 hover:bg-gray-50 dark:hover:bg-white/5">
-                  Ver imagen completa
+                  Ver documento
                 </a>
               </div>
               <p v-else class="text-sm text-gray-500 dark:text-gray-400">No disponible</p>
@@ -88,9 +93,14 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">INE Reverso</label>
               <div v-if="client.ine_back" class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <img :src="getFileUrl(client.ine_back)" alt="INE Reverso" class="w-full h-48 object-cover" />
+                <div v-if="isPdf(client.ine_back)" class="flex h-48 items-center justify-center bg-gray-100 dark:bg-gray-800">
+                   <FileText class="h-16 w-16 text-gray-400" />
+                   <span class="ml-2 font-medium text-gray-500">Documento PDF</span>
+                </div>
+                <img v-else :src="getFileUrl(client.ine_back)" alt="INE Reverso" class="w-full h-48 object-cover" />
+
                 <a :href="getFileUrl(client.ine_back)" target="_blank" class="block p-2 text-center text-sm text-blue-600 hover:bg-gray-50 dark:hover:bg-white/5">
-                  Ver imagen completa
+                  Ver documento
                 </a>
               </div>
               <p v-else class="text-sm text-gray-500 dark:text-gray-400">No disponible</p>
@@ -99,9 +109,14 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">Comprobante de Domicilio</label>
               <div v-if="client.comprobant" class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <img :src="getFileUrl(client.comprobant)" alt="Comprobante" class="w-full h-48 object-cover" />
+                <div v-if="isPdf(client.comprobant)" class="flex h-48 items-center justify-center bg-gray-100 dark:bg-gray-800">
+                   <FileText class="h-16 w-16 text-gray-400" />
+                   <span class="ml-2 font-medium text-gray-500">Documento PDF</span>
+                </div>
+                <img v-else :src="getFileUrl(client.comprobant)" alt="Comprobante" class="w-full h-48 object-cover" />
+
                 <a :href="getFileUrl(client.comprobant)" target="_blank" class="block p-2 text-center text-sm text-blue-600 hover:bg-gray-50 dark:hover:bg-white/5">
-                  Ver imagen completa
+                  Ver documento
                 </a>
               </div>
               <p v-else class="text-sm text-gray-500 dark:text-gray-400">No disponible</p>
@@ -118,7 +133,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import ComponentCard from '@/components/common/ComponentCard.vue'
-import { Pencil } from 'lucide-vue-next'
+import { Pencil, FileText } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -160,6 +175,10 @@ const getFileUrl = (path) => {
     if (!path) return '#'
     if (path.startsWith('http')) return path
     return `${import.meta.env.VITE_API_URL.replace('/api', '')}${path}`
+}
+
+const isPdf = (path) => {
+    return path && path.toLowerCase().endsWith('.pdf')
 }
 
 onMounted(() => {
