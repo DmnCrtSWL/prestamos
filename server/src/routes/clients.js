@@ -10,22 +10,7 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        const uploadDir = path.join(__dirname, '../../uploads/clients');
-        // Create directory if it doesn't exist
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-        cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-        // Generate unique filename: timestamp-originalname
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
-});
+import { storage } from '../config/cloudinary.js';
 
 const upload = multer({
     storage: storage,
@@ -33,9 +18,9 @@ const upload = multer({
         fileSize: 5 * 1024 * 1024 // 5MB limit
     },
     fileFilter: function (req, file, cb) {
-        // Accept images only
-        if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-            return cb(new Error('Solo se permiten archivos de imagen'), false);
+        // Accept images and PDFs
+        if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp|pdf)$/i)) {
+            return cb(new Error('Solo se permiten archivos de imagen o PDF'), false);
         }
         cb(null, true);
     }
@@ -108,9 +93,9 @@ router.post('/', upload.fields([
         }
 
         // Get uploaded file paths
-        const ine_front = req.files?.ine_front ? `/uploads/clients/${req.files.ine_front[0].filename}` : null;
-        const ine_back = req.files?.ine_back ? `/uploads/clients/${req.files.ine_back[0].filename}` : null;
-        const comprobant = req.files?.comprobant ? `/uploads/clients/${req.files.comprobant[0].filename}` : null;
+        const ine_front = req.files?.ine_front ? req.files.ine_front[0].path : null;
+        const ine_back = req.files?.ine_back ? req.files.ine_back[0].path : null;
+        const comprobant = req.files?.comprobant ? req.files.comprobant[0].path : null;
 
         // Insert client
         const result = await pool.query(
@@ -162,13 +147,13 @@ router.put('/:id', upload.fields([
 
         // Get uploaded file paths or keep existing ones
         const ine_front = req.files?.ine_front
-            ? `/uploads/clients/${req.files.ine_front[0].filename}`
+            ? req.files.ine_front[0].path
             : existingClient.rows[0].ine_front;
         const ine_back = req.files?.ine_back
-            ? `/uploads/clients/${req.files.ine_back[0].filename}`
+            ? req.files.ine_back[0].path
             : existingClient.rows[0].ine_back;
         const comprobant = req.files?.comprobant
-            ? `/uploads/clients/${req.files.comprobant[0].filename}`
+            ? req.files.comprobant[0].path
             : existingClient.rows[0].comprobant;
 
         // Update client

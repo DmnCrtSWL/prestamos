@@ -11,34 +11,20 @@ const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Configure multer for guarantor document uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadDir = path.join(__dirname, '../../uploads/guarantors');
-        // Create directory if it doesn't exist
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
+import { storage } from '../config/cloudinary.js';
 
 const upload = multer({
     storage: storage,
     limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
     fileFilter: (req, file, cb) => {
-        const allowedTypes = /jpeg|jpg|png|gif|webp/;
+        const allowedTypes = /jpeg|jpg|png|gif|webp|pdf/;
         const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = allowedTypes.test(file.mimetype);
+        const mimetype = allowedTypes.test(file.mimetype) || file.mimetype === 'application/pdf';
 
         if (mimetype && extname) {
             return cb(null, true);
         } else {
-            cb(new Error('Solo se permiten imágenes (jpeg, jpg, png, gif, webp)'));
+            cb(new Error('Solo se permiten imágenes (jpeg, jpg, png, gif, webp) o PDF'));
         }
     }
 });
@@ -75,13 +61,13 @@ router.post('/', upload.fields([
 
         // Get uploaded file paths
         const guarantorIneFront = req.files['guarantor_ine_front']
-            ? '/uploads/guarantors/' + req.files['guarantor_ine_front'][0].filename
+            ? req.files['guarantor_ine_front'][0].path
             : null;
         const guarantorIneBack = req.files['guarantor_ine_back']
-            ? '/uploads/guarantors/' + req.files['guarantor_ine_back'][0].filename
+            ? req.files['guarantor_ine_back'][0].path
             : null;
         const guarantorAddressProof = req.files['guarantor_address_proof']
-            ? '/uploads/guarantors/' + req.files['guarantor_address_proof'][0].filename
+            ? req.files['guarantor_address_proof'][0].path
             : null;
 
         // Parse payment_schedule if it's a string
@@ -425,21 +411,21 @@ router.put('/:id', upload.fields([
 
         // Handle file uploads
         if (req.files['guarantor_ine_front']) {
-            const filePath = '/uploads/guarantors/' + req.files['guarantor_ine_front'][0].filename;
+            const filePath = req.files['guarantor_ine_front'][0].path;
             updates.push(`guarantor_ine_front = $${paramCount}`);
             values.push(filePath);
             paramCount++;
         }
 
         if (req.files['guarantor_ine_back']) {
-            const filePath = '/uploads/guarantors/' + req.files['guarantor_ine_back'][0].filename;
+            const filePath = req.files['guarantor_ine_back'][0].path;
             updates.push(`guarantor_ine_back = $${paramCount}`);
             values.push(filePath);
             paramCount++;
         }
 
         if (req.files['guarantor_address_proof']) {
-            const filePath = '/uploads/guarantors/' + req.files['guarantor_address_proof'][0].filename;
+            const filePath = req.files['guarantor_address_proof'][0].path;
             updates.push(`guarantor_address_proof = $${paramCount}`);
             values.push(filePath);
             paramCount++;
