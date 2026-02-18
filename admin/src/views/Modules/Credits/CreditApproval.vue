@@ -159,7 +159,7 @@
                       Toma una foto o selecciona el archivo
                     </p>
                     <label class="cursor-pointer inline-flex items-center justify-center rounded-lg border border-brand-500 px-4 py-2 text-sm font-medium text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/15">
-                      <input type="file" accept="image/*" capture="environment" class="hidden" @change="(e) => handleFileUpload(e, 'ineFrontalFile')" />
+                      <input type="file" accept="image/*,application/pdf" class="hidden" @change="(e) => handleFileUpload(e, 'ineFrontalFile')" />
                       <Upload class="mr-2 h-4 w-4" />
                       Seleccionar
                     </label>
@@ -178,7 +178,7 @@
                       Toma una foto o selecciona el archivo
                     </p>
                     <label class="cursor-pointer inline-flex items-center justify-center rounded-lg border border-brand-500 px-4 py-2 text-sm font-medium text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/15">
-                      <input type="file" accept="image/*" capture="environment" class="hidden" @change="(e) => handleFileUpload(e, 'ineReversoFile')" />
+                      <input type="file" accept="image/*,application/pdf" class="hidden" @change="(e) => handleFileUpload(e, 'ineReversoFile')" />
                       <Upload class="mr-2 h-4 w-4" />
                       Seleccionar
                     </label>
@@ -197,7 +197,7 @@
                       Toma una foto o selecciona el archivo
                     </p>
                     <label class="cursor-pointer inline-flex items-center justify-center rounded-lg border border-brand-500 px-4 py-2 text-sm font-medium text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/15">
-                      <input type="file" accept="image/*" capture="environment" class="hidden" @change="(e) => handleFileUpload(e, 'addressProofFile')" />
+                      <input type="file" accept="image/*,application/pdf" class="hidden" @change="(e) => handleFileUpload(e, 'addressProofFile')" />
                       <Upload class="mr-2 h-4 w-4" />
                       Seleccionar
                     </label>
