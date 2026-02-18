@@ -289,7 +289,7 @@
           <button
             @click="submitPayment"
             :disabled="isSubmittingPay"
-            class="flex-1 rounded-lg bg-primary py-2.5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed"
+            class="flex-1 rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {{ isSubmittingPay ? 'Guardando...' : 'Registrar Pago' }}
           </button>
