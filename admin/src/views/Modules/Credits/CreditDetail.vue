@@ -203,7 +203,7 @@
                       class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
                       :class="payment.paid >= payment.amount
                         ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
-                        : 'bg-primary text-white hover:bg-primary/90'"
+                        : 'bg-blue-600 text-white hover:bg-blue-700'"
                     >
                       <CreditCard class="h-3.5 w-3.5" />
                       Pagar
