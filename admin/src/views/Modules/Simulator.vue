@@ -7,6 +7,7 @@
       <div class="flex flex-wrap gap-3">
         <button
           :disabled="!amount || !isValidAmount"
+          @click="generatePDF"
           class="inline-flex items-center justify-center gap-2.5 rounded-full py-3 px-10 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
           :class="!amount || !isValidAmount ? 'cursor-not-allowed bg-gray-400 opacity-50' : 'bg-blue-600'"
         >
@@ -109,6 +110,28 @@
         </div>
       </div>
     </ComponentCard>
+
+    <!-- Botones inferiors -->
+    <div class="mt-6 flex flex-wrap gap-3 justify-end">
+      <button
+        :disabled="!amount || !isValidAmount"
+        @click="generatePDF"
+        class="inline-flex items-center justify-center gap-2.5 rounded-full py-3 px-10 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
+        :class="!amount || !isValidAmount ? 'cursor-not-allowed bg-gray-400 opacity-50' : 'bg-blue-600'"
+      >
+        <Printer class="w-5 h-5" />
+        Imprimir
+      </button>
+      <button
+        :disabled="!amount || !isValidAmount"
+        @click="handleContinue"
+        class="inline-flex items-center justify-center gap-2.5 rounded-full py-3 px-10 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
+         :class="!amount || !isValidAmount ? 'cursor-not-allowed bg-gray-400 opacity-50' : 'bg-green-600'"
+      >
+        <Check class="w-5 h-5 text-current" />
+        Continuar
+      </button>
+    </div>
   </AdminLayout>
 </template>
 
@@ -118,6 +141,8 @@ import ComponentCard from '@/components/common/ComponentCard.vue'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Check, Printer } from 'lucide-vue-next'
+import jsPDF from 'jspdf'
+import 'jspdf-autotable'
 
 const router = useRouter()
 
@@ -171,5 +196,97 @@ const handleContinue = () => {
       totalToPay: totalToPay.value
     }
   })
+}
+
+const generatePDF = () => {
+  if (!isValidAmount.value) return
+
+  const doc = new jsPDF()
+  
+  // Configuración de fuentes y colores
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(22)
+  doc.setTextColor(41, 128, 185) // Azul corporativo
+  
+  // Título
+  doc.text("Simulación de Crédito", 105, 20, { align: "center" })
+  
+  // Línea separadora
+  doc.setLineWidth(0.5)
+  doc.setDrawColor(200, 200, 200)
+  doc.line(20, 25, 190, 25)
+
+  // Información General
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(12)
+  doc.setTextColor(60, 60, 60)
+  
+  const startY = 35
+  const lineHeight = 10
+  
+  // Función helper para filas de datos
+  const addDataRow = (label, value, y, isTotal = false) => {
+    doc.setFont("helvetica", isTotal ? "bold" : "normal")
+    doc.text(label, 20, y)
+    doc.text(value, 190, y, { align: "right" })
+  }
+
+  addDataRow("Monto Solicitado:", formatCurrency(amount.value), startY)
+  addDataRow("Gastos Administrativos (10%):", `-${formatCurrency(retention.value)}`, startY + lineHeight)
+  
+  // Recibes Neto resaltado
+  doc.setFont("helvetica", "bold")
+  doc.setTextColor(39, 174, 96) // Verde
+  addDataRow("Monto Neto a Recibir:", formatCurrency(netReceived.value), startY + lineHeight * 2, true)
+  
+  doc.setTextColor(60, 60, 60) // Reset color
+  addDataRow("Pago Semanal (12 semanas):", formatCurrency(weeklyPayment.value), startY + lineHeight * 3)
+  
+  // Total a Pagar resaltado
+  doc.setFont("helvetica", "bold")
+  doc.setTextColor(44, 62, 80) // Azul oscuro
+  addDataRow("Total a Pagar:", formatCurrency(totalToPay.value), startY + lineHeight * 4, true)
+
+  // Tabla de Amortización
+  doc.autoTable({
+    startY: startY + lineHeight * 6,
+    head: [['# Semana', 'Pago Programado', 'Saldo Pendiente']],
+    body: Array.from({ length: 12 }, (_, i) => {
+      const week = i + 1
+      const balance = Math.max(0, totalToPay.value - (weeklyPayment.value * week))
+      return [
+        week,
+        formatCurrency(weeklyPayment.value),
+        formatCurrency(balance)
+      ]
+    }),
+    theme: 'grid',
+    headStyles: { 
+      fillColor: [41, 128, 185],
+      textColor: 255,
+      halign: 'center',
+      fontStyle: 'bold'
+    },
+    bodyStyles: {
+      halign: 'center'
+    },
+    alternateRowStyles: {
+      fillColor: [245, 247, 250]
+    },
+    styles: {
+      font: "helvetica",
+      fontSize: 10,
+      cellPadding: 3
+    }
+  })
+
+  // Pie de página
+  const pageHeight = doc.internal.pageSize.height
+  doc.setFontSize(8)
+  doc.setTextColor(150, 150, 150)
+  doc.text("Documento generado automáticamente por el sistema de Gestión de Préstamos.", 105, pageHeight - 10, { align: "center" })
+  doc.text(`Fecha de generación: ${new Date().toLocaleDateString()}`, 105, pageHeight - 6, { align: "center" })
+
+  doc.save("simulacion-prestamo.pdf")
 }
 </script>
