@@ -63,7 +63,7 @@ router.get('/', async (req, res) => {
 // POST /api/incomes - Create new income
 router.post('/', async (req, res) => {
     try {
-        const { credit_id, client_id, payment_method, amount } = req.body;
+        const { credit_id, client_id, payment_method, amount, user } = req.body;
 
         if (!credit_id || !client_id || !payment_method || !amount) {
             return res.status(400).json({ error: 'Faltan campos requeridos' });
@@ -82,12 +82,12 @@ router.post('/', async (req, res) => {
         }
 
         const query = `
-      INSERT INTO incomes (folio, credit_id, client_id, payment_method, amount)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO incomes (folio, credit_id, client_id, payment_method, amount, "user")
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `;
 
-        const values = [folio, credit_id, client_id, payment_method, amount];
+        const values = [folio, credit_id, client_id, payment_method, amount, user || null];
         const result = await pool.query(query, values);
 
         res.status(201).json(result.rows[0]);

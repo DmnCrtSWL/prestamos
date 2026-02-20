@@ -58,6 +58,12 @@
                   <ArrowUpDown class="h-4 w-4 text-gray-400" />
                 </div>
               </th>
+              <th class="px-5 py-3 text-left sm:px-6 cursor-pointer" @click="sortBy('user')">
+                <div class="flex items-center gap-1.5">
+                  <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Usuario</p>
+                  <ArrowUpDown class="h-4 w-4 text-gray-400" />
+                </div>
+              </th>
               <th class="px-5 py-3 text-left sm:px-6">
                 <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Acciones</p>
               </th>
@@ -101,6 +107,9 @@
                 </span>
               </td>
               <td class="px-5 py-4 sm:px-6">
+                <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ credit.user || '-' }}</p>
+              </td>
+              <td class="px-5 py-4 sm:px-6">
                 <div class="flex items-center gap-2">
                   <button
                     @click="viewCredit(credit)"
@@ -110,6 +119,7 @@
                     <Eye class="h-5 w-5" />
                   </button>
                   <button
+                    v-if="isAdmin"
                     @click="editCredit(credit)"
                     class="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
                     title="Editar"
@@ -140,8 +150,10 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { Search, ArrowUpDown, Eye, Edit, User, Check } from 'lucide-vue-next'
+import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
+const { isAdmin } = useAuth()
 
 const searchQuery = ref('')
 const sortColumn = ref('created_at')

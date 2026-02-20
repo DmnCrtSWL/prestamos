@@ -293,11 +293,13 @@ import { reactive, ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import ComponentCard from '@/components/common/ComponentCard.vue'
+import { useAuth } from '@/composables/useAuth'
 
 import { Printer, Smile, Meh, Frown, Camera, Check, Upload, AlertTriangle } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
+const { userName } = useAuth()
 
 // Datos del Aval
 const avalData = reactive({
@@ -436,7 +438,7 @@ const confirmApproval = async () => {
     formData.append('weekly_payment', creditDetails.weeklyPayment)
     formData.append('total_to_pay', creditDetails.totalToPay)
     formData.append('weeks', 12)
-    formData.append('user', 'admin') // TODO: Replace with actual logged-in user
+    formData.append('user', userName.value || 'admin') // Real logged-in user
     formData.append('guarantor_name', avalData.name)
     formData.append('guarantor_phone', avalData.phone)
     formData.append('guarantor_address', avalData.address)
@@ -469,7 +471,7 @@ const confirmApproval = async () => {
     alert('¡Crédito Aprobado exitosamente!')
     showApprovalModal.value = false
     pagarePrinted.value = false
-    router.push('/creditos')
+    router.push(`/creditos/${data.credit.id}/fondear`)
   } catch (error) {
     console.error('Error approving credit:', error)
     alert('Error al aprobar crédito: ' + error.message)

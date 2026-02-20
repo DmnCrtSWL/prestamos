@@ -8,6 +8,7 @@ import clientsRouter from './routes/clients.js';
 import creditsRouter from './routes/credits.js';
 import incomesRouter from './routes/incomes.js';
 import providersRouter from './routes/providers.js';
+import authRouter from './routes/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,6 +33,7 @@ app.use((req, res, next) => {
 });
 
 // Routes
+app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/clients', clientsRouter);
 app.use('/api/credits', creditsRouter);

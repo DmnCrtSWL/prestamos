@@ -170,9 +170,11 @@ import { useRouter, useRoute } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import ComponentCard from '@/components/common/ComponentCard.vue'
 import { Camera, Upload, Check } from 'lucide-vue-next'
+import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
 const route = useRoute()
+const { userName } = useAuth()
 
 const clientId = computed(() => route.params.id)
 const isEditMode = computed(() => !!clientId.value)
@@ -238,6 +240,10 @@ const handleSubmit = async () => {
     formDataToSend.append('phone', formData.phone)
     formDataToSend.append('curp', formData.curp.toUpperCase())
     formDataToSend.append('address', formData.address)
+    // Only send user when creating (not editing)
+    if (!isEditMode.value && userName.value) {
+      formDataToSend.append('user', userName.value)
+    }
     
     // Append image files if they exist
     if (formData.ineFrontalFile) {

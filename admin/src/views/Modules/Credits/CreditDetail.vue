@@ -89,6 +89,10 @@
                 <div class="font-medium text-black dark:text-white">{{ credit.weeks }} semanas</div>
               </div>
               <div>
+                <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Operado por</label>
+                <div class="font-medium text-black dark:text-white">{{ credit.user || 'N/A' }}</div>
+              </div>
+              <div>
                 <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Fecha de Creación</label>
                 <div class="font-medium text-black dark:text-white">{{ formatDate(credit.created_at) }}</div>
               </div>
@@ -305,9 +309,11 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { FileText, CreditCard, X } from 'lucide-vue-next'
+import { useAuth } from '@/composables/useAuth'
 
 const route = useRoute()
 const router = useRouter()
+const { userName } = useAuth()
 const isLoading = ref(true)
 const credit = ref(null)
 const incomes = ref([])
@@ -408,7 +414,8 @@ const submitPayment = async () => {
       credit_id: credit.value.id,
       client_id: credit.value.client_id,
       payment_method: payForm.value.payment_method,
-      amount: payForm.value.amount
+      amount: payForm.value.amount,
+      user: userName.value || 'admin'
     }
 
     const response = await fetch(`${import.meta.env.VITE_API_URL}/incomes`, {

@@ -134,8 +134,10 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
+const { userName } = useAuth()
 const isLoadingCredits = ref(false)
 const isSubmitting = ref(false)
 const credits = ref([])
@@ -205,7 +207,8 @@ const submitIncome = async () => {
             credit_id: selectedCreditId.value,
             client_id: credit.client_id, 
             payment_method: form.value.payment_method,
-            amount: form.value.amount
+            amount: form.value.amount,
+            user: userName.value || 'admin'
         }
 
         const response = await fetch(`${import.meta.env.VITE_API_URL}/incomes`, {

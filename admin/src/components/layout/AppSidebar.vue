@@ -224,53 +224,64 @@ import {
 import SidebarWidget from "./SidebarWidget.vue";
 import BoxCubeIcon from "@/icons/BoxCubeIcon.vue";
 import { useSidebar } from "@/composables/useSidebar";
+import { useAuth } from "@/composables/useAuth";
 
 const route = useRoute();
 
 const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
+const { isAdmin } = useAuth();
 
-const menuGroups = [
+const allMenuItems = [
   {
-    title: "Módulos",
-    items: [
-      {
-        icon: GridIcon,
-        name: "Dashboard",
-        path: "/",
-      },
-      {
-        icon: UserCircleIcon,
-        name: "Usuarios",
-        path: "/usuarios",
-      },
-      {
-        icon: DocsIcon,
-        name: "Clientes",
-        path: "/clientes",
-      },
-      {
-        icon: PieChartIcon,
-        name: "Simulador",
-        path: "/simulador",
-      },
-      {
-        icon: DollarSignIcon,
-        name: "Créditos",
-        path: "/creditos",
-      },
-      {
-        icon: TableIcon,
-        name: "Caja",
-        path: "/caja",
-      },
-      {
-        icon: BoxCubeIcon,
-        name: "Proveedores",
-        path: "/proveedores",
-      },
-    ],
+    icon: GridIcon,
+    name: "Dashboard",
+    path: "/",
+    adminOnly: false,
+  },
+  {
+    icon: UserCircleIcon,
+    name: "Usuarios",
+    path: "/usuarios",
+    adminOnly: true,
+  },
+  {
+    icon: DocsIcon,
+    name: "Clientes",
+    path: "/clientes",
+    adminOnly: false,
+  },
+  {
+    icon: PieChartIcon,
+    name: "Simulador",
+    path: "/simulador",
+    adminOnly: false,
+  },
+  {
+    icon: DollarSignIcon,
+    name: "Créditos",
+    path: "/creditos",
+    adminOnly: false,
+  },
+  {
+    icon: TableIcon,
+    name: "Caja",
+    path: "/caja",
+    adminOnly: false,
+  },
+  {
+    icon: BoxCubeIcon,
+    name: "Proveedores",
+    path: "/proveedores",
+    adminOnly: true,
   },
 ];
+
+const menuGroups = computed(() => [
+  {
+    title: "Módulos",
+    items: allMenuItems.filter(item => !item.adminOnly || isAdmin.value),
+  },
+]);
 
 const isActive = (path) => route.path === path;
 
@@ -280,7 +291,7 @@ const toggleSubmenu = (groupIndex, itemIndex) => {
 };
 
 const isAnySubmenuRouteActive = computed(() => {
-  return menuGroups.some((group) =>
+  return menuGroups.value.some((group) =>
     group.items.some(
       (item) =>
         item.subItems && item.subItems.some((subItem) => isActive(subItem.path))
@@ -293,7 +304,7 @@ const isSubmenuOpen = (groupIndex, itemIndex) => {
   return (
     openSubmenu.value === key ||
     (isAnySubmenuRouteActive.value &&
-      menuGroups[groupIndex].items[itemIndex].subItems?.some((subItem) =>
+      menuGroups.value[groupIndex].items[itemIndex].subItems?.some((subItem) =>
         isActive(subItem.path)
       ))
   );

@@ -6,320 +6,168 @@ const router = createRouter({
     return savedPosition || { left: 0, top: 0 }
   },
   routes: [
-    {
-      path: '/',
-      name: 'Dashboard',
-      component: () => import('../views/Ecommerce.vue'),
-      meta: {
-        title: 'Dashboard',
-      },
-    },
-    {
-      path: '/usuarios',
-      name: 'Users',
-      component: () => import('../views/Modules/Users.vue'),
-      meta: {
-        title: 'Usuarios',
-      },
-    },
-    {
-      path: '/usuarios/nuevo',
-      name: 'NewUser',
-      component: () => import('../views/Modules/Users/UserForm.vue'),
-      meta: {
-        title: 'Nuevo Usuario',
-      },
-    },
-    {
-      path: '/usuarios/editar/:id',
-      name: 'EditUser',
-      component: () => import('../views/Modules/Users/UserForm.vue'),
-      meta: {
-        title: 'Editar Usuario',
-      },
-    },
-    {
-      path: '/simulador',
-      name: 'Simulador',
-      component: () => import('../views/Modules/Simulator.vue'),
-      meta: {
-        title: 'Simulador',
-      },
-    },
-    {
-      path: '/proveedores',
-      name: 'Proveedores',
-      component: () => import('../views/Modules/Providers.vue'),
-      meta: {
-        title: 'Proveedores',
-      },
-    },
-    {
-      path: '/proveedores/nuevo',
-      name: 'NewProvider',
-      component: () => import('../views/Modules/Providers/ProviderForm.vue'),
-      meta: {
-        title: 'Nuevo Proveedor',
-      },
-    },
-    {
-      path: '/proveedores/editar/:id',
-      name: 'EditProvider',
-      component: () => import('../views/Modules/Providers/ProviderForm.vue'),
-      meta: {
-        title: 'Editar Proveedor',
-      },
-    },
-    {
-      path: '/proveedores/aportaciones/:id',
-      name: 'ProviderContributions',
-      component: () => import('../views/Modules/Providers/Contributions.vue'),
-      meta: {
-        title: 'Aportaciones',
-      },
-    },
-    {
-      path: '/clientes',
-      name: 'Clientes',
-      component: () => import('../views/Modules/Clients.vue'),
-      meta: {
-        title: 'Clientes',
-      },
-    },
-    {
-      path: '/clientes/nuevo',
-      name: 'NewClient',
-      component: () => import('../views/Modules/Clients/ClientForm.vue'),
-      meta: {
-        title: 'Nuevo Cliente',
-      },
-    },
-    {
-      path: '/clientes/:id/editar',
-      name: 'EditClient',
-      component: () => import('../views/Modules/Clients/ClientForm.vue'),
-      meta: {
-        title: 'Editar Cliente',
-      },
-    },
-    {
-      path: '/clientes/:id',
-      name: 'ViewClient',
-      component: () => import('../views/Modules/Clients/ClientDetail.vue'),
-      meta: {
-        title: 'Detalle de Cliente',
-      },
-    },
-    {
-      path: '/reestructuracion',
-      name: 'Reestructuracion',
-      component: () => import('../views/Modules/Restructuring.vue'),
-      meta: {
-        title: 'Reestructuración',
-      },
-    },
-
-    // Rutas anteriores para referencia o borrado futuro
-    {
-      path: '/ecommerce',
-      name: 'Ecommerce',
-      component: () => import('../views/Ecommerce.vue'),
-      meta: {
-        title: 'eCommerce Dashboard',
-      },
-    },
-    {
-      path: '/calendar',
-      name: 'Calendar',
-      component: () => import('../views/Others/Calendar.vue'),
-      meta: {
-        title: 'Calendar',
-      },
-    },
-    {
-      path: '/profile',
-      name: 'Profile',
-      component: () => import('../views/Others/UserProfile.vue'),
-      meta: {
-        title: 'Profile',
-      },
-    },
-    {
-      path: '/form-elements',
-      name: 'Form Elements',
-      component: () => import('../views/Forms/FormElements.vue'),
-      meta: {
-        title: 'Form Elements',
-      },
-    },
-    {
-      path: '/basic-tables',
-      name: 'Basic Tables',
-      component: () => import('../views/Tables/BasicTables.vue'),
-      meta: {
-        title: 'Basic Tables',
-      },
-    },
-    {
-      path: '/line-chart',
-      name: 'Line Chart',
-      component: () => import('../views/Chart/LineChart/LineChart.vue'),
-    },
-    {
-      path: '/bar-chart',
-      name: 'Bar Chart',
-      component: () => import('../views/Chart/BarChart/BarChart.vue'),
-    },
-    {
-      path: '/alerts',
-      name: 'Alerts',
-      component: () => import('../views/UiElements/Alerts.vue'),
-      meta: {
-        title: 'Alerts',
-      },
-    },
-    {
-      path: '/avatars',
-      name: 'Avatars',
-      component: () => import('../views/UiElements/Avatars.vue'),
-      meta: {
-        title: 'Avatars',
-      },
-    },
-    {
-      path: '/badge',
-      name: 'Badge',
-      component: () => import('../views/UiElements/Badges.vue'),
-      meta: {
-        title: 'Badge',
-      },
-    },
-
-    {
-      path: '/buttons',
-      name: 'Buttons',
-      component: () => import('../views/UiElements/Buttons.vue'),
-      meta: {
-        title: 'Buttons',
-      },
-    },
-
-    {
-      path: '/images',
-      name: 'Images',
-      component: () => import('../views/UiElements/Images.vue'),
-      meta: {
-        title: 'Images',
-      },
-    },
-    {
-      path: '/videos',
-      name: 'Videos',
-      component: () => import('../views/UiElements/Videos.vue'),
-      meta: {
-        title: 'Videos',
-      },
-    },
-    {
-      path: '/debug',
-      name: 'Debug',
-      component: () => import('../views/DebugEnv.vue'),
-      meta: {
-        title: 'Debug',
-        hidden: true
-      }
-    },
-    {
-      path: '/blank',
-      name: 'Blank',
-      component: () => import('../views/Pages/BlankPage.vue'),
-      meta: {
-        title: 'Blank',
-      },
-    },
-
-    {
-      path: '/error-404',
-      name: '404 Error',
-      component: () => import('../views/Errors/FourZeroFour.vue'),
-      meta: {
-        title: '404 Error',
-      },
-    },
-
-    {
-      path: '/creditos',
-      name: 'Creditos',
-      component: () => import('../views/Modules/Credits.vue'),
-      meta: {
-        title: 'Créditos',
-      },
-    },
-    {
-      path: '/creditos/:id/fondear',
-      name: 'CreditFunding',
-      component: () => import('../views/Modules/Credits/CreditFunding.vue'),
-      meta: {
-        title: 'Fondeo de Crédito',
-      },
-    },
-
-    {
-      path: '/creditos/aprobar',
-      name: 'CreditApproval',
-      component: () => import('../views/Modules/Credits/CreditApproval.vue'),
-      meta: {
-        title: 'Formalización de Crédito',
-      },
-    },
-    {
-      path: '/caja',
-      name: 'Incomes',
-      component: () => import('../views/Modules/Incomes.vue'),
-      meta: {
-        title: 'Caja',
-      },
-    },
-    {
-      path: '/caja/nuevo',
-      name: 'NewIncome',
-      component: () => import('../views/Modules/Incomes/IncomeForm.vue'),
-      meta: {
-        title: 'Nuevo Ingreso',
-      },
-    },
-    {
-      path: '/creditos/:id',
-      name: 'CreditDetail',
-      component: () => import('../views/Modules/Credits/CreditDetail.vue'),
-      meta: {
-        title: 'Detalles de Crédito',
-      },
-    },
-    {
-      path: '/creditos/:id/editar',
-      name: 'CreditEdit',
-      component: () => import('../views/Modules/Credits/CreditForm.vue'),
-      meta: {
-        title: 'Editar Crédito',
-      },
-    },
-
+    // Public routes
     {
       path: '/signin',
       name: 'Signin',
       component: () => import('../views/Auth/Signin.vue'),
-      meta: {
-        title: 'Signin',
-      },
+      meta: { title: 'Iniciar Sesión', public: true },
     },
     {
       path: '/signup',
       name: 'Signup',
       component: () => import('../views/Auth/Signup.vue'),
-      meta: {
-        title: 'Signup',
-      },
+      meta: { title: 'Registro', public: true },
+    },
+
+    // Protected routes (all roles)
+    {
+      path: '/',
+      name: 'Dashboard',
+      component: () => import('../views/Ecommerce.vue'),
+      meta: { title: 'Dashboard', requiresAuth: true },
+    },
+    {
+      path: '/simulador',
+      name: 'Simulador',
+      component: () => import('../views/Modules/Simulator.vue'),
+      meta: { title: 'Simulador', requiresAuth: true },
+    },
+    {
+      path: '/clientes',
+      name: 'Clientes',
+      component: () => import('../views/Modules/Clients.vue'),
+      meta: { title: 'Clientes', requiresAuth: true },
+    },
+    {
+      path: '/clientes/nuevo',
+      name: 'NewClient',
+      component: () => import('../views/Modules/Clients/ClientForm.vue'),
+      meta: { title: 'Nuevo Cliente', requiresAuth: true },
+    },
+    {
+      path: '/clientes/:id/editar',
+      name: 'EditClient',
+      component: () => import('../views/Modules/Clients/ClientForm.vue'),
+      meta: { title: 'Editar Cliente', requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/clientes/:id',
+      name: 'ViewClient',
+      component: () => import('../views/Modules/Clients/ClientDetail.vue'),
+      meta: { title: 'Detalle de Cliente', requiresAuth: true },
+    },
+    {
+      path: '/creditos',
+      name: 'Creditos',
+      component: () => import('../views/Modules/Credits.vue'),
+      meta: { title: 'Créditos', requiresAuth: true },
+    },
+    {
+      path: '/creditos/:id/fondear',
+      name: 'CreditFunding',
+      component: () => import('../views/Modules/Credits/CreditFunding.vue'),
+      meta: { title: 'Fondeo de Crédito', requiresAuth: true },
+    },
+    {
+      path: '/creditos/aprobar',
+      name: 'CreditApproval',
+      component: () => import('../views/Modules/Credits/CreditApproval.vue'),
+      meta: { title: 'Formalización de Crédito', requiresAuth: true },
+    },
+    {
+      path: '/creditos/:id',
+      name: 'CreditDetail',
+      component: () => import('../views/Modules/Credits/CreditDetail.vue'),
+      meta: { title: 'Detalles de Crédito', requiresAuth: true },
+    },
+    {
+      path: '/creditos/:id/editar',
+      name: 'CreditEdit',
+      component: () => import('../views/Modules/Credits/CreditForm.vue'),
+      meta: { title: 'Editar Crédito', requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/caja',
+      name: 'Incomes',
+      component: () => import('../views/Modules/Incomes.vue'),
+      meta: { title: 'Caja', requiresAuth: true },
+    },
+    {
+      path: '/caja/nuevo',
+      name: 'NewIncome',
+      component: () => import('../views/Modules/Incomes/IncomeForm.vue'),
+      meta: { title: 'Nuevo Ingreso', requiresAuth: true },
+    },
+    {
+      path: '/reestructuracion',
+      name: 'Reestructuracion',
+      component: () => import('../views/Modules/Restructuring.vue'),
+      meta: { title: 'Reestructuración', requiresAuth: true },
+    },
+
+    // Admin-only routes
+    {
+      path: '/usuarios',
+      name: 'Users',
+      component: () => import('../views/Modules/Users.vue'),
+      meta: { title: 'Usuarios', requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/usuarios/nuevo',
+      name: 'NewUser',
+      component: () => import('../views/Modules/Users/UserForm.vue'),
+      meta: { title: 'Nuevo Usuario', requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/usuarios/editar/:id',
+      name: 'EditUser',
+      component: () => import('../views/Modules/Users/UserForm.vue'),
+      meta: { title: 'Editar Usuario', requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/proveedores',
+      name: 'Proveedores',
+      component: () => import('../views/Modules/Providers.vue'),
+      meta: { title: 'Proveedores', requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/proveedores/nuevo',
+      name: 'NewProvider',
+      component: () => import('../views/Modules/Providers/ProviderForm.vue'),
+      meta: { title: 'Nuevo Proveedor', requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/proveedores/editar/:id',
+      name: 'EditProvider',
+      component: () => import('../views/Modules/Providers/ProviderForm.vue'),
+      meta: { title: 'Editar Proveedor', requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/proveedores/aportaciones/:id',
+      name: 'ProviderContributions',
+      component: () => import('../views/Modules/Providers/Contributions.vue'),
+      meta: { title: 'Aportaciones', requiresAuth: true, requiresAdmin: true },
+    },
+
+    // Misc / legacy
+    {
+      path: '/ecommerce',
+      name: 'Ecommerce',
+      component: () => import('../views/Ecommerce.vue'),
+      meta: { title: 'eCommerce Dashboard', requiresAuth: true },
+    },
+    {
+      path: '/debug',
+      name: 'Debug',
+      component: () => import('../views/DebugEnv.vue'),
+      meta: { title: 'Debug', hidden: true, requiresAuth: true },
+    },
+    {
+      path: '/error-404',
+      name: '404 Error',
+      component: () => import('../views/Errors/FourZeroFour.vue'),
+      meta: { title: '404 Error' },
     },
   ],
 })
@@ -327,6 +175,26 @@ const router = createRouter({
 export default router
 
 router.beforeEach((to, from, next) => {
-  document.title = `Vue.js ${to.meta.title} | TailAdmin - Vue.js Tailwind CSS Dashboard Template`
+  document.title = `${to.meta.title || 'Admin'} | Prestamos`
+
+  const token = localStorage.getItem('auth_token')
+  const userRaw = localStorage.getItem('auth_user')
+  const user = userRaw ? JSON.parse(userRaw) : null
+
+  // Redirect to signin if not authenticated and route requires auth
+  if (to.meta.requiresAuth && !token) {
+    return next({ name: 'Signin' })
+  }
+
+  // Redirect to dashboard if already logged in and trying to access signin
+  if (to.meta.public && token) {
+    return next({ name: 'Dashboard' })
+  }
+
+  // Block Sucursal from admin-only routes
+  if (to.meta.requiresAdmin && user?.rol !== 'Administrador') {
+    return next({ name: 'Dashboard' })
+  }
+
   next()
 })

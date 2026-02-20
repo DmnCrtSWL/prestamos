@@ -89,12 +89,14 @@
                   <button class="hover:text-primary" title="Ver" @click="viewClient(client.id)">
                     <Eye class="w-5 h-5 text-blue-600 transition-colors" />
                   </button>
-                  <button class="hover:text-primary" title="Editar" @click="editClient(client.id)">
-                    <Pencil class="w-5 h-5 text-yellow-500 transition-colors" />
-                  </button>
-                  <button class="hover:text-primary" title="Eliminar" @click="deleteClient(client.id)">
-                    <Trash2 class="w-5 h-5 text-red-600 transition-colors" />
-                  </button>
+                  <template v-if="isAdmin">
+                    <button class="hover:text-primary" title="Editar" @click="editClient(client.id)">
+                      <Pencil class="w-5 h-5 text-yellow-500 transition-colors" />
+                    </button>
+                    <button class="hover:text-primary" title="Eliminar" @click="deleteClient(client.id)">
+                      <Trash2 class="w-5 h-5 text-red-600 transition-colors" />
+                    </button>
+                  </template>
                 </div>
               </td>
             </tr>
@@ -110,8 +112,10 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Eye, Pencil, Trash2, ArrowUpDown, Search } from 'lucide-vue-next'
+import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
+const { isAdmin } = useAuth()
 
 const clients = ref([])
 const loading = ref(false)

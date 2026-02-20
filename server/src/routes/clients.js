@@ -30,7 +30,7 @@ const upload = multer({
 router.get('/', async (req, res) => {
     try {
         const result = await pool.query(
-            'SELECT id, name, phone, curp, address, ine_front, ine_back, comprobant, created_at, updated_at FROM clients WHERE deleted_at IS NULL ORDER BY created_at DESC'
+            'SELECT id, name, phone, curp, address, ine_front, ine_back, comprobant, "user", created_at, updated_at FROM clients WHERE deleted_at IS NULL ORDER BY created_at DESC'
         );
         res.json(result.rows);
     } catch (error) {
@@ -44,7 +44,7 @@ router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const result = await pool.query(
-            'SELECT id, name, phone, curp, address, ine_front, ine_back, comprobant, created_at, updated_at FROM clients WHERE id = $1 AND deleted_at IS NULL',
+            'SELECT id, name, phone, curp, address, ine_front, ine_back, comprobant, "user", created_at, updated_at FROM clients WHERE id = $1 AND deleted_at IS NULL',
             [id]
         );
 
@@ -66,7 +66,7 @@ router.post('/', upload.fields([
     { name: 'comprobant', maxCount: 1 }
 ]), async (req, res) => {
     try {
-        const { name, phone, curp, address } = req.body;
+        const { name, phone, curp, address, user } = req.body;
 
         // Validate required fields
         if (!name || !phone || !curp || !address) {
@@ -99,8 +99,8 @@ router.post('/', upload.fields([
 
         // Insert client
         const result = await pool.query(
-            'INSERT INTO clients (name, phone, curp, address, ine_front, ine_back, comprobant) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, name, phone, curp, address, ine_front, ine_back, comprobant, created_at',
-            [name, phone, curp, address, ine_front, ine_back, comprobant]
+            'INSERT INTO clients (name, phone, curp, address, ine_front, ine_back, comprobant, "user") VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, name, phone, curp, address, ine_front, ine_back, comprobant, "user", created_at',
+            [name, phone, curp, address, ine_front, ine_back, comprobant, user || null]
         );
 
         res.status(201).json({

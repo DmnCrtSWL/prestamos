@@ -96,6 +96,9 @@
                 <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Forma de Pago</p>
               </th>
               <th class="px-5 py-3 text-left sm:px-6">
+                <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Usuario</p>
+              </th>
+              <th class="px-5 py-3 text-left sm:px-6">
                 <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Monto</p>
               </th>
               <th class="px-5 py-3 text-left sm:px-6">
@@ -129,6 +132,9 @@
                 >
                   {{ income.payment_method === 'cash' ? 'Efectivo' : 'Transferencia' }}
                 </span>
+              </td>
+              <td class="px-5 py-4 sm:px-6">
+                <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ income.user || '-' }}</p>
               </td>
               <td class="px-5 py-4 sm:px-6">
                 <p class="text-gray-500 text-theme-sm dark:text-gray-400 font-bold">{{ formatCurrency(income.amount) }}</p>
