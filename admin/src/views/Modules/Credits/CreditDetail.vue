@@ -81,10 +81,22 @@
                 <div class="font-medium text-black dark:text-white">{{ formatCurrency(credit.weekly_payment) }}</div>
               </div>
               <div>
-                <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Total a Pagar</label>
+                <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Total a Pagar Original</label>
                 <div class="font-medium text-black dark:text-white">{{ formatCurrency(credit.total_to_pay) }}</div>
               </div>
-              <div>
+              <div v-if="penaltyAmount > 0">
+                <label class="mb-1 block text-sm font-semibold text-red-500">Recargos por Atraso</label>
+                <div class="font-bold text-red-600">{{ formatCurrency(penaltyAmount) }}</div>
+              </div>
+              <div v-if="penaltyAmount > 0">
+                <label class="mb-1 block text-sm font-semibold text-gray-700 dark:text-gray-300">Nuevo Total a Pagar</label>
+                <div class="font-bold text-black dark:text-white">{{ formatCurrency(Number(credit.total_to_pay) + penaltyAmount) }}</div>
+              </div>
+              <div v-if="extendedSchedule.length > credit.weeks">
+                <label class="mb-1 block text-sm font-semibold text-orange-500">Plazo Actualizado</label>
+                <div class="font-bold text-orange-600">{{ extendedSchedule.length }} semanas</div>
+              </div>
+              <div v-else>
                 <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Plazo</label>
                 <div class="font-medium text-black dark:text-white">{{ credit.weeks }} semanas</div>
               </div>
@@ -191,7 +203,14 @@
                 >
                   <td class="py-3 px-2 text-black dark:text-white">{{ payment.number ?? (idx + 1) }}</td>
                   <td class="py-3 px-2 text-black dark:text-white">{{ payment.date }}</td>
-                  <td class="py-3 px-2 text-right text-black dark:text-white">{{ formatCurrency(payment.amount) }}</td>
+                  <td class="py-3 px-2 text-right text-black dark:text-white">
+                    <div class="flex flex-col items-end">
+                      <span>{{ formatCurrency(payment.amount) }}</span>
+                      <span v-if="payment.amount > payment.originalAmount" class="text-[10px] text-red-500 font-medium mt-0.5" title="Incluye recargos por atraso">
+                        (+{{ formatCurrency(payment.amount - payment.originalAmount) }} multas)
+                      </span>
+                    </div>
+                  </td>
                   <td class="py-3 px-2 text-right font-medium" :class="{'text-success': payment.paid >= payment.amount, 'text-warning': payment.paid > 0 && payment.paid < payment.amount, 'text-gray-400': payment.paid === 0}">
                     {{ formatCurrency(payment.paid) }}
                   </td>
@@ -200,18 +219,41 @@
                     <span v-else-if="payment.paid > 0" class="inline-flex rounded-full bg-yellow-50 px-2 py-0.5 text-xs font-medium text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400">Parcial</span>
                     <span v-else class="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">Pendiente</span>
                   </td>
-                  <td class="py-3 px-2 text-center">
-                    <button
-                      @click="openPayModal(payment, idx)"
-                      :disabled="payment.paid >= payment.amount"
-                      class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
-                      :class="payment.paid >= payment.amount
-                        ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'"
-                    >
-                      <CreditCard class="h-3.5 w-3.5" />
-                      Pagar
-                    </button>
+                  <td class="py-3 px-2">
+                    <div class="flex items-center justify-end gap-2 pr-4 w-full">
+                      <button
+                        @click="openPayModal(payment, idx)"
+                        :disabled="payment.paid >= payment.amount"
+                        class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+                        :class="payment.paid >= payment.amount
+                          ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'"
+                      >
+                        <CreditCard class="h-3.5 w-3.5" />
+                        Pagar
+                      </button>
+
+                      <button
+                        v-if="(payment.number ?? (idx + 1)) >= 5"
+                        @click="router.push(`/reestructuracion/${credit.id}`)"
+                        :disabled="!canRestructure"
+                        class="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+                        :class="!canRestructure
+                          ? 'cursor-not-allowed bg-orange-500/50 text-white/50 dark:bg-orange-600/50'
+                          : 'bg-orange-500 text-white hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700'"
+                        title="Reestructuración"
+                      >
+                        <Calculator class="h-3.5 w-3.5" />
+                      </button>
+                      
+                      <!-- Placeholder invisible para alinear el botón de pagar con los de abajo -->
+                      <button
+                        v-else
+                        class="invisible inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium"
+                      >
+                        <Calculator class="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -308,7 +350,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
-import { FileText, CreditCard, X } from 'lucide-vue-next'
+import { FileText, CreditCard, X, Calculator } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 
 const route = useRoute()
@@ -356,7 +398,7 @@ const totalPaidAmount = computed(() => {
   return incomes.value.reduce((sum, income) => sum + Number(income.amount), 0)
 })
 
-const scheduleWithPayments = computed(() => {
+const extendedSchedule = computed(() => {
   if (!credit.value || !credit.value.payment_schedule) return []
 
   let schedule = []
@@ -367,18 +409,104 @@ const scheduleWithPayments = computed(() => {
       return []
     }
   } else {
-    schedule = credit.value.payment_schedule
+    schedule = [...credit.value.payment_schedule] // Clone to avoid mutation
   }
 
-  let remainingPaid = totalPaidAmount.value
+  if (schedule.length === 0) return schedule;
 
-  return schedule.map((item, idx) => {
-    const amount = Number(item.amount)
+  // Check if first payment was made on time
+  // Need to parse the first date properly (local time)
+  // Assuming schedule[0].date is YYYY-MM-DD
+  const [year, month, day] = schedule[0].date.split('-').map(Number);
+  const firstPaymentDate = new Date(year, month - 1, day, 23, 59, 59, 999);
+  
+  const paidAtFirstDate = incomes.value
+    .filter(i => new Date(i.created_at) <= firstPaymentDate)
+    .reduce((sum, i) => sum + Number(i.amount), 0);
+    
+  if (paidAtFirstDate < Number(schedule[0].amount)) {
+    // Add one extra week at the end
+    const lastPayment = schedule[schedule.length - 1];
+    const [ly, lm, ld] = lastPayment.date.split('-').map(Number);
+    const lastDate = new Date(ly, lm - 1, ld);
+    lastDate.setDate(lastDate.getDate() + 7);
+    
+    // Format to YYYY-MM-DD
+    const pad = (n) => n.toString().padStart(2, '0');
+    const newDateStr = `${lastDate.getFullYear()}-${pad(lastDate.getMonth() + 1)}-${pad(lastDate.getDate())}`;
+    
+    schedule.push({
+      amount: lastPayment.amount, // Same weekly amount
+      date: newDateStr,
+      week: schedule.length + 1
+    });
+  }
+
+  return schedule;
+})
+
+const penaltyAmount = computed(() => {
+  const schedule = extendedSchedule.value;
+  if (schedule.length === 0) return 0;
+
+  const [year, month, day] = schedule[0].date.split('-').map(Number);
+  const firstDate = new Date(year, month - 1, day, 23, 59, 59, 999);
+  
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  
+  if (today <= firstDate) return 0;
+
+  const sortedIncomes = [...incomes.value].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+  let totalPenalty = 0;
+  let currentDate = new Date(firstDate);
+  currentDate.setDate(currentDate.getDate() + 1); // Start penalty computation the day AFTER the due date
+  currentDate.setHours(23, 59, 59, 999);
+  
+  while (currentDate <= today) {
+    const expectedAmount = schedule
+      .filter(() => true) // Evaluate all
+      .reduce((sum, p) => {
+        const [py, pm, pd] = p.date.split('-').map(Number);
+        const pDate = new Date(py, pm - 1, pd, 23, 59, 59, 999);
+        return pDate < currentDate ? sum + Number(p.amount) : sum;
+      }, 0);
+      
+    const endOfDay = new Date(currentDate);
+    
+    const actualAmount = sortedIncomes
+      .filter(i => new Date(i.created_at) <= endOfDay)
+      .reduce((sum, i) => sum + Number(i.amount), 0);
+      
+    const unpaid = expectedAmount - actualAmount;
+    
+    if (unpaid >= 1000) {
+      totalPenalty += 100;
+    } else if (unpaid > 0) {
+      totalPenalty += 50;
+    }
+    
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  
+  return totalPenalty;
+});
+
+const scheduleWithPayments = computed(() => {
+  const schedule = extendedSchedule.value;
+  let remainingPaid = totalPaidAmount.value
+  let penaltyToApply = penaltyAmount.value
+
+  const processedSchedule = schedule.map((item, idx) => {
+    const originalAmount = Number(item.amount)
+    let amountWithPenalty = originalAmount
+    
     let paid = 0
 
-    if (remainingPaid >= amount) {
-      paid = amount
-      remainingPaid -= amount
+    if (remainingPaid >= originalAmount) {
+      paid = originalAmount
+      remainingPaid -= originalAmount
     } else {
       paid = remainingPaid
       remainingPaid = 0
@@ -387,9 +515,21 @@ const scheduleWithPayments = computed(() => {
     return {
       ...item,
       number: item.week ?? (idx + 1),
+      originalAmount,
+      amount: amountWithPenalty,
       paid
     }
   })
+
+  // Apply penalty to the first unpaid payment
+  if (penaltyToApply > 0) {
+    const firstUnpaid = processedSchedule.find(p => p.paid < p.originalAmount)
+    if (firstUnpaid) {
+      firstUnpaid.amount = firstUnpaid.originalAmount + penaltyToApply
+    }
+  }
+
+  return processedSchedule
 })
 
 const openPayModal = (payment, idx) => {
@@ -478,4 +618,13 @@ const getFileUrl = (path) => {
 const isPdf = (path) => {
   return path && path.toLowerCase().endsWith('.pdf')
 }
+
+const canRestructure = computed(() => {
+  if (!scheduleWithPayments.value || scheduleWithPayments.value.length < 5) return false;
+  
+  const payment5 = scheduleWithPayments.value.find(p => (p.number ?? (scheduleWithPayments.value.indexOf(p) + 1)) === 5) || scheduleWithPayments.value[4];
+  if (!payment5) return false;
+  
+  return payment5.paid >= payment5.amount;
+});
 </script>

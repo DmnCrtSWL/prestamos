@@ -100,9 +100,9 @@ const router = createRouter({
       meta: { title: 'Nuevo Ingreso', requiresAuth: true },
     },
     {
-      path: '/reestructuracion',
+      path: '/reestructuracion/:id',
       name: 'Reestructuracion',
-      component: () => import('../views/Modules/Restructuring.vue'),
+      component: () => import('../views/Modules/Credits/CreditRestructure.vue'),
       meta: { title: 'Reestructuración', requiresAuth: true },
     },
 

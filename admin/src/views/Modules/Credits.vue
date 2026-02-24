@@ -135,6 +135,18 @@
                     <Check v-if="credit.funded_amount >= credit.loan_amount" class="h-5 w-5" />
                     <User v-else class="h-5 w-5" />
                   </button>
+
+                  <button
+                    @click="restructureCredit(credit)"
+                    :disabled="!canRestructureCredit(credit)"
+                    class="transition-colors"
+                    :class="!canRestructureCredit(credit)
+                      ? 'cursor-not-allowed text-gray-400 dark:text-gray-600'
+                      : 'text-yellow-600 hover:text-yellow-800 dark:text-yellow-500 dark:hover:text-yellow-400'"
+                    title="Reestructuración"
+                  >
+                    <Calculator class="h-5 w-5" />
+                  </button>
                 </div>
               </td>
             </tr>
@@ -149,7 +161,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
-import { Search, ArrowUpDown, Eye, Edit, User, Check } from 'lucide-vue-next'
+import { Search, ArrowUpDown, Eye, Edit, User, Check, Calculator } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
@@ -260,5 +272,13 @@ const editCredit = (credit) => {
 
 const viewCreditFunding = (credit) => {
   router.push(`/creditos/${credit.id}/fondear`)
+}
+
+const restructureCredit = (credit) => {
+  router.push(`/reestructuracion/${credit.id}`)
+}
+
+const canRestructureCredit = (credit) => {
+  return Number(credit.paid_amount || 0) >= (Number(credit.weekly_payment || 0) * 5)
 }
 </script>

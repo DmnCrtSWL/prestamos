@@ -117,6 +117,127 @@ router.post('/', upload.fields([
         res.status(500).json({ error: 'Error al crear crédito: ' + error.message });
     }
 });
+// POST /api/credits/restructure - Handle restructuring old credit into new credit
+router.post('/restructure', async (req, res) => {
+    const {
+        old_credit_id,
+        client_id,
+        new_loan_amount,
+        weeks,
+        interest_rate,
+        old_debt,
+        net_delivery,
+        guarantor_name,
+        guarantor_phone,
+        guarantor_address,
+        user
+    } = req.body;
+
+    if (!old_credit_id || !client_id || !new_loan_amount || !weeks) {
+        return res.status(400).json({ error: 'Faltan campos requeridos para reestructurar' });
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // 1. Create the income to liquidate the old credit
+        // Generate random alphanumeric folio XXXX-XXXX-XXXX
+        const generateFolio = () => {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let folio = '';
+            for (let i = 0; i < 12; i++) {
+                if (i > 0 && i % 4 === 0) folio += '-';
+                folio += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return folio;
+        };
+
+        let folioStr = generateFolio();
+        let folioExists = true;
+        while (folioExists) {
+            const check = await client.query('SELECT id FROM incomes WHERE folio = $1', [folioStr]);
+            if (check.rows.length === 0) {
+                folioExists = false;
+            } else {
+                folioStr = generateFolio();
+            }
+        }
+
+        await client.query(
+            `INSERT INTO incomes (folio, credit_id, client_id, payment_method, amount, "user")
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [folioStr, old_credit_id, client_id, 'cash', old_debt, user]
+        );
+
+        // 2. Mark old credit as completed (liquidated)
+        await client.query(
+            `UPDATE credits SET status = 'completed' WHERE id = $1`,
+            [old_credit_id]
+        );
+
+        // 3. Create the new credit
+        const retention_amount = Number(new_loan_amount) * 0.1;
+        const total_to_pay = Number(new_loan_amount) * (1 + (Number(interest_rate) / 100));
+        const weekly_payment = total_to_pay / Number(weeks);
+
+        // Generate schedule
+        const payment_schedule = [];
+        const today = new Date();
+        for (let i = 1; i <= weeks; i++) {
+            const date = new Date(today);
+            date.setDate(date.getDate() + (i * 7));
+            const yyyy = date.getFullYear();
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            payment_schedule.push({
+                week: i,
+                date: `${yyyy}-${mm}-${dd}`,
+                amount: Number(weekly_payment.toFixed(2))
+            });
+        }
+
+        const newCreditResult = await client.query(
+            `INSERT INTO credits (
+                client_id, loan_amount, retention_amount, net_received,
+                weekly_payment, total_to_pay, weeks, "user",
+                guarantor_name, guarantor_phone, guarantor_address,
+                payment_schedule, status
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            RETURNING *`,
+            [
+                client_id,
+                new_loan_amount,
+                retention_amount,
+                net_delivery,
+                weekly_payment,
+                total_to_pay,
+                weeks,
+                user,
+                guarantor_name,
+                guarantor_phone,
+                guarantor_address,
+                JSON.stringify(payment_schedule),
+                'approved'
+            ]
+        );
+
+        await client.query('COMMIT');
+
+        res.status(201).json({
+            message: 'Crédito reestructurado exitosamente',
+            new_credit: newCreditResult.rows[0]
+        });
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error restructuring credit:', error);
+        res.status(500).json({ error: 'Error al reestructurar: ' + error.message });
+    } finally {
+        client.release();
+    }
+});
+
 
 // GET /api/credits/:id/funding-info - Get credit funding info and providers availability
 router.get('/:id/funding-info', async (req, res) => {
@@ -286,7 +407,8 @@ router.get('/', async (req, res) => {
         cl.name as client_name,
         cl.phone as client_phone,
         cl.curp as client_curp,
-        COALESCE(fundings.total, 0) as funded_amount
+        COALESCE(fundings.total, 0) as funded_amount,
+        COALESCE(inc.total, 0) as paid_amount
       FROM credits c
       LEFT JOIN clients cl ON c.client_id = cl.id
       LEFT JOIN (
@@ -294,6 +416,12 @@ router.get('/', async (req, res) => {
         FROM credit_fundings
         GROUP BY credit_id
       ) fundings ON c.id = fundings.credit_id
+      LEFT JOIN (
+        SELECT credit_id, SUM(amount) as total
+        FROM incomes
+        WHERE deleted_at IS NULL
+        GROUP BY credit_id
+      ) inc ON c.id = inc.credit_id
       WHERE c.deleted_at IS NULL
     `;
 
