@@ -409,93 +409,104 @@ const extendedSchedule = computed(() => {
       return []
     }
   } else {
-    schedule = [...credit.value.payment_schedule] // Clone to avoid mutation
+    schedule = [...credit.value.payment_schedule]
   }
 
-  if (schedule.length === 0) return schedule;
+  if (schedule.length === 0) return schedule
 
-  // Check if first payment was made on time
-  // Need to parse the first date properly (local time)
-  // Assuming schedule[0].date is YYYY-MM-DD
-  const [year, month, day] = schedule[0].date.split('-').map(Number);
-  const firstPaymentDate = new Date(year, month - 1, day, 23, 59, 59, 999);
-  
-  const paidAtFirstDate = incomes.value
-    .filter(i => new Date(i.created_at) <= firstPaymentDate)
-    .reduce((sum, i) => sum + Number(i.amount), 0);
-    
-  // Only extend the schedule if today is already past the first payment due date
-  const today = new Date();
-  today.setHours(23, 59, 59, 999);
-  
-  if (today > firstPaymentDate && paidAtFirstDate < Number(schedule[0].amount)) {
-    // Add one extra week at the end
-    const lastPayment = schedule[schedule.length - 1];
-    const [ly, lm, ld] = lastPayment.date.split('-').map(Number);
-    const lastDate = new Date(ly, lm - 1, ld);
-    lastDate.setDate(lastDate.getDate() + 7);
-    
-    // Format to YYYY-MM-DD
-    const pad = (n) => n.toString().padStart(2, '0');
-    const newDateStr = `${lastDate.getFullYear()}-${pad(lastDate.getMonth() + 1)}-${pad(lastDate.getDate())}`;
-    
-    schedule.push({
-      amount: lastPayment.amount, // Same weekly amount
-      date: newDateStr,
-      week: schedule.length + 1
-    });
+  const today = new Date()
+  today.setHours(23, 59, 59, 999)
+
+  // The schedule can only be extended ONCE during the credit's life.
+  // If the stored schedule is already longer than credit.weeks, extension already happened.
+  const alreadyExtended = schedule.length > (credit.value.weeks || 12)
+  if (alreadyExtended) return schedule
+
+  // Check payments in order. If any due date has passed and cumulative paid < expected, extend once.
+  let cumulativeExpected = 0
+  const sortedIncomes = [...incomes.value].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+
+  for (const payment of schedule) {
+    const [py, pm, pd] = payment.date.split('-').map(Number)
+    const dueDate = new Date(py, pm - 1, pd, 23, 59, 59, 999)
+    cumulativeExpected += Number(payment.amount)
+
+    if (today > dueDate) {
+      // How much was paid on or before this due date?
+      const paidByDue = sortedIncomes
+        .filter(i => new Date(i.created_at) <= dueDate)
+        .reduce((sum, i) => sum + Number(i.amount), 0)
+
+      if (paidByDue < cumulativeExpected) {
+        // Missed this payment — extend by one week (only once)
+        const lastPayment = schedule[schedule.length - 1]
+        const [ly, lm, ld] = lastPayment.date.split('-').map(Number)
+        const lastDate = new Date(ly, lm - 1, ld)
+        lastDate.setDate(lastDate.getDate() + 7)
+        const pad = (n) => n.toString().padStart(2, '0')
+        schedule.push({
+          amount: lastPayment.amount,
+          date: `${lastDate.getFullYear()}-${pad(lastDate.getMonth() + 1)}-${pad(lastDate.getDate())}`,
+          week: schedule.length + 1
+        })
+        break // Only extend once
+      }
+    }
   }
 
-  return schedule;
+  return schedule
 })
 
 const penaltyAmount = computed(() => {
-  const schedule = extendedSchedule.value;
-  if (schedule.length === 0) return 0;
+  const schedule = extendedSchedule.value
+  if (schedule.length === 0) return 0
 
-  const [year, month, day] = schedule[0].date.split('-').map(Number);
-  const firstDate = new Date(year, month - 1, day, 23, 59, 59, 999);
-  
-  const today = new Date();
-  today.setHours(23, 59, 59, 999);
-  
-  if (today <= firstDate) return 0;
+  const today = new Date()
+  today.setHours(23, 59, 59, 999)
 
-  const sortedIncomes = [...incomes.value].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  const sortedIncomes = [...incomes.value].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
 
-  let totalPenalty = 0;
-  let currentDate = new Date(firstDate);
-  currentDate.setDate(currentDate.getDate() + 1); // Start penalty computation the day AFTER the due date
-  currentDate.setHours(23, 59, 59, 999);
-  
-  while (currentDate <= today) {
-    const expectedAmount = schedule
-      .filter(() => true) // Evaluate all
-      .reduce((sum, p) => {
-        const [py, pm, pd] = p.date.split('-').map(Number);
-        const pDate = new Date(py, pm - 1, pd, 23, 59, 59, 999);
-        return pDate < currentDate ? sum + Number(p.amount) : sum;
-      }, 0);
-      
-    const endOfDay = new Date(currentDate);
-    
-    const actualAmount = sortedIncomes
-      .filter(i => new Date(i.created_at) <= endOfDay)
-      .reduce((sum, i) => sum + Number(i.amount), 0);
-      
-    const unpaid = expectedAmount - actualAmount;
-    
-    if (unpaid >= 1000) {
-      totalPenalty += 100;
-    } else if (unpaid > 0) {
-      totalPenalty += 50;
+  let totalPenalty = 0
+
+  // For each payment due date that has already passed, check day-by-day starting
+  // from the day AFTER the due date up to today.
+  for (const payment of schedule) {
+    const [py, pm, pd] = payment.date.split('-').map(Number)
+    const dueDate = new Date(py, pm - 1, pd, 23, 59, 59, 999)
+
+    if (today <= dueDate) break // Future payment — stop
+
+    // Start counting from the day after this payment's due date
+    let currentDate = new Date(dueDate)
+    currentDate.setDate(currentDate.getDate() + 1)
+    currentDate.setHours(23, 59, 59, 999)
+
+    while (currentDate <= today) {
+      // Cumulative expected up to (but not including) currentDate
+      const expectedAmount = schedule.reduce((sum, p) => {
+        const [epy, epm, epd] = p.date.split('-').map(Number)
+        const pDate = new Date(epy, epm - 1, epd, 23, 59, 59, 999)
+        return pDate < currentDate ? sum + Number(p.amount) : sum
+      }, 0)
+
+      const actualAmount = sortedIncomes
+        .filter(i => new Date(i.created_at) <= currentDate)
+        .reduce((sum, i) => sum + Number(i.amount), 0)
+
+      const unpaid = expectedAmount - actualAmount
+
+      if (unpaid >= 1000) {
+        totalPenalty += 100
+      } else if (unpaid > 0) {
+        totalPenalty += 50
+      }
+
+      currentDate.setDate(currentDate.getDate() + 1)
     }
-    
-    currentDate.setDate(currentDate.getDate() + 1);
   }
-  
-  return totalPenalty;
-});
+
+  return totalPenalty
+})
 
 const scheduleWithPayments = computed(() => {
   const schedule = extendedSchedule.value;

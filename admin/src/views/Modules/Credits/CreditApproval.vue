@@ -415,14 +415,21 @@ const confirmApproval = async () => {
     const retentionAmount = creditDetails.amount * 0.10
     const netReceived = creditDetails.amount - retentionAmount
     
-    // Generate payment schedule (12 weekly payments)
+    // Generate payment schedule (12 weekly payments starting on next Saturday)
     const paymentSchedule = []
     const startDate = new Date()
-    for (let i = 1; i <= 12; i++) {
-      const paymentDate = new Date(startDate)
-      paymentDate.setDate(startDate.getDate() + (i * 7)) // Add weeks
+    // Find next Saturday (dayOfWeek: 0=Sun, 6=Sat)
+    const dayOfWeek = startDate.getDay()
+    const daysUntilNextSaturday = dayOfWeek === 6 ? 7 : (6 - dayOfWeek)
+    const firstPaymentDate = new Date(startDate)
+    firstPaymentDate.setDate(startDate.getDate() + daysUntilNextSaturday)
+    firstPaymentDate.setHours(0, 0, 0, 0)
+
+    for (let i = 0; i < 12; i++) {
+      const paymentDate = new Date(firstPaymentDate)
+      paymentDate.setDate(firstPaymentDate.getDate() + (i * 7)) // week 1 = first Saturday, week 2 = +7, ...
       paymentSchedule.push({
-        week: i,
+        week: i + 1,
         date: paymentDate.toISOString().split('T')[0],
         amount: creditDetails.weeklyPayment,
         status: 'pending'
