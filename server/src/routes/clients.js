@@ -122,7 +122,7 @@ router.post('/', upload.fields([
         });
     } catch (error) {
         console.error('Error creating client:', error);
-        res.status(500).json({ error: 'Error al crear cliente' });
+        res.status(500).json({ error: 'Error al crear cliente: ' + (error.message || error.toString()) });
     }
 });
 
@@ -197,7 +197,7 @@ router.put('/:id', upload.fields([
         });
     } catch (error) {
         console.error('Error updating client:', error);
-        res.status(500).json({ error: 'Error al actualizar cliente' });
+        res.status(500).json({ error: 'Error al actualizar cliente: ' + (error.message || error.toString()) });
     }
 });
 
