@@ -59,6 +59,13 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+// Provide Vercel specific configuration to ensure multipart requests are handled correctly
+export const config = {
+    api: {
+        bodyParser: false,
+    },
+};
+
 // POST create new client with image uploads
 router.post('/', upload.fields([
     { name: 'ine_front', maxCount: 1 },
