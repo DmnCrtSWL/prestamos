@@ -2,6 +2,9 @@ import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import dotenv from 'dotenv';
 
+import multer from 'multer';
+import { Readable } from 'stream';
+
 dotenv.config();
 
 // Configure Cloudinary
@@ -11,21 +14,33 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Configure Multer Storage for Cloudinary
-const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: async (req, file) => {
-        const isPdf = file.mimetype === 'application/pdf' || file.originalname.toLowerCase().endsWith('.pdf');
+// Configure Multer to use memory storage instead of multer-storage-cloudinary
+// due to compatibility issues with multer 2.x
+const storage = multer.memoryStorage();
 
-        return {
-            folder: 'prestamos-app',
-            resource_type: 'auto',
-            // For PDFs, we strictly request 'pdf' format. For images, we allow the detected format.
-            format: isPdf ? 'pdf' : undefined,
-            allowed_formats: isPdf ? ['pdf'] : ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-            // Add public_id suffix to ensure uniqueness and prevent overwrites (optional but good practice)
-        };
-    }
-});
+// Helper function to upload buffer to Cloudinary via stream
+const uploadToCloudinary = (buffer, mimetype) => {
+    return new Promise((resolve, reject) => {
+        const isPdf = mimetype === 'application/pdf';
 
-export { cloudinary, storage };
+        const uploadStream = cloudinary.uploader.upload_stream(
+            {
+                folder: 'prestamos-app',
+                resource_type: 'auto',
+                format: isPdf ? 'pdf' : undefined
+            },
+            (error, result) => {
+                if (error) return reject(error);
+                resolve(result);
+            }
+        );
+
+        // Write buffer to stream
+        const stream = new Readable();
+        stream.push(buffer);
+        stream.push(null);
+        stream.pipe(uploadStream);
+    });
+};
+
+export { cloudinary, storage, uploadToCloudinary };

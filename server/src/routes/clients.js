@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-import { storage } from '../config/cloudinary.js';
+import { storage, uploadToCloudinary } from '../config/cloudinary.js';
 
 const upload = multer({
     storage: storage,
@@ -93,9 +93,22 @@ router.post('/', upload.fields([
         }
 
         // Get uploaded file paths
-        const ine_front = req.files?.ine_front ? req.files.ine_front[0].path : null;
-        const ine_back = req.files?.ine_back ? req.files.ine_back[0].path : null;
-        const comprobant = req.files?.comprobant ? req.files.comprobant[0].path : null;
+        let ine_front = null;
+        let ine_back = null;
+        let comprobant = null;
+
+        if (req.files?.ine_front) {
+            const result = await uploadToCloudinary(req.files.ine_front[0].buffer, req.files.ine_front[0].mimetype);
+            ine_front = result.secure_url;
+        }
+        if (req.files?.ine_back) {
+            const result = await uploadToCloudinary(req.files.ine_back[0].buffer, req.files.ine_back[0].mimetype);
+            ine_back = result.secure_url;
+        }
+        if (req.files?.comprobant) {
+            const result = await uploadToCloudinary(req.files.comprobant[0].buffer, req.files.comprobant[0].mimetype);
+            comprobant = result.secure_url;
+        }
 
         // Insert client
         const result = await pool.query(
@@ -146,15 +159,22 @@ router.put('/:id', upload.fields([
         }
 
         // Get uploaded file paths or keep existing ones
-        const ine_front = req.files?.ine_front
-            ? req.files.ine_front[0].path
-            : existingClient.rows[0].ine_front;
-        const ine_back = req.files?.ine_back
-            ? req.files.ine_back[0].path
-            : existingClient.rows[0].ine_back;
-        const comprobant = req.files?.comprobant
-            ? req.files.comprobant[0].path
-            : existingClient.rows[0].comprobant;
+        let ine_front = existingClient.rows[0].ine_front;
+        let ine_back = existingClient.rows[0].ine_back;
+        let comprobant = existingClient.rows[0].comprobant;
+
+        if (req.files?.ine_front) {
+            const result = await uploadToCloudinary(req.files.ine_front[0].buffer, req.files.ine_front[0].mimetype);
+            ine_front = result.secure_url;
+        }
+        if (req.files?.ine_back) {
+            const result = await uploadToCloudinary(req.files.ine_back[0].buffer, req.files.ine_back[0].mimetype);
+            ine_back = result.secure_url;
+        }
+        if (req.files?.comprobant) {
+            const result = await uploadToCloudinary(req.files.comprobant[0].buffer, req.files.comprobant[0].mimetype);
+            comprobant = result.secure_url;
+        }
 
         // Update client
         const result = await pool.query(
