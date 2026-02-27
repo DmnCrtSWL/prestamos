@@ -467,9 +467,15 @@ router.get('/:id', async (req, res) => {
         cl.name as client_name,
         cl.phone as client_phone,
         cl.curp as client_curp,
-        cl.address as client_address
+        cl.address as client_address,
+        COALESCE(fundings.total, 0) as funded_amount
       FROM credits c
       LEFT JOIN clients cl ON c.client_id = cl.id
+      LEFT JOIN (
+        SELECT credit_id, SUM(amount) as total
+        FROM credit_fundings
+        GROUP BY credit_id
+      ) fundings ON c.id = fundings.credit_id
       WHERE c.id = $1 AND c.deleted_at IS NULL
     `;
 

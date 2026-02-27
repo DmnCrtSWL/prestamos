@@ -548,6 +548,14 @@ const scheduleWithPayments = computed(() => {
 })
 
 const openPayModal = (payment, idx) => {
+  // Guard: credit must be funded before accepting payments
+  if (!credit.value || Number(credit.value.funded_amount) <= 0) {
+    const goToFunding = confirm('Crédito no fondeado, favor de asignar fondos.\n\n¿Deseas ir a la pantalla de fondeo ahora?')
+    if (goToFunding) {
+      router.push(`/creditos/${credit.value.id}/fondear`)
+    }
+    return
+  }
   selectedPayment.value = payment
   selectedPaymentIdx.value = idx
   payForm.value = {
