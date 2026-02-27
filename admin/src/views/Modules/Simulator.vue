@@ -20,27 +20,45 @@
 
     <ComponentCard>
       <div class="space-y-6">
-        <!-- Input de Monto -->
-        <div class="space-y-1.5">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">
-            Monto a Prestar (Mínimo $1,000)
-          </label>
-          <div class="relative">
-            <span class="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-3 text-gray-500 dark:border-gray-800 dark:text-gray-400">
-              $
-            </span>
-            <input
-              type="number"
-              v-model="amount"
-              min="1000"
-              placeholder="1000.00"
-              class="dark:bg-dark-900 h-11 w-full rounded-lg border bg-transparent px-4 py-2.5 pl-[50px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-              :class="hasError ? 'border-error-500 focus:border-error-500 focus:ring-error-500/10' : 'border-gray-300 dark:border-gray-700'"
-            />
+        <!-- Input de Monto y Tipo de Préstamo -->
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <!-- Input de Monto -->
+          <div class="space-y-1.5">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">
+              Monto a Prestar (Mínimo $1,000)
+            </label>
+            <div class="relative">
+              <span class="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-3 text-gray-500 dark:border-gray-800 dark:text-gray-400">
+                $
+              </span>
+              <input
+                type="number"
+                v-model="amount"
+                min="1000"
+                placeholder="1000.00"
+                class="dark:bg-dark-900 h-11 w-full rounded-lg border bg-transparent px-4 py-2.5 pl-[50px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                :class="hasError ? 'border-error-500 focus:border-error-500 focus:ring-error-500/10' : 'border-gray-300 dark:border-gray-700'"
+              />
+            </div>
+            <p v-if="hasError" class="text-xs text-error-500">
+              El monto mínimo es de $1,000
+            </p>
           </div>
-          <p v-if="hasError" class="text-xs text-error-500">
-            El monto mínimo es de $1,000
-          </p>
+
+          <!-- Selector de Tipo -->
+          <div class="space-y-1.5">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">
+              Tipo de Préstamo
+            </label>
+            <select
+              v-model="loanType"
+              class="dark:bg-dark-900 h-11 w-full rounded-lg border bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800 border-gray-300 dark:border-gray-700"
+            >
+              <option value="Tradicional">Tradicional</option>
+              <option value="10% Semanal">10% Semanal</option>
+              <option value="Personalizado">Personalizado</option>
+            </select>
+          </div>
         </div>
 
         <!-- Resultados -->
@@ -141,6 +159,7 @@ const formatCurrency = (value) => {
 }
 
 const amount = ref(10000)
+const loanType = ref('Tradicional')
 const weeks = 12
 
 // Basado en el ejemplo: $10,000 préstamo -> $1,250 pago semanal -> Total $15,000
@@ -176,6 +195,7 @@ const handleContinue = () => {
     path: '/creditos/aprobar',
     query: {
       amount: amount.value,
+      loanType: loanType.value,
       weeklyPayment: weeklyPayment.value,
       totalToPay: totalToPay.value
     }
