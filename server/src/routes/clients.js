@@ -15,7 +15,7 @@ import { storage } from '../config/cloudinary.js';
 const upload = multer({
     storage: storage,
     limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limit
+        fileSize: 4 * 1024 * 1024 // 4MB limit (Vercel limit is 4.5MB)
     },
     fileFilter: function (req, file, cb) {
         // Accept images and PDFs
