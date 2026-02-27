@@ -157,27 +157,27 @@
                     class="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary text-xl"
                   />
                 </div>
+
+                <!-- Plazo fijo: no editable -->
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-black dark:text-white">
-                        Plazo (Semanas)
-                    </label>
-                    <input
-                        type="number"
-                        v-model="newWeeks"
-                        placeholder="12"
-                        class="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
-                    />
+                  <label class="mb-2 block text-sm font-medium text-black dark:text-white">
+                    Plazo (Semanas)
+                  </label>
+                  <div class="w-full rounded border-[1.5px] border-stroke bg-gray-100 dark:bg-gray-700 py-3 px-5 text-black dark:text-white text-base flex items-center gap-2">
+                    <span class="font-semibold">12 semanas</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">(fijo — crédito tradicional)</span>
+                  </div>
                 </div>
+
+                <!-- Interés fijo: no editable -->
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-black dark:text-white">
-                        Interés (%)
-                    </label>
-                    <input
-                        type="number"
-                        v-model="newInterestRate"
-                        placeholder="20"
-                        class="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
-                    />
+                  <label class="mb-2 block text-sm font-medium text-black dark:text-white">
+                    Interés
+                  </label>
+                  <div class="w-full rounded border-[1.5px] border-stroke bg-gray-100 dark:bg-gray-700 py-3 px-5 text-black dark:text-white text-base flex items-center gap-2">
+                    <span class="font-semibold">30%</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">(fijo — crédito tradicional)</span>
+                  </div>
                 </div>
               </div>
 
@@ -248,10 +248,10 @@ const isLoading = ref(true)
 const credit = ref(null)
 const incomes = ref([])
 
-// Form state
+// Form state — plazo e interés son fijos igual que crédito tradicional
 const newLoanAmount = ref(0)
-const newWeeks = ref(12)
-const newInterestRate = ref(20)
+const FIXED_WEEKS = 12
+const FIXED_INTEREST_RATE = 30 // 30% igual que crédito tradicional
 const isSubmittingRestructure = ref(false)
 
 const fetchData = async () => {
@@ -293,38 +293,48 @@ const extendedSchedule = computed(() => {
       return []
     }
   } else {
-    schedule = [...credit.value.payment_schedule] // Clone to avoid mutation
+    schedule = [...credit.value.payment_schedule]
   }
 
-  if (schedule.length === 0) return schedule;
+  if (schedule.length === 0) return schedule
 
-  // Check if first payment was made on time
-  const [year, month, day] = schedule[0].date.split('-').map(Number);
-  const firstPaymentDate = new Date(year, month - 1, day, 23, 59, 59, 999);
-  
-  const paidAtFirstDate = incomes.value
-    .filter(i => new Date(i.created_at) <= firstPaymentDate)
-    .reduce((sum, i) => sum + Number(i.amount), 0);
-    
-  if (paidAtFirstDate < Number(schedule[0].amount)) {
-    // Add one extra week at the end
-    const lastPayment = schedule[schedule.length - 1];
-    const [ly, lm, ld] = lastPayment.date.split('-').map(Number);
-    const lastDate = new Date(ly, lm - 1, ld);
-    lastDate.setDate(lastDate.getDate() + 7);
-    
-    // Format to YYYY-MM-DD
-    const pad = (n) => n.toString().padStart(2, '0');
-    const newDateStr = `${lastDate.getFullYear()}-${pad(lastDate.getMonth() + 1)}-${pad(lastDate.getDate())}`;
-    
-    schedule.push({
-      amount: lastPayment.amount,
-      date: newDateStr,
-      week: schedule.length + 1
-    });
+  const today = new Date()
+  today.setHours(23, 59, 59, 999)
+
+  // Only extend ONCE during the credit lifetime
+  const alreadyExtended = schedule.length > (credit.value.weeks || 12)
+  if (alreadyExtended) return schedule
+
+  let cumulativeExpected = 0
+  const sortedIncomes = [...incomes.value].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+
+  for (const payment of schedule) {
+    const [py, pm, pd] = payment.date.split('-').map(Number)
+    const dueDate = new Date(py, pm - 1, pd, 23, 59, 59, 999)
+    cumulativeExpected += Number(payment.amount)
+
+    if (today > dueDate) {
+      const paidByDue = sortedIncomes
+        .filter(i => new Date(i.created_at) <= dueDate)
+        .reduce((sum, i) => sum + Number(i.amount), 0)
+
+      if (paidByDue < cumulativeExpected) {
+        const lastPayment = schedule[schedule.length - 1]
+        const [ly, lm, ld] = lastPayment.date.split('-').map(Number)
+        const lastDate = new Date(ly, lm - 1, ld)
+        lastDate.setDate(lastDate.getDate() + 7)
+        const pad = (n) => n.toString().padStart(2, '0')
+        schedule.push({
+          amount: lastPayment.amount,
+          date: `${lastDate.getFullYear()}-${pad(lastDate.getMonth() + 1)}-${pad(lastDate.getDate())}`,
+          week: schedule.length + 1
+        })
+        break
+      }
+    }
   }
 
-  return schedule;
+  return schedule
 })
 
 const penaltyAmount = computed(() => {
@@ -401,8 +411,8 @@ const submitRestructure = async () => {
       old_credit_id: credit.value.id,
       client_id: credit.value.client_id,
       new_loan_amount: newLoanAmount.value,
-      weeks: newWeeks.value,
-      interest_rate: newInterestRate.value,
+      weeks: FIXED_WEEKS,
+      interest_rate: FIXED_INTEREST_RATE,
       old_debt: oldDebt.value,
       net_delivery: netToReceive.value,
       guarantor_name: credit.value.guarantor_name,
