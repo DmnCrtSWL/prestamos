@@ -424,7 +424,11 @@ const extendedSchedule = computed(() => {
     .filter(i => new Date(i.created_at) <= firstPaymentDate)
     .reduce((sum, i) => sum + Number(i.amount), 0);
     
-  if (paidAtFirstDate < Number(schedule[0].amount)) {
+  // Only extend the schedule if today is already past the first payment due date
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  
+  if (today > firstPaymentDate && paidAtFirstDate < Number(schedule[0].amount)) {
     // Add one extra week at the end
     const lastPayment = schedule[schedule.length - 1];
     const [ly, lm, ld] = lastPayment.date.split('-').map(Number);
