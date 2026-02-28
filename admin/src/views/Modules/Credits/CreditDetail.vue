@@ -68,6 +68,19 @@
                 <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Monto Solicitado</label>
                 <div class="text-2xl font-bold text-black dark:text-white">{{ formatCurrency(credit.loan_amount) }}</div>
               </div>
+              <!-- Tipo de Crédito -->
+              <div class="col-span-2">
+                <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Tipo de Crédito</label>
+                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                  :class="credit.loan_type === '10% Semanal'
+                    ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
+                    : credit.loan_type === 'Personalizado'
+                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
+                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'"
+                >
+                  {{ credit.loan_type || 'Tradicional' }}
+                </span>
+              </div>
               <div>
                 <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Retención (10%)</label>
                 <div class="font-medium text-red-600">{{ formatCurrency(credit.retention_amount) }}</div>
@@ -409,10 +422,11 @@ const extendedSchedule = computed(() => {
       return []
     }
   } else {
-    schedule = [...credit.value.payment_schedule]
+    schedule = credit.value.payment_schedule
   }
 
-  if (schedule.length === 0) return schedule
+  // Guard: must be a real array (10% Semanal credits store an object, not an array)
+  if (!Array.isArray(schedule) || schedule.length === 0) return []
 
   const today = new Date()
   today.setHours(23, 59, 59, 999)
