@@ -73,8 +73,8 @@
           </div>
         </div>
 
-        <!-- Resultados -->
-        <div v-if="isValidAmount" class="rounded-lg border border-gray-200 bg-gray-50 p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+        <!-- ==================== TRADICIONAL ==================== -->
+        <div v-if="loanType === 'Tradicional' && isValidAmount" class="rounded-lg border border-gray-200 bg-gray-50 p-6 dark:border-gray-800 dark:bg-white/[0.03]">
           <h4 class="mb-4 text-lg font-medium text-gray-800 dark:text-white/90">
             Desglose del Préstamo
           </h4>
@@ -130,6 +130,209 @@
             </div>
           </div>
         </div>
+
+        <!-- ==================== 10% SEMANAL ==================== -->
+        <div v-if="loanType === '10% Semanal' && isValidAmount" class="rounded-lg border border-orange-200 bg-orange-50 p-6 dark:border-orange-900 dark:bg-orange-950/20">
+          <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <h4 class="text-lg font-medium text-gray-800 dark:text-white/90">
+              Simulador — Crédito 10% Semanal
+            </h4>
+            <span class="inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
+              Interés semanal sobre saldo
+            </span>
+          </div>
+
+          <!-- Explicación del tipo de crédito -->
+          <div class="mb-5 rounded-lg border border-orange-200 bg-white p-4 dark:border-orange-800 dark:bg-gray-800/60">
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              Cada semana se genera un interés del <strong>10%</strong> sobre el saldo pendiente.
+              Si el pago cubre <em>exactamente</em> el interés generado, el capital no se reduce.
+              Cualquier monto pagado <em>por encima</em> del interés abona a capital.
+            </p>
+          </div>
+
+          <!-- Resumen base -->
+          <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div class="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800">
+              <span class="text-sm text-gray-500 dark:text-gray-400">Capital Prestado:</span>
+              <span class="text-xl font-bold text-gray-800 dark:text-white">{{ formatCurrency(amount) }}</span>
+            </div>
+            <div class="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800">
+              <span class="text-sm text-gray-500 dark:text-gray-400">Interés Semana 1 (10%):</span>
+              <span class="text-xl font-bold text-orange-500">{{ formatCurrency(amount * 0.1) }}</span>
+            </div>
+            <div class="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800 border border-orange-200 dark:border-orange-800">
+              <span class="text-sm text-gray-500 dark:text-gray-400">Deuda al finalizar Sem. 1:</span>
+              <span class="text-xl font-bold text-gray-800 dark:text-white">{{ formatCurrency(amount * 1.1) }}</span>
+            </div>
+          </div>
+
+          <!-- Input pago semanal del cliente -->
+          <div class="mb-6 space-y-1.5">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">
+              ¿Cuánto pagará el cliente cada semana? (mín. {{ formatCurrency(amount * 0.1) }} para no aumentar capital)
+            </label>
+            <div class="relative max-w-xs">
+              <span class="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-3 text-gray-500 dark:border-gray-800 dark:text-gray-400">
+                $
+              </span>
+              <input
+                type="number"
+                v-model.number="weeklyPaySemanal"
+                :min="0"
+                :placeholder="(amount * 0.1).toFixed(2)"
+                class="dark:bg-dark-900 h-11 w-full rounded-lg border bg-transparent px-4 py-2.5 pl-[50px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 border-gray-300 dark:border-gray-700"
+              />
+            </div>
+            <!-- Aviso si pago es menor al interés -->
+            <p v-if="weeklyPaySemanal > 0 && weeklyPaySemanal < amount * 0.1" class="text-xs text-error-500">
+              ⚠️ El pago es menor al interés generado ({{ formatCurrency(amount * 0.1) }}). El capital aumentará semana a semana.
+            </p>
+            <p v-if="weeklyPaySemanal === amount * 0.1" class="text-xs text-orange-500">
+              ℹ️ Solo cubre el interés. El capital no baja nunca.
+            </p>
+            <p v-if="weeklyPaySemanal > amount * 0.1" class="text-xs text-success-600">
+              ✅ {{ formatCurrency(weeklyPaySemanal - amount * 0.1) }} se abona a capital en la primera semana.
+            </p>
+          </div>
+
+          <!-- Advertencia de semanas infinitas si no abona capital -->
+          <div v-if="weeklyPaySemanal > 0 && semanalSchedule.length === 0" class="mb-4 rounded-lg border border-orange-300 bg-orange-100 p-4 dark:border-orange-700 dark:bg-orange-900/30">
+            <p class="text-sm font-medium text-orange-700 dark:text-orange-300">
+              ⚠️ Con ese pago el cliente <strong>nunca liquida</strong> el crédito.
+              El capital permanece en {{ formatCurrency(amount) }} indefinidamente.
+            </p>
+          </div>
+
+          <!-- Tabla proyección semanal -->
+          <div v-if="weeklyPaySemanal > 0" class="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-800">
+            <div class="max-w-full overflow-x-auto">
+              <table class="min-w-full text-left text-sm">
+                <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.03]">
+                  <tr>
+                    <th class="px-4 py-3 font-medium text-gray-700 dark:text-gray-400"># Semana</th>
+                    <th class="px-4 py-3 font-medium text-gray-700 dark:text-gray-400">Saldo Inicial</th>
+                    <th class="px-4 py-3 font-medium text-gray-700 dark:text-gray-400">Interés (10%)</th>
+                    <th class="px-4 py-3 font-medium text-gray-700 dark:text-gray-400">Total Adeudado</th>
+                    <th class="px-4 py-3 font-medium text-gray-700 dark:text-gray-400">Pago Cliente</th>
+                    <th class="px-4 py-3 font-medium text-gray-700 dark:text-gray-400">Abono a Capital</th>
+                    <th class="px-4 py-3 font-medium text-gray-700 dark:text-gray-400">Saldo Final</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+                  <!-- Filas con amortización real -->
+                  <tr
+                    v-for="row in semanalSchedule"
+                    :key="row.week"
+                    :class="row.paid ? 'bg-green-50 dark:bg-green-900/10' : ''"
+                  >
+                    <td class="px-4 py-3 text-gray-800 dark:text-white/90">{{ row.week }}</td>
+                    <td class="px-4 py-3 text-gray-800 dark:text-white/90">{{ formatCurrency(row.opening) }}</td>
+                    <td class="px-4 py-3 text-orange-500 font-medium">{{ formatCurrency(row.interest) }}</td>
+                    <td class="px-4 py-3 text-gray-800 dark:text-white/90">{{ formatCurrency(row.total) }}</td>
+                    <td class="px-4 py-3 text-gray-800 dark:text-white/90">{{ formatCurrency(row.payment) }}</td>
+                    <td class="px-4 py-3" :class="row.toCapital > 0 ? 'text-success-600 font-medium' : 'text-gray-400'">
+                      {{ formatCurrency(row.toCapital) }}
+                    </td>
+                    <td class="px-4 py-3 font-medium" :class="row.paid ? 'text-success-600' : 'text-gray-800 dark:text-white/90'">
+                      {{ row.paid ? '✅ Liquidado' : formatCurrency(row.closing) }}
+                    </td>
+                  </tr>
+                  <!-- Fila resumen si el crédito se liquida -->
+                  <tr v-if="semanalSchedule.length > 0 && semanalSchedule[semanalSchedule.length - 1].paid" class="bg-green-50 dark:bg-green-900/20 font-bold">
+                    <td colspan="4" class="px-4 py-3 text-success-700 dark:text-success-400">Total pagado en {{ semanalSchedule.length }} semanas</td>
+                    <td class="px-4 py-3 text-success-700 dark:text-success-400">{{ formatCurrency(semanalTotalPaid) }}</td>
+                    <td class="px-4 py-3 text-success-700 dark:text-success-400">{{ formatCurrency(Number(amount)) }}</td>
+                    <td class="px-4 py-3 text-success-700 dark:text-success-400">—</td>
+                  </tr>
+                  <!-- Fila de "sigue indefinidamente" -->
+                  <tr v-if="weeklyPaySemanal <= amount * 0.1 && weeklyPaySemanal > 0">
+                    <td colspan="7" class="px-4 py-3 text-center text-orange-500 font-medium italic">
+                      … el crédito continúa indefinidamente con el mismo saldo
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Estado placeholder cuando no hay pago definido -->
+          <div v-if="!weeklyPaySemanal || weeklyPaySemanal <= 0" class="rounded-lg border border-dashed border-gray-300 p-8 text-center dark:border-gray-700">
+            <p class="text-sm text-gray-400 dark:text-gray-500">
+              Ingresa el monto de pago semanal para simular el comportamiento del crédito
+            </p>
+          </div>
+
+          <!-- ── Penalización por Retraso ── -->
+          <div class="mt-6 rounded-lg border border-red-200 bg-red-50 p-5 dark:border-red-900 dark:bg-red-950/20">
+            <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <h5 class="font-medium text-gray-800 dark:text-white/90">Penalización por Retraso</h5>
+              <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
+                :class="penaltyPerDay === 100
+                  ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                  : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300'"
+              >
+                {{ formatCurrency(penaltyPerDay) }} por día de retraso
+              </span>
+            </div>
+
+            <!-- Regla informativa -->
+            <div class="mb-4 rounded-lg border border-red-100 bg-white p-3 dark:border-red-900 dark:bg-gray-800/60">
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Tasa aplicada según capital prestado:
+                <span class="mx-2 font-medium text-gray-700 dark:text-gray-300">$0–$999 → $50/día</span>
+                <span class="font-medium text-gray-700 dark:text-gray-300">$1,000 en adelante → $100/día</span>
+              </p>
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                ⚠️ A diferencia del crédito tradicional, este tipo <strong>no agrega semanas adicionales</strong>.
+                Solo se acumula la penalización diaria sobre el saldo pendiente en el momento del pago.
+              </p>
+            </div>
+
+            <!-- Input días de retraso -->
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-end">
+              <div class="flex-1 space-y-1.5">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">
+                  Días de retraso
+                </label>
+                <input
+                  type="number"
+                  v-model.number="daysLate"
+                  min="0"
+                  placeholder="0"
+                  class="dark:bg-dark-900 h-11 w-full rounded-lg border bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 border-gray-300 dark:border-gray-700"
+                />
+              </div>
+
+              <!-- Resumen penalización -->
+              <div v-if="daysLate > 0" class="flex flex-1 flex-col gap-3 sm:flex-row">
+                <div class="flex flex-1 flex-col gap-1 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800 border border-red-200 dark:border-red-800">
+                  <span class="text-xs text-gray-500 dark:text-gray-400">Penalización acumulada</span>
+                  <span class="text-xl font-bold text-red-600">{{ formatCurrency(penaltyTotal) }}</span>
+                  <span class="text-xs text-gray-400">{{ daysLate }} día(s) × {{ formatCurrency(penaltyPerDay) }}</span>
+                </div>
+                <div v-if="weeklyPaySemanal > 0" class="flex flex-1 flex-col gap-1 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                  <span class="text-xs text-gray-500 dark:text-gray-400">Pago total con retraso (sem. 1)</span>
+                  <span class="text-xl font-bold text-gray-800 dark:text-white">
+                    {{ formatCurrency(Number(amount) * 1.1 + penaltyTotal) }}
+                  </span>
+                  <span class="text-xs text-gray-400">Interés sem. 1 + penalización</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== PERSONALIZADO ==================== -->
+        <div v-if="loanType === 'Personalizado' && isValidAmount" class="rounded-lg border border-gray-200 bg-gray-50 p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+          <h4 class="mb-4 text-lg font-medium text-gray-800 dark:text-white/90">
+            Crédito Personalizado
+          </h4>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Los detalles de este tipo de crédito se configuran de forma personalizada con el cliente.
+          </p>
+        </div>
+
       </div>
     </ComponentCard>
   </AdminLayout>
@@ -148,7 +351,7 @@ const router = useRouter()
 
 // Helper para formatear moneda
 const formatCurrency = (value) => {
-  if (!value) return '$0.00'
+  if (!value && value !== 0) return '$0.00'
   return new Intl.NumberFormat('es-MX', {
     style: 'currency',
     currency: 'MXN',
@@ -161,16 +364,15 @@ const clientName = ref('')
 const loanType = ref('Tradicional')
 const weeks = 12
 
-// Basado en el ejemplo: $10,000 préstamo -> $1,250 pago semanal -> Total $15,000
-// Esto implica un interés total del 50% sobre el monto solicitado ($5,000 extra)
-const TOTAL_INTEREST_RATE = 1.5 
+// ==================== TRADICIONAL ====================
+const TOTAL_INTEREST_RATE = 1.5
 
 const isValidAmount = computed(() => amount.value >= 1000)
 const hasError = computed(() => amount.value > 0 && amount.value < 1000)
 
 const retention = computed(() => {
   if (!isValidAmount.value) return 0
-  return amount.value * 0.10 // 10% del monto
+  return amount.value * 0.10
 })
 
 const netReceived = computed(() => {
@@ -188,6 +390,83 @@ const weeklyPayment = computed(() => {
   return totalToPay.value / weeks
 })
 
+// ==================== 10% SEMANAL ====================
+// Pago semanal que ingresa el usuario para la simulación
+const weeklyPaySemanal = ref(null)
+
+const MAX_SEMANAL_WEEKS = 520 // cap at 10 years to avoid infinite loops
+
+/**
+ * Genera la tabla de amortización para el crédito 10% Semanal.
+ * Reglas:
+ *   - Cada semana: interés = saldo_inicial * 0.10
+ *   - total_adeudado = saldo_inicial + interés
+ *   - Si pago >= total_adeudado: crédito liquidado en esa semana
+ *   - Si pago > interés: abono a capital = pago - interés; saldo_final = saldo_inicial - abono_capital
+ *   - Si pago == interés: no abona capital; saldo_final = saldo_inicial
+ *   - Si pago < interés: capital crece (raro pero posible); saldo_final = total_adeudado - pago
+ * Sólo se genera tabla cuando hay abono a capital (eventual liquidación).
+ */
+const semanalSchedule = computed(() => {
+  const pay = weeklyPaySemanal.value
+  if (!pay || pay <= 0 || !isValidAmount.value) return []
+
+  const minInterest = Number(amount.value) * 0.1
+  // Si el pago no supera el interés mínimo inicial no hay amortización, return []
+  // (El interés varía si el saldo sube, pero para simplificar: si pago <= interés inicial no hay liquidación)
+  if (pay <= minInterest) return []
+
+  const rows = []
+  let balance = Number(amount.value)
+
+  for (let week = 1; week <= MAX_SEMANAL_WEEKS; week++) {
+    const opening = balance
+    const interest = opening * 0.1
+    const total = opening + interest
+
+    // Pago efectivo: no puede pagar más de lo que debe
+    const effectivePay = Math.min(pay, total)
+    const toCapital = Math.max(0, effectivePay - interest)
+    const closing = Math.max(0, opening - toCapital)
+    const paid = effectivePay >= total || closing <= 0.01
+
+    rows.push({
+      week,
+      opening,
+      interest,
+      total,
+      payment: effectivePay,
+      toCapital,
+      closing: paid ? 0 : closing,
+      paid
+    })
+
+    if (paid) break
+    balance = closing
+  }
+
+  return rows
+})
+
+const semanalTotalPaid = computed(() => {
+  return semanalSchedule.value.reduce((acc, r) => acc + r.payment, 0)
+})
+
+// ==================== PENALIZACIÓN POR RETRASO ====================
+// Regla: $0–$999 → $50/día | $1,000+ → $100/día
+const daysLate = ref(0)
+
+const penaltyPerDay = computed(() => {
+  if (!isValidAmount.value) return 0
+  return Number(amount.value) < 1000 ? 50 : 100
+})
+
+const penaltyTotal = computed(() => {
+  if (!daysLate.value || daysLate.value <= 0) return 0
+  return daysLate.value * penaltyPerDay.value
+})
+
+// ==================== CONTINUAR ====================
 const handleContinue = () => {
   if (!isValidAmount.value) return
   router.push({
@@ -195,158 +474,9 @@ const handleContinue = () => {
     query: {
       amount: amount.value,
       loanType: loanType.value,
-      weeklyPayment: weeklyPayment.value,
-      totalToPay: totalToPay.value
+      weeklyPayment: loanType.value === 'Tradicional' ? weeklyPayment.value : undefined,
+      totalToPay: loanType.value === 'Tradicional' ? totalToPay.value : undefined
     }
   })
-}
-
-const generatePDF = () => {
-  if (!isValidAmount.value) return
-
-  const doc = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'letter'
-  })
-  
-  // Configuración de fuentes y colores elegant
-  const primaryColor = [41, 128, 185] // Blue
-  const darkColor = [44, 62, 80] // Dark Blue/Grey
-  const successColor = [39, 174, 96] // Green
-  const dangerColor = [192, 57, 43] // Red
-
-  // === HEADER ===
-  // Título Principal
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(24)
-  doc.setTextColor(...primaryColor)
-  doc.text("Simulación de Crédito", 105, 25, { align: "center" })
-  
-  // Subtítulo / Fecha
-  doc.setFont("helvetica", "normal")
-  doc.setFontSize(10)
-  doc.setTextColor(100, 100, 100)
-  const dateStr = new Date().toLocaleDateString('es-MX', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  })
-  doc.text(dateStr.charAt(0).toUpperCase() + dateStr.slice(1), 105, 32, { align: "center" })
-
-  // Línea decorativa
-  doc.setLineWidth(0.5)
-  doc.setDrawColor(200, 200, 200)
-  doc.line(20, 38, 196, 38)
-
-  // === CLIENT INFO ===
-  const startY = 48
-  if (clientName.value) {
-    doc.setFont("helvetica", "bold")
-    doc.setFontSize(14)
-    doc.setTextColor(...darkColor)
-    doc.text("Cliente:", 20, startY)
-    
-    doc.setFont("helvetica", "normal")
-    doc.text(clientName.value, 45, startY)
-  }
-
-  // === RESUMEN FINANCIERO ===
-  const summaryY = clientName.value ? startY + 15 : startY
-  
-  // Caja de fondo para el resumen
-  doc.setFillColor(248, 250, 252)
-  doc.roundedRect(20, summaryY, 176, 55, 3, 3, 'F')
-  
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(12)
-  doc.setTextColor(...darkColor)
-  doc.text("Resumen del Préstamo", 25, summaryY + 10)
-
-  // Helper para filas de datos del resumen
-  const addSummaryRow = (label, value, y, color = null, isBold = false) => {
-    doc.setFont("helvetica", "normal")
-    doc.setTextColor(80, 80, 80)
-    doc.setFontSize(11)
-    doc.text(label, 30, y)
-    
-    doc.setFont("helvetica", isBold ? "bold" : "normal")
-    if (color) doc.setTextColor(...color)
-    else doc.setTextColor(...darkColor)
-    doc.text(value, 190, y, { align: "right" })
-  }
-
-  let currentY = summaryY + 20
-  const lineHeight = 8
-
-  addSummaryRow("Monto Solicitado:", formatCurrency(amount.value), currentY)
-  currentY += lineHeight
-  addSummaryRow("Gastos Administrativos (10%):", `-${formatCurrency(retention.value)}`, currentY, dangerColor)
-  currentY += lineHeight
-  
-  // Línea separadora interna
-  doc.setDrawColor(220, 220, 220)
-  doc.line(30, currentY - 4, 190, currentY - 4)
-  
-  addSummaryRow("Monto Neto a Recibir:", formatCurrency(netReceived.value), currentY, successColor, true)
-  currentY += lineHeight
-  addSummaryRow("Pago Semanal (12 semanas):", formatCurrency(weeklyPayment.value), currentY, primaryColor, true)
-  currentY += lineHeight
-  
-  // Total destacado
-  doc.setFont("helvetica", "bold")
-  doc.setTextColor(...darkColor)
-  doc.text("Total a Pagar:", 130, currentY)
-  doc.setFontSize(14)
-  doc.text(formatCurrency(totalToPay.value), 190, currentY, { align: "right" })
-
-  // === TABLA DE AMORTIZACIÓN ===
-  doc.autoTable({
-    startY: summaryY + 65,
-    head: [['# Semana', 'Pago Programado', 'Saldo Pendiente']],
-    body: Array.from({ length: 12 }, (_, i) => {
-      const week = i + 1
-      const balance = Math.max(0, totalToPay.value - (weeklyPayment.value * week))
-      return [
-        week,
-        formatCurrency(weeklyPayment.value),
-        formatCurrency(balance)
-      ]
-    }),
-    theme: 'grid',
-    headStyles: { 
-      fillColor: primaryColor,
-      textColor: 255,
-      halign: 'center',
-      fontStyle: 'bold',
-      fontSize: 10
-    },
-    bodyStyles: {
-      halign: 'center',
-      fontSize: 10,
-      textColor: [60, 60, 60]
-    },
-    alternateRowStyles: {
-      fillColor: [245, 250, 255]
-    },
-    styles: {
-      font: "helvetica",
-      cellPadding: 4,
-      lineWidth: 0.1,
-      lineColor: [230, 230, 230]
-    },
-    margin: { top: 20, right: 20, bottom: 20, left: 20 }
-  })
-
-  // === FOOTER ===
-  const pageHeight = doc.internal.pageSize.height
-  doc.setFontSize(8)
-  doc.setTextColor(150, 150, 150)
-  
-  doc.text("Este documento es una simulación informativa y no representa un compromiso de crédito.", 105, pageHeight - 15, { align: "center" })
-  doc.text(`Generado el ${new Date().toLocaleString()}`, 105, pageHeight - 10, { align: "center" })
-
-  doc.save(`simulacion_credito_${clientName.value || 'cliente'}.pdf`)
 }
 </script>
