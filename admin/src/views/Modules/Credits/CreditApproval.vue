@@ -294,6 +294,7 @@ import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import ComponentCard from '@/components/common/ComponentCard.vue'
 import { useAuth } from '@/composables/useAuth'
+import jsPDF from 'jspdf'
 
 import { Printer, Smile, Meh, Frown, Camera, Check, Upload, AlertTriangle } from 'lucide-vue-next'
 
@@ -395,13 +396,297 @@ const formatCurrency = (value) => {
   }).format(value)
 }
 
+// ─── helpers para el PDF ────────────────────────────────────────────────────
+const numberToWords = (num) => {
+  const ones = ['', 'UN', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE',
+    'DIEZ', 'ONCE', 'DOCE', 'TRECE', 'CATORCE', 'QUINCE', 'DIECISÉIS', 'DIECISIETE', 'DIECIOCHO', 'DIECINUEVE']
+  const tens = ['', '', 'VEINTE', 'TREINTA', 'CUARENTA', 'CINCUENTA', 'SESENTA', 'SETENTA', 'OCHENTA', 'NOVENTA']
+  const hundreds = ['', 'CIEN', 'DOSCIENTOS', 'TRESCIENTOS', 'CUATROCIENTOS', 'QUINIENTOS',
+    'SEISCIENTOS', 'SETECIENTOS', 'OCHOCIENTOS', 'NOVECIENTOS']
+
+  if (num === 0) return 'CERO'
+  const integer = Math.floor(num)
+  const cents = Math.round((num - integer) * 100)
+
+  const convert = (n) => {
+    if (n === 0) return ''
+    if (n < 20) return ones[n]
+    if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' Y ' + ones[n % 10] : '')
+    if (n === 100) return 'CIEN'
+    const h = Math.floor(n / 100)
+    const rest = n % 100
+    let word = hundreds[h]
+    if (h === 1 && rest > 0) word = 'CIENTO'
+    return word + (rest !== 0 ? ' ' + convert(rest) : '')
+  }
+
+  const convertThousands = (n) => {
+    if (n >= 1000) {
+      const th = Math.floor(n / 1000)
+      const rest = n % 1000
+      const thWord = th === 1 ? 'MIL' : convert(th) + ' MIL'
+      return thWord + (rest !== 0 ? ' ' + convert(rest) : '')
+    }
+    return convert(n)
+  }
+
+  return convertThousands(integer) + ' ' + String(cents).padStart(2, '0') + '/100 M.N.'
+}
+
+const buildPagare = () => {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' })
+  const pageW = doc.internal.pageSize.getWidth()   // 215.9 mm
+  const pageH = doc.internal.pageSize.getHeight()  // 279.4 mm
+
+  const client = selectedClient.value
+  const amount = creditDetails.amount
+  const amountWords = numberToWords(amount)
+  const now = new Date()
+  const day = now.getDate()
+  const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
+  const month = months[now.getMonth()]
+  const year = now.getFullYear()
+
+  // Colores
+  const PRIMARY  = [30, 90, 160]
+  const DARK     = [20, 20, 20]
+  const GRAY     = [100, 100, 100]
+  const LIGHTBG  = [245, 247, 250]
+  const BORDER   = [200, 210, 220]
+  const LINE     = [170, 185, 200]
+
+  const setFont = (style = 'normal', size = 10, color = DARK) => {
+    doc.setFont('helvetica', style)
+    doc.setFontSize(size)
+    doc.setTextColor(...color)
+  }
+  const hline = (x1, y1, x2, y2, color = LINE, w = 0.3) => {
+    doc.setDrawColor(...color)
+    doc.setLineWidth(w)
+    doc.line(x1, y1, x2, y2)
+  }
+  const fillRect = (x, y, w, h, fill, border) => {
+    if (fill)   doc.setFillColor(...fill)
+    if (border) doc.setDrawColor(...border)
+    else        doc.setDrawColor(255, 255, 255)
+    doc.rect(x, y, w, h, fill && border ? 'FD' : fill ? 'F' : 'D')
+  }
+  const signLine = (x, y, w = 55) => hline(x, y, x + w, y, DARK, 0.4)
+
+  const mx = 16
+  const mr = pageW - mx
+
+  // ═══════════════════════════════════════════════════════════
+  // SECCIÓN 1 — PAGARÉ  (y = 8 … ~138)
+  // ═══════════════════════════════════════════════════════════
+  let y = 8
+
+  // Cabecera azul
+  fillRect(0, y, pageW, 18, PRIMARY, PRIMARY)
+  setFont('bold', 16, [255, 255, 255])
+  doc.text('PAGARÉ', mx, y + 12)
+  setFont('normal', 8, [200, 220, 255])
+  doc.text('Zamora, Michoacán', mr, y + 7, { align: 'right' })
+  setFont('bold', 8, [200, 220, 255])
+  doc.text(`No. ${Date.now().toString().slice(-6)}`, mr, y + 13, { align: 'right' })
+  y += 22
+
+  // Lugar y fecha
+  fillRect(mx, y, pageW - mx * 2, 12, LIGHTBG, BORDER)
+  setFont('bold', 8, GRAY)
+  doc.text('LUGAR Y FECHA', mx + 3, y + 4.5)
+  setFont('normal', 9, DARK)
+  doc.text(`En la ciudad de Zamora, Mich., a ${day} de ${month} de ${year}.`, mx + 3, y + 10)
+  y += 16
+
+  // Bueno por
+  setFont('bold', 9, GRAY)
+  doc.text('BUENO POR:', mx, y)
+  y += 6
+  fillRect(mx, y, pageW - mx * 2, 12, [255, 255, 255], BORDER)
+  const amtFmt = `$${Number(amount).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
+  setFont('bold', 11, PRIMARY)
+  doc.text(amtFmt, mx + 3, y + 8)
+  setFont('normal', 8.5, DARK)
+  doc.text(`(${amountWords})`, mx + 32, y + 8, { maxWidth: pageW - mx * 2 - 36 })
+  y += 16
+
+  // Promesa de pago
+  setFont('bold', 9, PRIMARY)
+  doc.text('PROMESA DE PAGO', mx, y)
+  hline(mx, y + 1, mr, y + 1, PRIMARY, 0.5)
+  y += 6
+  setFont('normal', 9, DARK)
+  const acreedor = 'FINANCIERA ZAMORA'
+  const promText = `Debo y pagaré incondicionalmente a la orden de ${acreedor}, la cantidad de ${amtFmt} (${amountWords}), en moneda nacional.`
+  const promLines = doc.splitTextToSize(promText, pageW - mx * 2)
+  doc.text(promLines, mx, y)
+  y += promLines.length * 5 + 3
+
+  // Dados del crédito
+  fillRect(mx, y, pageW - mx * 2, 14, LIGHTBG, BORDER)
+  setFont('bold', 8, GRAY)
+  doc.text('TIPO DE CRÉDITO', mx + 3, y + 4.5)
+  doc.text('PAGO SEMANAL', mx + 80, y + 4.5)
+  doc.text('TOTAL A PAGAR', mx + 140, y + 4.5)
+  setFont('bold', 10, PRIMARY)
+  doc.text('Tradicional', mx + 3, y + 11)
+  doc.text(
+    creditDetails.weeklyPayment
+      ? `$${Number(creditDetails.weeklyPayment).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
+      : '—',
+    mx + 80, y + 11
+  )
+  doc.text(
+    creditDetails.totalToPay
+      ? `$${Number(creditDetails.totalToPay).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
+      : '—',
+    mx + 140, y + 11
+  )
+  y += 18
+
+  // Intereses
+  setFont('bold', 9, PRIMARY)
+  doc.text('INTERESES', mx, y)
+  hline(mx, y + 1, mr, y + 1, PRIMARY, 0.5)
+  y += 6
+  setFont('normal', 9, DARK)
+  const intText = 'La cantidad adeudada causará intereses ordinarios a razón del 20% mensual. En caso de mora, causará intereses moratorios a razón del 20% mensual, desde el día siguiente al vencimiento y hasta la total liquidación.'
+  const intLines = doc.splitTextToSize(intText, pageW - mx * 2)
+  doc.text(intLines, mx, y)
+  y += intLines.length * 5 + 3
+
+  // Jurisdicción
+  setFont('bold', 9, PRIMARY)
+  doc.text('JURISDICCIÓN', mx, y)
+  hline(mx, y + 1, mr, y + 1, PRIMARY, 0.5)
+  y += 6
+  setFont('normal', 8.5, DARK)
+  const jurText = 'Este pagaré es de naturaleza mercantil conforme a la Ley General de Títulos y Operaciones de Crédito. Para su interpretación y cumplimiento, las partes se someten a las leyes y tribunales competentes de la ciudad de Zamora, Michoacán, renunciando a cualquier otro fuero.'
+  const jurLines = doc.splitTextToSize(jurText, pageW - mx * 2)
+  doc.text(jurLines, mx, y)
+  y += jurLines.length * 4.5 + 5
+
+  // Firma deudor
+  signLine(mx, y + 6)
+  setFont('bold', 8, GRAY)
+  doc.text('FIRMA DEL DEUDOR', mx, y + 11)
+  if (client) {
+    setFont('normal', 8, DARK)
+    doc.text(client.name, mx, y + 16)
+  }
+
+  // ── Línea divisoria ────────────────────────────────────────
+  const divY = 148
+  hline(0, divY, pageW, divY, [150, 170, 200], 0.8)
+  setFont('normal', 7, [180, 180, 180])
+  doc.text('✂  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─', mx, divY + 4)
+
+  // ═══════════════════════════════════════════════════════════
+  // SECCIÓN 2 — DEUDOR & AVAL  (y = divY+10 … final)
+  // ═══════════════════════════════════════════════════════════
+  let ey = divY + 10
+
+  // Cabecera sec.2
+  fillRect(0, ey, pageW, 14, PRIMARY, PRIMARY)
+  setFont('bold', 11, [255, 255, 255])
+  doc.text('DATOS DEL DEUDOR', mx, ey + 10)
+  setFont('normal', 8, [200, 220, 255])
+  doc.text('Datos del Aval  ▶', mr, ey + 10, { align: 'right' })
+  ey += 18
+
+  const colW = (pageW - mx * 2 - 8) / 2
+  const col1 = mx
+  const col2 = mx + colW + 8
+
+  // — Columna 1: Deudor
+  setFont('bold', 8, PRIMARY)
+  doc.text('DATOS DEL DEUDOR', col1, ey)
+  hline(col1, ey + 1, col1 + colW, ey + 1, PRIMARY, 0.4)
+  ey += 7
+
+  const deudorFields = [
+    ['Nombre completo:', client?.name || ''],
+    ['Domicilio:', client?.address || ''],
+    ['Teléfono:', client?.phone || ''],
+  ]
+  let ey2 = ey // parallel tracker for col2
+
+  deudorFields.forEach(([label, value]) => {
+    setFont('bold', 8, GRAY)
+    doc.text(label, col1, ey)
+    ey += 5
+    fillRect(col1, ey, colW, 8, [255, 255, 255], BORDER)
+    setFont('normal', 9, DARK)
+    doc.text(value, col1 + 2, ey + 5.5, { maxWidth: colW - 4 })
+    ey += 11
+  })
+
+  ey += 4
+  signLine(col1, ey + 6, colW - 4)
+  setFont('bold', 8, GRAY)
+  doc.text('FIRMA DEL DEUDOR', col1, ey + 11)
+  if (client) {
+    setFont('normal', 7.5, DARK)
+    doc.text(client.name, col1, ey + 16)
+  }
+
+  // — Columna 2: Aval
+  setFont('bold', 8, PRIMARY)
+  doc.text('DATOS DEL AVAL', col2, ey2)
+  hline(col2, ey2 + 1, col2 + colW, ey2 + 1, PRIMARY, 0.4)
+  ey2 += 7
+
+  setFont('italic', 8, GRAY)
+  const avalText = 'Por medio del presente, el suscrito se constituye como aval solidario, obligándose en los mismos términos que el deudor principal.'
+  const avalTextLines = doc.splitTextToSize(avalText, colW)
+  doc.text(avalTextLines, col2, ey2)
+  ey2 += avalTextLines.length * 4.5 + 5
+
+  const avalFields = [
+    ['Nombre completo:', avalData.name || ''],
+    ['Domicilio:', avalData.address || ''],
+    ['Teléfono:', avalData.phone || ''],
+  ]
+
+  avalFields.forEach(([label, value]) => {
+    setFont('bold', 8, GRAY)
+    doc.text(label, col2, ey2)
+    ey2 += 5
+    fillRect(col2, ey2, colW, 8, [255, 255, 255], BORDER)
+    setFont('normal', 9, DARK)
+    doc.text(value, col2 + 2, ey2 + 5.5, { maxWidth: colW - 4 })
+    ey2 += 11
+  })
+
+  ey2 += 4
+  signLine(col2, ey2 + 6, colW - 4)
+  setFont('bold', 8, GRAY)
+  doc.text('FIRMA DEL AVAL', col2, ey2 + 11)
+  if (avalData.name) {
+    setFont('normal', 7.5, DARK)
+    doc.text(avalData.name, col2, ey2 + 16)
+  }
+
+  // Pie de página
+  hline(mx, pageH - 11, mr, pageH - 11, BORDER, 0.3)
+  setFont('normal', 7, GRAY)
+  doc.text('Documento generado electrónicamente. Válido como título de crédito con valor legal.', pageW / 2, pageH - 6, { align: 'center' })
+
+  return doc
+}
+
 // Actions
 const printPagare = () => {
-  alert('Imprimiendo Pagaré para ' + (selectedClient.value?.name || 'Cliente') + ' por ' + formatCurrency(creditDetails.amount))
+  const doc = buildPagare()
+  doc.autoPrint()
+  window.open(doc.output('bloburl'), '_blank')
 }
 
 const printPagareFromModal = () => {
-  alert('Imprimiendo Pagaré para ' + (selectedClient.value?.name || 'Cliente') + ' por ' + formatCurrency(creditDetails.amount))
+  const doc = buildPagare()
+  doc.autoPrint()
+  window.open(doc.output('bloburl'), '_blank')
   pagarePrinted.value = true
 }
 
