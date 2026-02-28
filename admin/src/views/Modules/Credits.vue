@@ -34,6 +34,9 @@
                   <ArrowUpDown class="h-4 w-4 text-gray-400" />
                 </div>
               </th>
+              <th class="px-5 py-3 text-left sm:px-6">
+                <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Tipo</p>
+              </th>
               <th class="px-5 py-3 text-left sm:px-6 cursor-pointer" @click="sortBy('weeklyPayment')">
                 <div class="flex items-center gap-1.5">
                   <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Pago Semanal</p>
@@ -80,6 +83,17 @@
               </td>
               <td class="px-5 py-4 sm:px-6">
                 <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ formatCurrency(credit.loan_amount) }}</p>
+              </td>
+              <td class="px-5 py-4 sm:px-6">
+                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                  :class="credit.loan_type === '10% Semanal'
+                    ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
+                    : credit.loan_type === 'Personalizado'
+                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
+                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'"
+                >
+                  {{ credit.loan_type || 'Tradicional' }}
+                </span>
               </td>
               <td class="px-5 py-4 sm:px-6">
                 <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ formatCurrency(credit.weekly_payment) }}</p>
@@ -279,6 +293,8 @@ const restructureCredit = (credit) => {
 }
 
 const canRestructureCredit = (credit) => {
+  // 10% Semanal cannot be restructured (business rule)
+  if (credit.loan_type === '10% Semanal') return false
   return Number(credit.paid_amount || 0) >= (Number(credit.weekly_payment || 0) * 5)
 }
 </script>

@@ -49,6 +49,7 @@ router.post('/', upload.fields([
             guarantor_phone,
             guarantor_address,
             payment_schedule,
+            loan_type = 'Tradicional',
             status = 'approved'
         } = req.body;
 
@@ -82,8 +83,8 @@ router.post('/', upload.fields([
         weekly_payment, total_to_pay, weeks, "user",
         guarantor_name, guarantor_phone, guarantor_address,
         guarantor_ine_front, guarantor_ine_back, guarantor_address_proof,
-        payment_schedule, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        payment_schedule, loan_type, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
       RETURNING *
     `;
 
@@ -103,6 +104,7 @@ router.post('/', upload.fields([
             guarantorIneBack,
             guarantorAddressProof,
             JSON.stringify(parsedPaymentSchedule),
+            loan_type,
             status
         ];
 
@@ -202,8 +204,8 @@ router.post('/restructure', async (req, res) => {
                 client_id, loan_amount, retention_amount, net_received,
                 weekly_payment, total_to_pay, weeks, "user",
                 guarantor_name, guarantor_phone, guarantor_address,
-                payment_schedule, status
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                payment_schedule, loan_type, status
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
             RETURNING *`,
             [
                 client_id,
@@ -218,6 +220,7 @@ router.post('/restructure', async (req, res) => {
                 guarantor_phone,
                 guarantor_address,
                 JSON.stringify(payment_schedule),
+                'Tradicional',
                 'approved'
             ]
         );

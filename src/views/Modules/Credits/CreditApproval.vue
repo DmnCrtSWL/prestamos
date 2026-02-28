@@ -75,7 +75,24 @@
                 <span class="block text-xs font-medium text-gray-500 dark:text-gray-400">Total a Pagar</span>
                 <span class="block text-lg font-bold text-gray-800 dark:text-white">{{ formatCurrency(creditDetails.totalToPay) }}</span>
               </div>
-              <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+              <!-- Tipo de Crédito -->
+              <div class="p-4 rounded-lg border border-gray-200 dark:border-gray-700"
+                :class="creditDetails.loanType === '10% Semanal'
+                  ? 'bg-orange-50 dark:bg-orange-950/20'
+                  : 'bg-gray-50 dark:bg-gray-800'"
+              >
+                <span class="block text-xs font-medium text-gray-500 dark:text-gray-400">Tipo de Crédito</span>
+                <span class="mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                  :class="creditDetails.loanType === '10% Semanal'
+                    ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
+                    : creditDetails.loanType === 'Personalizado'
+                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
+                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'"
+                >
+                  {{ creditDetails.loanType || 'Tradicional' }}
+                </span>
+              </div>
+              <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 sm:col-span-2 lg:col-span-4">
                 <span class="block text-xs font-medium text-gray-500 dark:text-gray-400">Calificación del Cliente</span>
                 <div class="flex items-center gap-2 mt-1">
                   <component 
@@ -246,7 +263,8 @@ const avalData = reactive({
 const creditDetails = reactive({
   amount: 0,
   weeklyPayment: 0,
-  totalToPay: 0
+  totalToPay: 0,
+  loanType: 'Tradicional'
 })
 
 onMounted(() => {
@@ -255,6 +273,7 @@ onMounted(() => {
     creditDetails.amount = Number(route.query.amount)
     creditDetails.weeklyPayment = Number(route.query.weeklyPayment)
     creditDetails.totalToPay = Number(route.query.totalToPay)
+    creditDetails.loanType = route.query.loanType || 'Tradicional'
   }
 })
 
