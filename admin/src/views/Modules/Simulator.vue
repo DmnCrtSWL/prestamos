@@ -136,54 +136,8 @@
             </div>
           </div>
 
-          <!-- Toggle: modo de simulación -->
-          <div class="mb-6">
-            <p class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-400">Simular por:</p>
-            <div class="inline-flex rounded-lg border border-gray-200 bg-white p-1 dark:border-gray-700 dark:bg-gray-800">
-              <button
-                @click="simMode = 'weeks'"
-                class="rounded-md px-5 py-2 text-sm font-medium transition-colors"
-                :class="simMode === 'weeks'
-                  ? 'bg-brand-500 text-white shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-              >
-                Número de semanas
-              </button>
-              <button
-                @click="simMode = 'payment'"
-                class="rounded-md px-5 py-2 text-sm font-medium transition-colors"
-                :class="simMode === 'payment'
-                  ? 'bg-brand-500 text-white shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-              >
-                Monto de pago semanal
-              </button>
-            </div>
-          </div>
-
-          <!-- Input: por semanas -->
-          <div v-if="simMode === 'weeks'" class="mb-6 max-w-sm space-y-1.5">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">
-              ¿Cuántas semanas tardará en pagar?
-              <span class="ml-1 font-bold text-brand-600">{{ semanalWeeks }} semanas</span>
-            </label>
-            <input
-              type="range"
-              v-model.number="semanalWeeks"
-              min="1"
-              max="52"
-              class="w-full h-2 rounded-lg appearance-none cursor-pointer bg-gray-200 dark:bg-gray-700 accent-brand-500"
-            />
-            <div class="flex justify-between text-xs text-gray-400">
-              <span>1</span><span>13</span><span>26</span><span>39</span><span>52</span>
-            </div>
-            <p class="text-xs text-gray-500 dark:text-gray-400 pt-1">
-              Asume que el cliente paga solo el interés de cada semana y liquida el capital al final.
-            </p>
-          </div>
-
-          <!-- Input: por monto de pago -->
-          <div v-if="simMode === 'payment'" class="mb-6 max-w-sm space-y-1.5">
+          <!-- Input: pago semanal -->
+          <div class="mb-6 max-w-sm space-y-1.5">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">
               ¿Cuánto pagará el cliente cada semana?
             </label>
@@ -237,24 +191,14 @@
                     </td>
                   </tr>
 
-                  <!-- Fila "una semana más" — solo en modo semanas y si no liquidó -->
-                  <tr v-if="simMode === 'weeks' && nextWeekRow && !lastRowPaid"
-                    class="bg-brand-50 dark:bg-brand-900/10 border-t-2 border-brand-200 dark:border-brand-800">
-                    <td class="px-4 py-3 font-bold text-brand-700 dark:text-brand-300">Sem. {{ semanalWeeks + 1 }}</td>
-                    <td class="px-4 py-3 text-brand-600 dark:text-brand-400">{{ formatCurrency(nextWeekRow.opening) }}</td>
-                    <td class="px-4 py-3 font-medium text-brand-600 dark:text-brand-400">{{ formatCurrency(nextWeekRow.interest) }}</td>
-                    <td class="px-4 py-3 font-bold text-brand-700 dark:text-brand-300">{{ formatCurrency(nextWeekRow.total) }}</td>
-                    <td colspan="3" class="px-4 py-3 text-xs italic text-brand-600 dark:text-brand-400">
-                      ← Si se tarda una semana más, deberá {{ formatCurrency(nextWeekRow.total) }}
-                    </td>
-                  </tr>
+
                 </tbody>
               </table>
             </div>
           </div>
 
-          <!-- Placeholder si modo pago no tiene valor -->
-          <div v-if="simMode === 'payment' && (!weeklyPaySemanal || weeklyPaySemanal <= 0)"
+          <!-- Placeholder si no hay pago ingresado -->
+          <div v-if="!weeklyPaySemanal || weeklyPaySemanal <= 0"
             class="rounded-lg border border-dashed border-gray-300 p-8 text-center dark:border-gray-700">
             <p class="text-sm text-gray-400 dark:text-gray-500">Ingresa el monto de pago semanal para ver la proyección</p>
           </div>
@@ -320,65 +264,34 @@ const totalToPay    = computed(() => isValidAmount.value ? amount.value * TOTAL_
 const weeklyPayment = computed(() => isValidAmount.value ? totalToPay.value / weeks : 0)
 
 // ==================== 10% SEMANAL ====================
-const simMode          = ref('weeks')   // 'weeks' | 'payment'
-const semanalWeeks     = ref(10)        // used in 'weeks' mode
-const weeklyPaySemanal = ref(null)      // used in 'payment' mode
+const weeklyPaySemanal = ref(null)      // weekly payment the client makes
 const MAX_WEEKS        = 520
 
 const semanalTable = computed(() => {
   if (!isValidAmount.value) return []
+  const pay = weeklyPaySemanal.value && weeklyPaySemanal.value > 0 ? weeklyPaySemanal.value : 0
+  if (pay <= 0) return []
 
   const rows = []
   let balance = Number(amount.value)
 
-  if (simMode.value === 'weeks') {
-    // Mode: simulate exactly N weeks, client pays interest-only each week,
-    // then pays off the full capital on the last week.
-    for (let week = 1; week <= semanalWeeks.value; week++) {
-      const opening  = balance
-      const interest = opening * 0.1
-      const total    = opening + interest
-      const isLast   = week === semanalWeeks.value
-      // On last week assume they pay everything; otherwise just the interest
-      const payment  = isLast ? total : interest
-      const toCapital = isLast ? opening : 0
-      const closing   = isLast ? 0 : opening
-      rows.push({ week, opening, interest, total, payment, toCapital, closing, paid: isLast })
-    }
-  } else {
-    // Mode: simulate by weekly payment until credit is paid off (capped at MAX_WEEKS)
-    const pay = weeklyPaySemanal.value && weeklyPaySemanal.value > 0 ? weeklyPaySemanal.value : 0
-    if (pay <= 0) return []
+  for (let week = 1; week <= MAX_WEEKS; week++) {
+    const opening    = balance
+    const interest   = opening * 0.1
+    const total      = opening + interest
+    const effectivePay = Math.min(pay, total)
+    const toCapital  = Math.max(0, effectivePay - interest)
+    const closing    = Math.max(0, opening - toCapital)
+    const paid       = effectivePay >= total || closing <= 0.01
 
-    for (let week = 1; week <= MAX_WEEKS; week++) {
-      const opening    = balance
-      const interest   = opening * 0.1
-      const total      = opening + interest
-      const effectivePay = Math.min(pay, total)
-      const toCapital  = Math.max(0, effectivePay - interest)
-      const closing    = Math.max(0, opening - toCapital)
-      const paid       = effectivePay >= total || closing <= 0.01
-
-      rows.push({ week, opening, interest, total, payment: effectivePay, toCapital, closing: paid ? 0 : closing, paid })
-      if (paid) break
-      balance = closing
-    }
+    rows.push({ week, opening, interest, total, payment: effectivePay, toCapital, closing: paid ? 0 : closing, paid })
+    if (paid) break
+    balance = closing
   }
   return rows
 })
 
-const lastRowPaid = computed(() => semanalTable.value[semanalTable.value.length - 1]?.paid ?? false)
-
-// "One more week" row — only for weeks mode, shows what week N+1 would look like
-const nextWeekRow = computed(() => {
-  if (simMode.value !== 'weeks' || !isValidAmount.value) return null
-  // Capital at end of N weeks (interest-only payments) = original capital
-  const opening  = Number(amount.value)
-  const interest = opening * 0.1
-  const total    = opening + interest
-  return { opening, interest, total }
-})
-
+const lastRowPaid           = computed(() => semanalTable.value[semanalTable.value.length - 1]?.paid ?? false)
 const semanalTotalPaid     = computed(() => semanalTable.value.reduce((s, r) => s + r.payment, 0))
 const semanalTotalInterest  = computed(() => semanalTable.value.reduce((s, r) => s + r.interest, 0))
 
