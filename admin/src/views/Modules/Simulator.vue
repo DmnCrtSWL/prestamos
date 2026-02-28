@@ -19,7 +19,7 @@
 
     <ComponentCard>
       <div class="space-y-6">
-        <!-- Input de Nombre Cliente -->
+        <!-- Nombre Cliente -->
         <div class="space-y-1.5">
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">
             Nombre del Cliente (Opcional)
@@ -32,16 +32,14 @@
           />
         </div>
 
-        <!-- Input de Monto y Tipo de Préstamo -->
+        <!-- Monto + Tipo -->
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div class="space-y-1.5">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">
               Monto a Prestar (Mínimo $1,000)
             </label>
             <div class="relative">
-              <span class="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-3 text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                $
-              </span>
+              <span class="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-3 text-gray-500 dark:border-gray-800 dark:text-gray-400">$</span>
               <input
                 type="number"
                 v-model="amount"
@@ -51,15 +49,11 @@
                 :class="hasError ? 'border-error-500 focus:border-error-500 focus:ring-error-500/10' : 'border-gray-300 dark:border-gray-700'"
               />
             </div>
-            <p v-if="hasError" class="text-xs text-error-500">
-              El monto mínimo es de $1,000
-            </p>
+            <p v-if="hasError" class="text-xs text-error-500">El monto mínimo es de $1,000</p>
           </div>
 
           <div class="space-y-1.5">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">
-              Tipo de Préstamo
-            </label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Tipo de Préstamo</label>
             <select
               v-model="loanType"
               class="dark:bg-dark-900 h-11 w-full rounded-lg border bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800 border-gray-300 dark:border-gray-700"
@@ -73,9 +67,7 @@
 
         <!-- ==================== TRADICIONAL ==================== -->
         <div v-if="loanType === 'Tradicional' && isValidAmount" class="rounded-lg border border-gray-200 bg-gray-50 p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-          <h4 class="mb-4 text-lg font-medium text-gray-800 dark:text-white/90">
-            Desglose del Préstamo
-          </h4>
+          <h4 class="mb-4 text-lg font-medium text-gray-800 dark:text-white/90">Desglose del Préstamo</h4>
           <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <div class="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800">
               <span class="text-sm text-gray-500 dark:text-gray-400">Monto Solicitado:</span>
@@ -112,9 +104,7 @@
                   <tr v-for="week in 12" :key="week">
                     <td class="px-4 py-3 text-gray-800 dark:text-white/90">{{ week }}</td>
                     <td class="px-4 py-3 text-gray-800 dark:text-white/90">{{ formatCurrency(weeklyPayment) }}</td>
-                    <td class="px-4 py-3 text-gray-500 dark:text-gray-400">
-                      {{ formatCurrency(Math.max(0, totalToPay - (weeklyPayment * week))) }}
-                    </td>
+                    <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ formatCurrency(Math.max(0, totalToPay - (weeklyPayment * week))) }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -124,9 +114,7 @@
 
         <!-- ==================== 10% SEMANAL ==================== -->
         <div v-if="loanType === '10% Semanal' && isValidAmount" class="rounded-lg border border-gray-200 bg-gray-50 p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-          <h4 class="mb-4 text-lg font-medium text-gray-800 dark:text-white/90">
-            Desglose del Préstamo — 10% Semanal
-          </h4>
+          <h4 class="mb-5 text-lg font-medium text-gray-800 dark:text-white/90">Desglose del Préstamo — 10% Semanal</h4>
 
           <!-- Resumen base -->
           <div class="mb-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -135,7 +123,7 @@
               <span class="text-xl font-bold text-gray-800 dark:text-white">{{ formatCurrency(amount) }}</span>
             </div>
             <div class="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800">
-              <span class="text-sm text-gray-500 dark:text-gray-400">Interés por Semana (10%):</span>
+              <span class="text-sm text-gray-500 dark:text-gray-400">Interés por semana (10%):</span>
               <span class="text-xl font-bold text-brand-600">{{ formatCurrency(amount * 0.1) }}</span>
             </div>
             <div class="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800">
@@ -143,59 +131,82 @@
               <span class="text-xl font-bold text-gray-800 dark:text-white">{{ formatCurrency(amount * 0.1) }}</span>
             </div>
             <div class="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800 border border-brand-200 dark:border-brand-800">
-              <span class="text-sm text-gray-500 dark:text-gray-400">Sin plazo fijo:</span>
-              <span class="text-xl font-bold text-brand-600">Crédito Abierto</span>
+              <span class="text-sm text-gray-500 dark:text-gray-400">Plazo:</span>
+              <span class="text-xl font-bold text-brand-600">Sin límite</span>
             </div>
           </div>
 
-          <!-- Controles de simulación -->
-          <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <!-- Semanas a simular -->
-            <div class="space-y-1.5">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">
-                Semanas a simular: <span class="font-bold text-brand-600">{{ semanalWeeks }}</span>
-              </label>
-              <input
-                type="range"
-                v-model.number="semanalWeeks"
-                min="1"
-                max="52"
-                class="w-full h-2 rounded-lg appearance-none cursor-pointer bg-gray-200 dark:bg-gray-700 accent-brand-500"
-              />
-              <div class="flex justify-between text-xs text-gray-400">
-                <span>1 semana</span>
-                <span>52 semanas</span>
-              </div>
+          <!-- Toggle: modo de simulación -->
+          <div class="mb-6">
+            <p class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-400">Simular por:</p>
+            <div class="inline-flex rounded-lg border border-gray-200 bg-white p-1 dark:border-gray-700 dark:bg-gray-800">
+              <button
+                @click="simMode = 'weeks'"
+                class="rounded-md px-5 py-2 text-sm font-medium transition-colors"
+                :class="simMode === 'weeks'
+                  ? 'bg-brand-500 text-white shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+              >
+                Número de semanas
+              </button>
+              <button
+                @click="simMode = 'payment'"
+                class="rounded-md px-5 py-2 text-sm font-medium transition-colors"
+                :class="simMode === 'payment'
+                  ? 'bg-brand-500 text-white shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+              >
+                Monto de pago semanal
+              </button>
             </div>
+          </div>
 
-            <!-- Pago semanal del cliente -->
-            <div class="space-y-1.5">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">
-                Pago del cliente cada semana
-              </label>
-              <div class="relative">
-                <span class="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-3 text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                  $
-                </span>
-                <input
-                  type="number"
-                  v-model.number="weeklyPaySemanal"
-                  min="0"
-                  :placeholder="`${(amount * 0.1).toFixed(2)} (solo interés)`"
-                  class="dark:bg-dark-900 h-11 w-full rounded-lg border bg-transparent px-4 py-2.5 pl-[50px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 border-gray-300 dark:border-gray-700"
-                />
-              </div>
-              <p v-if="weeklyPaySemanal > 0 && weeklyPaySemanal <= amount * 0.1" class="text-xs text-gray-500">
-                Solo cubre el interés — el capital no baja.
-              </p>
-              <p v-if="weeklyPaySemanal > amount * 0.1" class="text-xs text-success-600">
-                ✅ {{ formatCurrency(weeklyPaySemanal - amount * 0.1) }} abona a capital en la primera semana.
-              </p>
+          <!-- Input: por semanas -->
+          <div v-if="simMode === 'weeks'" class="mb-6 max-w-sm space-y-1.5">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">
+              ¿Cuántas semanas tardará en pagar?
+              <span class="ml-1 font-bold text-brand-600">{{ semanalWeeks }} semanas</span>
+            </label>
+            <input
+              type="range"
+              v-model.number="semanalWeeks"
+              min="1"
+              max="52"
+              class="w-full h-2 rounded-lg appearance-none cursor-pointer bg-gray-200 dark:bg-gray-700 accent-brand-500"
+            />
+            <div class="flex justify-between text-xs text-gray-400">
+              <span>1</span><span>13</span><span>26</span><span>39</span><span>52</span>
             </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 pt-1">
+              Asume que el cliente paga solo el interés de cada semana y liquida el capital al final.
+            </p>
+          </div>
+
+          <!-- Input: por monto de pago -->
+          <div v-if="simMode === 'payment'" class="mb-6 max-w-sm space-y-1.5">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">
+              ¿Cuánto pagará el cliente cada semana?
+            </label>
+            <div class="relative">
+              <span class="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-3 text-gray-500 dark:border-gray-800 dark:text-gray-400">$</span>
+              <input
+                type="number"
+                v-model.number="weeklyPaySemanal"
+                min="0"
+                :placeholder="`${(amount * 0.1).toFixed(2)}`"
+                class="dark:bg-dark-900 h-11 w-full rounded-lg border bg-transparent px-4 py-2.5 pl-[50px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 border-gray-300 dark:border-gray-700"
+              />
+            </div>
+            <p v-if="weeklyPaySemanal > 0 && weeklyPaySemanal <= amount * 0.1" class="text-xs text-gray-500">
+              Solo cubre el interés — el capital no baja nunca.
+            </p>
+            <p v-if="weeklyPaySemanal > amount * 0.1" class="text-xs text-success-600">
+              ✅ {{ formatCurrency(weeklyPaySemanal - amount * 0.1) }} abona a capital la primera semana.
+            </p>
           </div>
 
           <!-- Tabla de simulación -->
-          <div class="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-800">
+          <div v-if="semanalTable.length > 0" class="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-800">
             <div class="max-w-full overflow-x-auto">
               <table class="min-w-full text-left text-sm">
                 <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.03]">
@@ -210,34 +221,30 @@
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
-                  <!-- Semanas N simuladas -->
                   <tr
                     v-for="row in semanalTable"
                     :key="row.week"
                     :class="row.paid ? 'bg-success-50 dark:bg-success-900/10' : ''"
                   >
-                    <td class="px-4 py-3 text-gray-800 dark:text-white/90 font-medium">{{ row.week }}</td>
+                    <td class="px-4 py-3 font-medium text-gray-800 dark:text-white/90">{{ row.week }}</td>
                     <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ formatCurrency(row.opening) }}</td>
                     <td class="px-4 py-3 text-gray-800 dark:text-white/90">{{ formatCurrency(row.interest) }}</td>
-                    <td class="px-4 py-3 text-gray-800 dark:text-white/90 font-medium">{{ formatCurrency(row.total) }}</td>
+                    <td class="px-4 py-3 font-medium text-gray-800 dark:text-white/90">{{ formatCurrency(row.total) }}</td>
                     <td class="px-4 py-3 text-gray-800 dark:text-white/90">{{ formatCurrency(row.payment) }}</td>
-                    <td class="px-4 py-3" :class="row.toCapital > 0 ? 'text-success-600 font-medium' : 'text-gray-400'">
-                      {{ formatCurrency(row.toCapital) }}
-                    </td>
+                    <td class="px-4 py-3" :class="row.toCapital > 0 ? 'text-success-600 font-medium' : 'text-gray-400'">{{ formatCurrency(row.toCapital) }}</td>
                     <td class="px-4 py-3 font-medium" :class="row.paid ? 'text-success-600' : 'text-gray-800 dark:text-white/90'">
                       {{ row.paid ? '✅ Liquidado' : formatCurrency(row.closing) }}
                     </td>
                   </tr>
 
-                  <!-- Fila highlight: "si se tarda una semana más" -->
-                  <tr v-if="nextWeekRow && !lastRowPaid" class="bg-brand-50 dark:bg-brand-900/10 border-t-2 border-brand-200 dark:border-brand-800">
-                    <td class="px-4 py-3 font-bold text-brand-700 dark:text-brand-300">
-                      Sem. {{ semanalWeeks + 1 }}
-                    </td>
+                  <!-- Fila "una semana más" — solo en modo semanas y si no liquidó -->
+                  <tr v-if="simMode === 'weeks' && nextWeekRow && !lastRowPaid"
+                    class="bg-brand-50 dark:bg-brand-900/10 border-t-2 border-brand-200 dark:border-brand-800">
+                    <td class="px-4 py-3 font-bold text-brand-700 dark:text-brand-300">Sem. {{ semanalWeeks + 1 }}</td>
                     <td class="px-4 py-3 text-brand-600 dark:text-brand-400">{{ formatCurrency(nextWeekRow.opening) }}</td>
-                    <td class="px-4 py-3 text-brand-600 dark:text-brand-400 font-medium">{{ formatCurrency(nextWeekRow.interest) }}</td>
+                    <td class="px-4 py-3 font-medium text-brand-600 dark:text-brand-400">{{ formatCurrency(nextWeekRow.interest) }}</td>
                     <td class="px-4 py-3 font-bold text-brand-700 dark:text-brand-300">{{ formatCurrency(nextWeekRow.total) }}</td>
-                    <td colspan="3" class="px-4 py-3 text-xs text-brand-600 dark:text-brand-400 italic">
+                    <td colspan="3" class="px-4 py-3 text-xs italic text-brand-600 dark:text-brand-400">
                       ← Si se tarda una semana más, deberá {{ formatCurrency(nextWeekRow.total) }}
                     </td>
                   </tr>
@@ -246,10 +253,16 @@
             </div>
           </div>
 
-          <!-- Resumen totales -->
-          <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <!-- Placeholder si modo pago no tiene valor -->
+          <div v-if="simMode === 'payment' && (!weeklyPaySemanal || weeklyPaySemanal <= 0)"
+            class="rounded-lg border border-dashed border-gray-300 p-8 text-center dark:border-gray-700">
+            <p class="text-sm text-gray-400 dark:text-gray-500">Ingresa el monto de pago semanal para ver la proyección</p>
+          </div>
+
+          <!-- Totales -->
+          <div v-if="semanalTable.length > 0" class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div class="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800">
-              <span class="text-sm text-gray-500 dark:text-gray-400">Total Pagado en {{ semanalWeeks }} sem.:</span>
+              <span class="text-sm text-gray-500 dark:text-gray-400">Total Pagado:</span>
               <span class="text-xl font-bold text-gray-800 dark:text-white">{{ formatCurrency(semanalTotalPaid) }}</span>
             </div>
             <div class="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800">
@@ -257,7 +270,7 @@
               <span class="text-xl font-bold text-error-500">{{ formatCurrency(semanalTotalInterest) }}</span>
             </div>
             <div class="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800 border border-brand-200 dark:border-brand-800">
-              <span class="text-sm text-gray-500 dark:text-gray-400">Saldo al finalizar:</span>
+              <span class="text-sm text-gray-500 dark:text-gray-400">Saldo Final:</span>
               <span class="text-xl font-bold text-brand-600">
                 {{ lastRowPaid ? '✅ Liquidado' : formatCurrency(semanalTable[semanalTable.length - 1]?.closing ?? 0) }}
               </span>
@@ -267,12 +280,8 @@
 
         <!-- ==================== PERSONALIZADO ==================== -->
         <div v-if="loanType === 'Personalizado' && isValidAmount" class="rounded-lg border border-gray-200 bg-gray-50 p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-          <h4 class="mb-4 text-lg font-medium text-gray-800 dark:text-white/90">
-            Crédito Personalizado
-          </h4>
-          <p class="text-sm text-gray-500 dark:text-gray-400">
-            Los detalles de este tipo de crédito se configuran de forma personalizada con el cliente.
-          </p>
+          <h4 class="mb-4 text-lg font-medium text-gray-800 dark:text-white/90">Crédito Personalizado</h4>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Los detalles se configuran de forma personalizada con el cliente.</p>
         </div>
 
       </div>
@@ -293,80 +302,85 @@ const router = useRouter()
 
 const formatCurrency = (value) => {
   if (!value && value !== 0) return '$0.00'
-  return new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency: 'MXN',
-    minimumFractionDigits: 2
-  }).format(value)
+  return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 2 }).format(value)
 }
 
-const amount = ref(10000)
+const amount    = ref(10000)
 const clientName = ref('')
-const loanType = ref('Tradicional')
-const weeks = 12
+const loanType  = ref('Tradicional')
+const weeks     = 12
 
 // ==================== TRADICIONAL ====================
 const TOTAL_INTEREST_RATE = 1.5
-
 const isValidAmount = computed(() => amount.value >= 1000)
-const hasError = computed(() => amount.value > 0 && amount.value < 1000)
-
-const retention = computed(() => isValidAmount.value ? amount.value * 0.10 : 0)
-const netReceived = computed(() => isValidAmount.value ? amount.value - retention.value : 0)
-const totalToPay = computed(() => isValidAmount.value ? amount.value * TOTAL_INTEREST_RATE : 0)
+const hasError      = computed(() => amount.value > 0 && amount.value < 1000)
+const retention     = computed(() => isValidAmount.value ? amount.value * 0.10 : 0)
+const netReceived   = computed(() => isValidAmount.value ? amount.value - retention.value : 0)
+const totalToPay    = computed(() => isValidAmount.value ? amount.value * TOTAL_INTEREST_RATE : 0)
 const weeklyPayment = computed(() => isValidAmount.value ? totalToPay.value / weeks : 0)
 
 // ==================== 10% SEMANAL ====================
-const semanalWeeks = ref(10)   // weeks selector
-const weeklyPaySemanal = ref(null) // weekly payment the client makes
+const simMode          = ref('weeks')   // 'weeks' | 'payment'
+const semanalWeeks     = ref(10)        // used in 'weeks' mode
+const weeklyPaySemanal = ref(null)      // used in 'payment' mode
+const MAX_WEEKS        = 520
 
-/**
- * Generates N rows of the 10% weekly interest table.
- * If no weekly payment is given, assume client only pays the interest each week
- * (capital stays fixed — useful to show pure interest cost).
- */
 const semanalTable = computed(() => {
   if (!isValidAmount.value) return []
-
-  const pay = weeklyPaySemanal.value && weeklyPaySemanal.value > 0
-    ? weeklyPaySemanal.value
-    : Number(amount.value) * 0.1   // default: interest-only
 
   const rows = []
   let balance = Number(amount.value)
 
-  for (let week = 1; week <= semanalWeeks.value; week++) {
-    const opening = balance
-    const interest = opening * 0.1
-    const total = opening + interest
-    const effectivePay = Math.min(pay, total)
-    const toCapital = Math.max(0, effectivePay - interest)
-    const closing = Math.max(0, opening - toCapital)
-    const paid = effectivePay >= total || closing <= 0.01
+  if (simMode.value === 'weeks') {
+    // Mode: simulate exactly N weeks, client pays interest-only each week,
+    // then pays off the full capital on the last week.
+    for (let week = 1; week <= semanalWeeks.value; week++) {
+      const opening  = balance
+      const interest = opening * 0.1
+      const total    = opening + interest
+      const isLast   = week === semanalWeeks.value
+      // On last week assume they pay everything; otherwise just the interest
+      const payment  = isLast ? total : interest
+      const toCapital = isLast ? opening : 0
+      const closing   = isLast ? 0 : opening
+      rows.push({ week, opening, interest, total, payment, toCapital, closing, paid: isLast })
+    }
+  } else {
+    // Mode: simulate by weekly payment until credit is paid off (capped at MAX_WEEKS)
+    const pay = weeklyPaySemanal.value && weeklyPaySemanal.value > 0 ? weeklyPaySemanal.value : 0
+    if (pay <= 0) return []
 
-    rows.push({ week, opening, interest, total, payment: effectivePay, toCapital, closing: paid ? 0 : closing, paid })
+    for (let week = 1; week <= MAX_WEEKS; week++) {
+      const opening    = balance
+      const interest   = opening * 0.1
+      const total      = opening + interest
+      const effectivePay = Math.min(pay, total)
+      const toCapital  = Math.max(0, effectivePay - interest)
+      const closing    = Math.max(0, opening - toCapital)
+      const paid       = effectivePay >= total || closing <= 0.01
 
-    if (paid) break
-    balance = closing
+      rows.push({ week, opening, interest, total, payment: effectivePay, toCapital, closing: paid ? 0 : closing, paid })
+      if (paid) break
+      balance = closing
+    }
   }
   return rows
 })
 
 const lastRowPaid = computed(() => semanalTable.value[semanalTable.value.length - 1]?.paid ?? false)
 
-// "One more week" row (week N+1) — only shown if credit not yet paid off
+// "One more week" row — only for weeks mode, shows what week N+1 would look like
 const nextWeekRow = computed(() => {
-  if (!isValidAmount.value || lastRowPaid.value) return null
-  const lastRow = semanalTable.value[semanalTable.value.length - 1]
-  if (!lastRow) return null
-  const opening = lastRow.closing
+  if (simMode.value !== 'weeks' || !isValidAmount.value) return null
+  // Capital at end of N weeks (interest-only payments) = original capital
+  const opening  = Number(amount.value)
   const interest = opening * 0.1
-  const total = opening + interest
+  const total    = opening + interest
   return { opening, interest, total }
 })
 
-const semanalTotalPaid = computed(() => semanalTable.value.reduce((s, r) => s + r.payment, 0))
-const semanalTotalInterest = computed(() => semanalTable.value.reduce((s, r) => s + r.interest, 0))
+const semanalTotalPaid     = computed(() => semanalTable.value.reduce((s, r) => s + r.payment, 0))
+const semanalTotalInterest  = computed(() => semanalTable.value.reduce((s, r) => s + r.interest, 0))
 
 // ==================== CONTINUAR ====================
 const handleContinue = () => {
@@ -377,7 +391,7 @@ const handleContinue = () => {
       amount: amount.value,
       loanType: loanType.value,
       weeklyPayment: loanType.value === 'Tradicional' ? weeklyPayment.value : undefined,
-      totalToPay: loanType.value === 'Tradicional' ? totalToPay.value : undefined
+      totalToPay:    loanType.value === 'Tradicional' ? totalToPay.value : undefined
     }
   })
 }
