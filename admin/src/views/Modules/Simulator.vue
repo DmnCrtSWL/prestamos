@@ -259,6 +259,57 @@
               </div>
             </div>
           </div>
+
+          <div class="mt-6 overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-800">
+            <div class="max-w-full overflow-x-auto">
+              <table class="min-w-full text-left text-sm">
+                <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.03]">
+                  <tr>
+                    <th class="px-4 py-3 font-medium text-gray-700 dark:text-gray-400"># Semana</th>
+                    <th class="px-4 py-3 font-medium text-gray-700 dark:text-gray-400">Pago Programado</th>
+                    <th class="px-4 py-3 font-medium text-gray-700 dark:text-gray-400">Saldo Pendiente</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+                  <tr v-for="row in personalizadoPaginatedRows" :key="row.week">
+                    <td class="px-4 py-3 text-gray-800 dark:text-white/90">{{ row.week }}</td>
+                    <td class="px-4 py-3 text-gray-800 dark:text-white/90">{{ formatCurrency(row.payment) }}</td>
+                    <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ formatCurrency(row.balance) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <!-- Pagination Controls -->
+            <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-800 sm:px-6">
+              <div class="flex flex-1 justify-between sm:hidden">
+                <button @click="personalizadoPrevPage" :disabled="personalizadoCurrentPage === 1" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:z-20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50">Anterior</button>
+                <button @click="personalizadoNextPage" :disabled="personalizadoCurrentPage === personalizadoTotalPages" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:z-20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50">Siguiente</button>
+              </div>
+              <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                <div>
+                  <p class="text-sm text-gray-700 dark:text-gray-400">
+                    Mostrando del <span class="font-medium">{{ ((personalizadoCurrentPage - 1) * 10) + 1 }}</span> al <span class="font-medium">{{ Math.min(personalizadoCurrentPage * 10, 36) }}</span> de <span class="font-medium">36</span> semanas
+                  </p>
+                </div>
+                <div>
+                  <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                    <button @click="personalizadoPrevPage" :disabled="personalizadoCurrentPage === 1" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 dark:ring-gray-600 dark:hover:bg-gray-700 disabled:opacity-50">
+                      <span class="sr-only">Anterior</span>
+                      <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" /></svg>
+                    </button>
+                    <!-- Current Page Indicator -->
+                    <span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 dark:text-white dark:ring-gray-600 focus:z-20 focus:outline-offset-0">Página {{ personalizadoCurrentPage }} de {{ personalizadoTotalPages }}</span>
+                    <button @click="personalizadoNextPage" :disabled="personalizadoCurrentPage === personalizadoTotalPages" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 dark:ring-gray-600 dark:hover:bg-gray-700 disabled:opacity-50">
+                      <span class="sr-only">Siguiente</span>
+                      <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg>
+                    </button>
+                  </nav>
+                </div>
+              </div>
+            </div>
+            
+          </div>
         </div>
 
       </div>
@@ -301,6 +352,36 @@ const weeklyPayment = computed(() => isValidAmount.value ? totalToPay.value / we
 // ==================== PERSONALIZADO ====================
 const personalizadoWeeklyPayment = computed(() => weeklyPayment.value / 2)
 const personalizadoTotalToPay = computed(() => personalizadoWeeklyPayment.value * 36)
+
+const personalizadoCurrentPage = ref(1)
+const personalizadoTotalPages = computed(() => Math.ceil(36 / 10))
+
+const personalizadoPaginatedRows = computed(() => {
+  if (!isValidAmount.value) return []
+  const start = (personalizadoCurrentPage.value - 1) * 10
+  const end = Math.min(start + 10, 36)
+  const rows = []
+  for (let week = start + 1; week <= end; week++) {
+    rows.push({
+      week,
+      payment: personalizadoWeeklyPayment.value,
+      balance: Math.max(0, personalizadoTotalToPay.value - (personalizadoWeeklyPayment.value * week))
+    })
+  }
+  return rows
+})
+
+const personalizadoNextPage = () => {
+  if (personalizadoCurrentPage.value < personalizadoTotalPages.value) {
+    personalizadoCurrentPage.value++
+  }
+}
+
+const personalizadoPrevPage = () => {
+  if (personalizadoCurrentPage.value > 1) {
+    personalizadoCurrentPage.value--
+  }
+}
 
 // ==================== 10% SEMANAL ====================
 const weeklyPaySemanal = ref(null)      // weekly payment the client makes
