@@ -449,23 +449,23 @@ const handleApprove = async () => {
 
   // Create FormData for multipart/form-data request
   const formData = new FormData()
-  formData.append('client_id', selectedClient.value.id) // Assuming client has an ID
+  formData.append('client_id', selectedClient.value.id)
   formData.append('loan_amount', creditDetails.amount)
   formData.append('retention_amount', creditDetails.retention)
   formData.append('net_received', creditDetails.netReceived)
   formData.append('weekly_payment', creditDetails.weeklyPayment)
   formData.append('total_to_pay', creditDetails.totalToPay || 0)
   formData.append('loan_type', creditDetails.loanType)
-  formData.append('user', storedUserName) // Real logged-in user
+  formData.append('user', storedUserName)
+  formData.append('status', 'approved')
 
-  // Calculate weeks to map for init. For 10% Semanal, we just want ONE progressive row.
+  // Calculate weeks
   const weeksToGenerate = creditDetails.loanType === '10% Semanal' ? 1 : (creditDetails.loanType === 'Personalizado' ? 36 : 12);
-  formData.append('weeks', creditDetails.loanType === '10% Semanal' ? 1 : (creditDetails.loanType === 'Personalizado' ? 36 : 12))
+  formData.append('weeks', weeksToGenerate)
 
   // Generate payment schedule
   const paymentSchedule = []
   const startDate = new Date()
-  // Find next Saturday (dayOfWeek: 0=Sun, 6=Sat)
   const dayOfWeek = startDate.getDay()
   const daysUntilNextSaturday = dayOfWeek === 6 ? 7 : (6 - dayOfWeek)
   const firstPaymentDate = new Date(startDate)
@@ -474,7 +474,7 @@ const handleApprove = async () => {
 
   for (let i = 0; i < weeksToGenerate; i++) {
     const paymentDate = new Date(firstPaymentDate)
-    paymentDate.setDate(firstPaymentDate.getDate() + (i * 7)) // week 1 = first Saturday, week 2 = +7, ...
+    paymentDate.setDate(firstPaymentDate.getDate() + (i * 7))
     paymentSchedule.push({
       week: i + 1,
       date: paymentDate.toISOString().split('T')[0],
@@ -484,24 +484,27 @@ const handleApprove = async () => {
   }
   formData.append('payment_schedule', JSON.stringify(paymentSchedule))
 
-  // Add aval data
-  formData.append('aval_name', avalData.name)
-  formData.append('aval_phone', avalData.phone)
-  formData.append('aval_email', avalData.email)
-  formData.append('aval_address', avalData.address)
-  formData.append('aval_has_ine', avalData.hasIne ? '1' : '0')
-  formData.append('aval_has_address_proof', avalData.hasAddressProof ? '1' : '0')
+  // Add guarantor data (nombres alineados con el servidor)
+  formData.append('guarantor_name', avalData.name)
+  formData.append('guarantor_phone', avalData.phone)
+  formData.append('guarantor_address', avalData.address || 'N/A')
 
   try {
-    // Simulate API call
-    console.log('Sending approval request with data:', Object.fromEntries(formData.entries()))
-    // await api.post('/credits', formData) // Uncomment and replace with actual API call
-    alert('Crédito aprobado exitosamente!')
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+    const response = await fetch(`${apiUrl}/credits`, {
+      method: 'POST',
+      body: formData
+    })
+    const data = await response.json()
+    if (!response.ok) {
+      throw new Error(data.error || 'Error al aprobar el crédito')
+    }
+    alert('¡Crédito aprobado exitosamente!')
     showApproveModal.value = false
-    router.push('/creditos') // Redirect to credits list
+    router.push('/creditos')
   } catch (error) {
     console.error('Error approving credit:', error)
-    alert('Error al aprobar el crédito. Intente de nuevo.')
+    alert('Error al aprobar el crédito: ' + error.message)
   }
 }
 
