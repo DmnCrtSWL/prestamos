@@ -459,8 +459,8 @@ const handleApprove = async () => {
   formData.append('user', storedUserName) // Real logged-in user
 
   // Calculate weeks to map for init. For 10% Semanal, we just want ONE progressive row.
-  const weeksToGenerate = creditDetails.loanType === '10% Semanal' ? 1 : 12;
-  formData.append('weeks', creditDetails.loanType === '10% Semanal' ? 1 : 12)
+  const weeksToGenerate = creditDetails.loanType === '10% Semanal' ? 1 : (creditDetails.loanType === 'Personalizado' ? 36 : 12);
+  formData.append('weeks', creditDetails.loanType === '10% Semanal' ? 1 : (creditDetails.loanType === 'Personalizado' ? 36 : 12))
 
   // Generate payment schedule
   const paymentSchedule = []
@@ -868,23 +868,7 @@ const openApproveModal = () => {
   showApproveModal.value = true
 }
 
-// Confirmar aprobación
-const handleApprove = () => {
-  if (!selectedClient.value || !pagareWasPrinted.value) return
-  showApproveModal.value = false
-  console.log('Aprobando crédito', {
-    client: selectedClient.value,
-    aval: avalData,
-    credit: creditDetails
-  })
-  router.push('/clientes')
-}
 
-// Rechazar
-const handleReject = () => {
-  if (!selectedClient.value) return
-  const confirmReject = confirm('¿Estás seguro de RECHAZAR este crédito?')
-  if (!confirmReject) return
-  router.push('/simulador')
-}
+
+
 </script>

@@ -543,7 +543,7 @@ const buildPagare = () => {
   doc.text('PAGO SEMANAL', mx + 80, y + 4.5)
   doc.text('TOTAL A PAGAR', mx + 140, y + 4.5)
   setFont('bold', 10, PRIMARY)
-  doc.text('Tradicional', mx + 3, y + 11)
+  doc.text(creditDetails.loanType || 'Tradicional', mx + 3, y + 11)
   doc.text(
     creditDetails.weeklyPayment
       ? `$${Number(creditDetails.weeklyPayment).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
@@ -715,7 +715,7 @@ const confirmApproval = async () => {
     
     // Generate payment schedule (if Tradicional, 12 weeks. If 10% Semanal, maybe 1 week indefinitely or as needed)
     // Para 10% Semanal, mandaremos un solo registro base
-    const weeksToGenerate = creditDetails.loanType === '10% Semanal' ? 1 : 12;
+    const weeksToGenerate = creditDetails.loanType === '10% Semanal' ? 1 : (creditDetails.loanType === 'Personalizado' ? 36 : 12);
     const paymentSchedule = []
     const startDate = new Date()
     // Find next Saturday (dayOfWeek: 0=Sun, 6=Sat)
@@ -744,7 +744,7 @@ const confirmApproval = async () => {
     formData.append('net_received', netReceived)
     formData.append('weekly_payment', creditDetails.weeklyPayment)
     formData.append('total_to_pay', creditDetails.totalToPay || 0)
-    formData.append('weeks', creditDetails.loanType === '10% Semanal' ? 1 : 12)
+    formData.append('weeks', creditDetails.loanType === '10% Semanal' ? 1 : (creditDetails.loanType === 'Personalizado' ? 36 : 12))
     formData.append('loan_type', creditDetails.loanType)
     formData.append('user', userName.value || 'admin') // Real logged-in user
     formData.append('guarantor_name', avalData.name)

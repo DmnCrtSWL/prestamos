@@ -230,10 +230,35 @@
           </div>
         </div>
 
-        <!-- ==================== PERSONALIZADO ==================== -->
+        <!-- ==================== PERSONALIZADO (36 Semanas) ==================== -->
         <div v-if="loanType === 'Personalizado' && isValidAmount" class="rounded-lg border border-gray-200 bg-gray-50 p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-          <h4 class="mb-4 text-lg font-medium text-gray-800 dark:text-white/90">Crédito Personalizado</h4>
-          <p class="text-sm text-gray-500 dark:text-gray-400">Los detalles se configuran de forma personalizada con el cliente.</p>
+          <h4 class="mb-4 text-lg font-medium text-gray-800 dark:text-white/90">Desglose del Préstamo — Personalizado (36 semanas)</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">
+              <span class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Capital Prestado</span>
+              <span class="text-xl font-bold text-gray-900 dark:text-white">{{ formatCurrency(amount) }}</span>
+            </div>
+            <div class="p-4 rounded-lg bg-white dark:bg-gray-800 border border-error-100 dark:border-error-900/30 shadow-sm relative overflow-hidden group">
+              <div class="absolute inset-0 bg-error-50 dark:bg-error-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <span class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1 relative z-10">Retención Administ. (10%)</span>
+              <span class="text-xl font-bold text-error-600 dark:text-error-500 relative z-10">-{{ formatCurrency(retention) }}</span>
+            </div>
+            <div class="p-4 rounded-lg bg-white dark:bg-gray-800 border border-success-100 dark:border-success-900/30 shadow-sm relative overflow-hidden group">
+              <div class="absolute inset-0 bg-success-50 dark:bg-success-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <span class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1 relative z-10">Recibes Neto</span>
+              <span class="text-xl font-bold text-success-600 dark:text-success-500 relative z-10">{{ formatCurrency(netReceived) }}</span>
+            </div>
+            <div class="p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">
+              <span class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Pago Semanal (Mitad)</span>
+              <span class="text-xl font-bold text-gray-900 dark:text-white">{{ formatCurrency(personalizadoWeeklyPayment) }}</span>
+            </div>
+            <div class="p-4 rounded-lg bg-white dark:bg-gray-800 border border-brand-100 dark:border-brand-900/30 shadow-sm md:col-span-2 lg:col-span-4 flex items-center justify-between">
+              <div>
+                <span class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Total a Pagar Original (36 semanas)</span>
+                <span class="text-2xl font-black text-brand-600 dark:text-brand-500">{{ formatCurrency(personalizadoTotalToPay) }}</span>
+              </div>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -273,6 +298,10 @@ const TOTAL_INTEREST_RATE = 1.5
 const totalToPay    = computed(() => isValidAmount.value ? amount.value * TOTAL_INTEREST_RATE : 0)
 const weeklyPayment = computed(() => isValidAmount.value ? totalToPay.value / weeks : 0)
 
+// ==================== PERSONALIZADO ====================
+const personalizadoWeeklyPayment = computed(() => weeklyPayment.value / 2)
+const personalizadoTotalToPay = computed(() => personalizadoWeeklyPayment.value * 36)
+
 // ==================== 10% SEMANAL ====================
 const weeklyPaySemanal = ref(null)      // weekly payment the client makes
 const MAX_WEEKS        = 520
@@ -308,6 +337,20 @@ const semanalTotalInterest  = computed(() => semanalTable.value.reduce((s, r) =>
 // ==================== CONTINUAR ====================
 const handleContinue = () => {
   if (!isValidAmount.value) return
+  
+  let finalWeeklyPay = undefined;
+  let finalTotalPay = undefined;
+  
+  if (loanType.value === 'Tradicional') {
+    finalWeeklyPay = weeklyPayment.value;
+    finalTotalPay = totalToPay.value;
+  } else if (loanType.value === '10% Semanal') {
+    finalWeeklyPay = amount.value * 0.1;
+  } else if (loanType.value === 'Personalizado') {
+    finalWeeklyPay = personalizadoWeeklyPayment.value;
+    finalTotalPay = personalizadoTotalToPay.value;
+  }
+
   router.push({
     path: '/creditos/aprobar',
     query: {
@@ -315,8 +358,8 @@ const handleContinue = () => {
       loanType: loanType.value,
       retention: retention.value,
       netReceived: netReceived.value,
-      weeklyPayment: loanType.value === 'Tradicional' ? weeklyPayment.value : (loanType.value === '10% Semanal' ? amount.value * 0.1 : undefined),
-      totalToPay:    loanType.value === 'Tradicional' ? totalToPay.value : undefined
+      weeklyPayment: finalWeeklyPay,
+      totalToPay: finalTotalPay
     }
   })
 }
