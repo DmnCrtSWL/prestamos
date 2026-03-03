@@ -117,12 +117,20 @@
           <h4 class="mb-5 text-lg font-medium text-gray-800 dark:text-white/90">Desglose del Préstamo — 10% Semanal</h4>
 
           <!-- Resumen base -->
-          <div class="mb-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="mb-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <div class="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800">
               <span class="text-sm text-gray-500 dark:text-gray-400">Capital Prestado:</span>
               <span class="text-xl font-bold text-gray-800 dark:text-white">{{ formatCurrency(amount) }}</span>
             </div>
             <div class="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800">
+              <span class="text-sm text-gray-500 dark:text-gray-400">Gastos Administrativos (10%):</span>
+              <span class="text-xl font-bold text-error-500">-{{ formatCurrency(retention) }}</span>
+            </div>
+            <div class="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800">
+              <span class="text-sm text-gray-500 dark:text-gray-400">Recibes Neto:</span>
+              <span class="text-xl font-bold text-success-600">{{ formatCurrency(netReceived) }}</span>
+            </div>
+            <div class="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800 border border-brand-200 dark:border-brand-800">
               <span class="text-sm text-gray-500 dark:text-gray-400">Interés por semana (10%):</span>
               <span class="text-xl font-bold text-brand-600">{{ formatCurrency(amount * 0.1) }}</span>
             </div>
@@ -254,12 +262,14 @@ const clientName = ref('')
 const loanType  = ref('Tradicional')
 const weeks     = 12
 
-// ==================== TRADICIONAL ====================
-const TOTAL_INTEREST_RATE = 1.5
+// ==================== COMUNES ====================
 const isValidAmount = computed(() => amount.value >= 1000)
 const hasError      = computed(() => amount.value > 0 && amount.value < 1000)
 const retention     = computed(() => isValidAmount.value ? amount.value * 0.10 : 0)
 const netReceived   = computed(() => isValidAmount.value ? amount.value - retention.value : 0)
+
+// ==================== TRADICIONAL ====================
+const TOTAL_INTEREST_RATE = 1.5
 const totalToPay    = computed(() => isValidAmount.value ? amount.value * TOTAL_INTEREST_RATE : 0)
 const weeklyPayment = computed(() => isValidAmount.value ? totalToPay.value / weeks : 0)
 
@@ -303,7 +313,9 @@ const handleContinue = () => {
     query: {
       amount: amount.value,
       loanType: loanType.value,
-      weeklyPayment: loanType.value === 'Tradicional' ? weeklyPayment.value : undefined,
+      retention: retention.value,
+      netReceived: netReceived.value,
+      weeklyPayment: loanType.value === 'Tradicional' ? weeklyPayment.value : (loanType.value === '10% Semanal' ? amount.value * 0.1 : undefined),
       totalToPay:    loanType.value === 'Tradicional' ? totalToPay.value : undefined
     }
   })

@@ -78,7 +78,7 @@
                     ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
                     : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'"
                 >
-                  {{ credit.loan_type || 'Tradicional' }}
+                  {{ credit.loan_type === '10% Semanal' ? 'Semanal 10%' : (credit.loan_type || 'Tradicional') }}
                 </span>
               </div>
               <div>
@@ -95,7 +95,10 @@
               </div>
               <div>
                 <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Total a Pagar Original</label>
-                <div class="font-medium text-black dark:text-white">{{ formatCurrency(credit.total_to_pay) }}</div>
+                <div class="font-medium text-black dark:text-white">
+                  <span v-if="credit.loan_type === '10% Semanal'">Solo Interés Semanal</span>
+                  <span v-else>{{ formatCurrency(credit.total_to_pay) }}</span>
+                </div>
               </div>
               <div v-if="penaltyAmount > 0">
                 <label class="mb-1 block text-sm font-semibold text-red-500">Recargos por Atraso</label>
@@ -111,7 +114,10 @@
               </div>
               <div v-else>
                 <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Plazo</label>
-                <div class="font-medium text-black dark:text-white">{{ credit.weeks }} semanas</div>
+                <div class="font-medium text-black dark:text-white">
+                  <span v-if="credit.loan_type === '10% Semanal'">Sin límite ({{ credit.weeks || 52 }} sem. proyectadas)</span>
+                  <span v-else>{{ credit.weeks }} semanas</span>
+                </div>
               </div>
               <div>
                 <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Operado por</label>
@@ -187,7 +193,7 @@
         </div>
 
         <!-- Payment Schedule -->
-        <div class="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+        <div v-if="credit.loan_type !== '10% Semanal'" class="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
           <div class="border-b border-stroke py-4 px-6.5 dark:border-strokedark flex justify-between items-center">
             <h3 class="font-medium text-black dark:text-white">Calendario de Pagos</h3>
             <div class="text-sm">
@@ -271,6 +277,93 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- NEW 10% SEMANAL TABLA Y TARJETAS -->
+        <div v-else class="space-y-6">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div class="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm border border-stroke dark:border-strokedark dark:bg-boxdark">
+              <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Pagado:</span>
+              <span class="text-xl font-bold text-gray-800 dark:text-white">{{ formatCurrency(totalPagadoSemanal10) }}</span>
+            </div>
+            <div class="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm border border-stroke dark:border-strokedark dark:bg-boxdark">
+              <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Total en Intereses:</span>
+              <span class="text-xl font-bold text-red-500">{{ formatCurrency(totalInteresSemanal10) }}</span>
+            </div>
+            <div class="flex flex-col gap-1 rounded-lg bg-white p-4 shadow-sm border border-blue-200 dark:border-blue-800 dark:bg-boxdark">
+              <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Saldo Final:</span>
+              <span class="flex items-center gap-1 text-xl font-bold text-blue-600 dark:text-blue-400">
+                <span v-if="isLiquidadoSemanal10" class="flex items-center gap-1.5 text-green-600 dark:text-green-500">
+                  <span class="inline-block rounded-md bg-green-500 text-white text-[10px] px-1.5 py-0.5">✔</span> Liquidado
+                </span>
+                <span v-else>{{ formatCurrency(saldoFinalSemanal10) }}</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+            <div class="border-b border-stroke py-4 px-6.5 dark:border-strokedark flex justify-between items-center">
+              <h3 class="font-medium text-black dark:text-white">Desglose Semanal 10%</h3>
+            </div>
+            <div class="p-6.5 overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead>
+                  <tr class="border-b border-stroke dark:border-strokedark">
+                    <th class="py-3 px-2 font-medium text-gray-500 dark:text-gray-400">No:</th>
+                    <th class="py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Deuda (Saldo Inicial)</th>
+                    <th class="py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Siguiente Pago</th>
+                    <th class="py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Monto Abono</th>
+                    <th class="py-3 px-2 font-medium text-gray-500 dark:text-gray-400 border-l border-stroke pl-2 ml-1">Para Interés</th>
+                    <th class="py-3 px-2 font-medium text-gray-500 dark:text-gray-400">Para Capital</th>
+                    <th class="py-3 px-2 text-center font-medium text-gray-500 dark:text-gray-400">Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(row, idx) in semanal10Table"
+                    :key="idx"
+                    class="border-b border-stroke dark:border-strokedark last:border-0"
+                    :class="row.paid ? 'bg-green-50/30 dark:bg-green-500/5' : (row.isPending ? 'bg-amber-50/30 dark:bg-amber-500/5' : 'bg-red-50/30 dark:bg-red-500/5')"
+                  >
+                    <td class="py-3 px-2 text-black dark:text-white">{{ row.week }}</td>
+                    <td class="py-3 px-2 text-gray-500 dark:text-gray-400 font-medium">{{ formatCurrency(row.opening) }}</td>
+                    <td class="py-3 px-2 text-black dark:text-white">
+                      {{ row.date }}
+                      <span v-if="!row.paid && !row.isPending" class="text-xs text-red-500 block">Capitaliza +10%</span>
+                      <span v-if="row.isPending" class="text-xs text-amber-500 block">Siguiente Pago</span>
+                    </td>
+                    <td class="py-3 px-2 text-black dark:text-white font-medium">
+                      <span v-if="row.paid" class="text-green-600">+ {{ formatCurrency(row.payment) }}</span>
+                      <span v-else class="text-gray-400">—</span>
+                    </td>
+                    <td class="py-3 pl-4 text-black dark:text-white border-l border-stroke">
+                      <span v-if="row.interest > 0">{{ formatCurrency(row.interest) }}</span>
+                      <span v-else>—</span>
+                    </td>
+                    <td class="py-3 px-2" :class="row.toCapital > 0 ? 'text-green-600 font-medium' : (row.toCapital < 0 ? 'text-red-500 font-medium' : 'text-gray-400')">
+                      <span v-if="row.toCapital !== 0">{{ formatCurrency(row.toCapital) }}</span>
+                      <span v-else>—</span>
+                    </td>
+                    <td class="py-3 px-2 text-center">
+                      <button
+                        v-if="row.isPending"
+                        @click="openPayModalSemanal10(row)"
+                        class="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
+                      >
+                        <CreditCard class="h-3.5 w-3.5" /> Pagar
+                      </button>
+                      <span v-else-if="row.paid" class="inline-flex rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-500/15 dark:text-green-400">
+                        Abono Registrado
+                      </span>
+                      <span v-else class="inline-flex rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-500/15 dark:text-red-400">
+                        Interés Agregado
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -406,6 +499,190 @@ const fetchData = async () => {
 onMounted(() => {
   fetchData()
 })
+
+const formatCurrency = (value) => {
+  return new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency: 'MXN',
+  }).format(value || 0)
+}
+
+/* --- COMPUTADOS PARA 10% SEMANAL --- */
+
+const semanal10Table = computed(() => {
+  if (!credit.value || credit.value.loan_type !== '10% Semanal') return [];
+
+  const incomesSorted = [...incomes.value].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  
+  const rows = [];
+  let balance = Number(credit.value.loan_amount);
+  
+  const startDate = new Date(credit.value.created_at || Date.now());
+  
+  // Find first Saturday
+  const findNextSaturday = (fromDate) => {
+    const d = new Date(fromDate);
+    const dayOfWeek = d.getDay();
+    const daysUntilNextSaturday = dayOfWeek === 6 ? 7 : (6 - dayOfWeek);
+    d.setDate(d.getDate() + daysUntilNextSaturday);
+    d.setHours(23, 59, 59, 999);
+    return d;
+  };
+
+  const today = new Date();
+  const events = [];
+
+  // 1. Generate Payment Events
+  for (const inc of incomesSorted) {
+    events.push({
+      type: 'PAYMENT',
+      date: new Date(inc.created_at),
+      amount: Number(inc.amount),
+      id: inc.id
+    });
+  }
+
+  // 2. Generate Saturday Due Events
+  // Generate all Saturdays from startDate until today (plus one future Saturday to serve as next due date)
+  let currentSat = findNextSaturday(startDate);
+  // We need the next Saturday after all events, so let's generate up to today + 7 days just in case
+  const maxDate = new Date();
+  maxDate.setDate(maxDate.getDate() + 7);
+  
+  while (currentSat <= maxDate) {
+    events.push({
+      type: 'DUE',
+      date: new Date(currentSat)
+    });
+    currentSat.setDate(currentSat.getDate() + 7);
+  }
+
+  // Sort ALL events chronologically
+  events.sort((a, b) => a.date - b.date);
+
+  let currentWeekNum = 1;
+  let nextDueDate = events.find(e => e.type === 'DUE')?.date || findNextSaturday(startDate);
+
+  for (const event of events) {
+    // If the event is in the future (after today) and it's a DUE event, 
+    // it shouldn't trigger an interest charge yet, it just sets the pending nextDueDate.
+    if (event.date > today && event.type === 'DUE') {
+      nextDueDate = event.date;
+      break; 
+    }
+
+    if (event.type === 'DUE') {
+      const interest = balance * 0.10;
+      const closing = balance + interest;
+      
+      rows.push({
+        week: currentWeekNum++,
+        date: event.date.toISOString().split('T')[0] + ' (Vencido)',
+        opening: balance,
+        interest: interest,
+        total: closing,
+        payment: 0,
+        toCapital: -interest, // Represent added debt
+        closing: closing,
+        paid: false,
+        isLiquidated: false
+      });
+      balance = closing;
+      
+      // Update next due date to the next week
+      nextDueDate = new Date(event.date);
+      nextDueDate.setDate(nextDueDate.getDate() + 7);
+
+    } else if (event.type === 'PAYMENT') {
+      // In this model, they just pay against the balance.
+      // If we want to show it as covering interest, maybe we don't separate it mid-week.
+      const closing = Math.max(0, balance - event.amount);
+      const isLiquidated = closing <= 0.01;
+
+      rows.push({
+        week: currentWeekNum++,
+        date: event.date.toISOString().split('T')[0] + ' (Abono)',
+        opening: balance,
+        interest: 0, 
+        total: balance,
+        payment: event.amount,
+        toCapital: event.amount,
+        closing: isLiquidated ? 0 : closing,
+        paid: true,
+        income_id: event.id,
+        isLiquidated: isLiquidated
+      });
+
+      balance = isLiquidated ? 0 : closing;
+      
+      if (isLiquidated) break;
+    }
+  }
+
+  // Finally, add the one PENDING row for the UI, looking forward to nextDueDate
+  if (balance > 0.01) {
+    const interest = balance * 0.10;
+    rows.push({
+      week: currentWeekNum,
+      date: nextDueDate.toISOString().split('T')[0],
+      opening: balance,
+      interest: interest,
+      total: balance + interest,
+      payment: 0,
+      toCapital: 0,
+      closing: balance, // pending
+      paid: false,
+      isPending: true,
+      isLiquidated: false
+    });
+  }
+
+  return rows;
+});
+
+const totalPagadoSemanal10 = computed(() => {
+  return incomes.value.reduce((sum, inc) => sum + Number(inc.amount), 0);
+});
+
+const totalInteresSemanal10 = computed(() => {
+  return semanal10Table.value.filter(r => r.interest > 0 && !r.isPending).reduce((sum, r) => sum + r.interest, 0);
+});
+
+const isLiquidadoSemanal10 = computed(() => {
+  if (semanal10Table.value.length === 0) return false;
+  const lastRow = semanal10Table.value[semanal10Table.value.length - 1];
+  return lastRow.paid && lastRow.isLiquidated;
+});
+
+const saldoFinalSemanal10 = computed(() => {
+  if (semanal10Table.value.length === 0) return credit.value?.loan_amount || 0;
+  const lastRow = semanal10Table.value[semanal10Table.value.length - 1];
+  return lastRow.isPending ? lastRow.opening : lastRow.closing;
+});
+
+const openPayModalSemanal10 = (row) => {
+  if (!credit.value || Number(credit.value.funded_amount) <= 0) {
+    const goToFunding = confirm('Crédito no fondeado, favor de asignar fondos.\n\n¿Deseas ir a la pantalla de fondeo ahora?')
+    if (goToFunding) {
+      router.push(`/creditos/${credit.value.id}/fondear`)
+    }
+    return
+  }
+  selectedPayment.value = {
+    number: row.week,
+    date: row.date.replace(' (Vencido)', '').replace(' (Abono)', ''),
+    amount: row.interest || row.opening * 0.1, // Suggested payment is the interest
+    opening: row.opening,
+    isSemanal10: true
+  }
+  payForm.value = {
+    payment_method: 'cash',
+    amount: selectedPayment.value.amount
+  }
+  showPayModal.value = true
+}
+
+/* --- COMPUTADOS PARA TRADICIONAL --- */
 
 const totalPaidAmount = computed(() => {
   return incomes.value.reduce((sum, income) => sum + Number(income.amount), 0)
@@ -580,7 +857,8 @@ const openPayModal = (payment, idx) => {
 }
 
 const submitPayment = async () => {
-  if (!payForm.value.amount || Number(payForm.value.amount) <= 0) {
+  let payAmount = Number(payForm.value.amount);
+  if (!payAmount || payAmount <= 0) {
     alert('Por favor ingresa un monto válido')
     return
   }
@@ -591,7 +869,7 @@ const submitPayment = async () => {
       credit_id: credit.value.id,
       client_id: credit.value.client_id,
       payment_method: payForm.value.payment_method,
-      amount: payForm.value.amount,
+      amount: payAmount,
       user: userName.value || 'admin'
     }
 
@@ -605,6 +883,26 @@ const submitPayment = async () => {
       const errorData = await response.json()
       throw new Error(errorData.error || 'Error al registrar pago')
     }
+    
+    // Liquidar crédito de forma simulada vía actualización si se cubre el saldo restante (para 10% Semanal o general)
+    if (credit.value.loan_type === '10% Semanal') {
+      const currentBalance = selectedPayment.value?.opening || 0;
+      const currentInterest = currentBalance * 0.1;
+      const amountToCapital = Math.max(0, payAmount - currentInterest);
+      const newBalance = Math.max(0, currentBalance - amountToCapital);
+      
+      if (newBalance <= 0.01 && credit.value.status !== 'completed') {
+        const updateParams = new FormData();
+        updateParams.append('status', 'completed');
+        await fetch(`${import.meta.env.VITE_API_URL}/credits/${credit.value.id}`, {
+          method: 'PUT',
+          body: updateParams
+        });
+      }
+    } else {
+      // Logic para tradicional... 
+      // Se podría revisar si lo pagado >= total_to_pay, etc. pero esto es una verificación adicional.
+    }
 
     showPayModal.value = false
     // Refresh data to update payment status
@@ -615,13 +913,6 @@ const submitPayment = async () => {
   } finally {
     isSubmittingPay.value = false
   }
-}
-
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency: 'MXN',
-  }).format(value || 0)
 }
 
 const formatDate = (dateString) => {

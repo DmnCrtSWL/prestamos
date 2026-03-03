@@ -69,9 +69,17 @@
                 <span class="block text-xs font-medium text-gray-500 dark:text-gray-400">Pago Semanal</span>
                 <span class="block text-lg font-bold text-brand-600">{{ formatCurrency(creditDetails.weeklyPayment) }}</span>
               </div>
-               <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+              <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                 <span class="block text-xs font-medium text-gray-500 dark:text-gray-400">Total a Pagar</span>
                 <span class="block text-lg font-bold text-gray-800 dark:text-white">{{ formatCurrency(creditDetails.totalToPay) }}</span>
+              </div>
+              <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                <span class="block text-xs font-medium text-gray-500 dark:text-gray-400">Retención Administ. (10%)</span>
+                <span class="block text-lg font-bold text-error-500">-{{ formatCurrency(creditDetails.retention) }}</span>
+              </div>
+              <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                <span class="block text-xs font-medium text-gray-500 dark:text-gray-400">Recibe Neto</span>
+                <span class="block text-lg font-bold text-success-600">{{ formatCurrency(creditDetails.netReceived) }}</span>
               </div>
               <!-- Tipo de Crédito -->
               <div class="p-4 rounded-lg border border-gray-200 dark:border-gray-700"
@@ -277,6 +285,14 @@
                 <span class="font-semibold text-gray-800 dark:text-white">{{ creditDetails.loanType }}</span>
               </div>
               <div class="flex justify-between text-sm">
+                <span class="text-gray-500 dark:text-gray-400">Retención (10%):</span>
+                <span class="font-semibold text-error-500">-{{ formatCurrency(creditDetails.retention) }}</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span class="text-gray-500 dark:text-gray-400">Recibe Neto:</span>
+                <span class="font-semibold text-success-600">{{ formatCurrency(creditDetails.netReceived) }}</span>
+              </div>
+              <div class="flex justify-between text-sm">
                 <span class="text-gray-500 dark:text-gray-400">Aval:</span>
                 <span class="font-semibold text-gray-800 dark:text-white">{{ avalData.name || '—' }}</span>
               </div>
@@ -377,6 +393,8 @@ const creditDetails = reactive({
   amount: 0,
   weeklyPayment: 0,
   totalToPay: 0,
+  retention: 0,
+  netReceived: 0,
   loanType: 'Tradicional'
 })
 
@@ -385,6 +403,8 @@ onMounted(() => {
     creditDetails.amount = Number(route.query.amount)
     creditDetails.weeklyPayment = Number(route.query.weeklyPayment)
     creditDetails.totalToPay = Number(route.query.totalToPay)
+    creditDetails.retention = Number(route.query.retention) || (creditDetails.amount * 0.10)
+    creditDetails.netReceived = Number(route.query.netReceived) || (creditDetails.amount - (creditDetails.amount * 0.10))
     creditDetails.loanType = route.query.loanType || 'Tradicional'
   }
 })
@@ -418,6 +438,77 @@ const clientRating = computed(() => {
 const selectClient = (client) => {
   selectedClient.value = client
   searchQuery.value = client.name
+}
+
+// Handlers para acciones
+const handleApprove = async () => {
+  if (!selectedClient.value || !pagareWasPrinted.value) return
+
+  const storedUser = localStorage.getItem('auth_user')
+  const storedUserName = storedUser ? JSON.parse(storedUser).name : 'Desconocido'
+
+  // Create FormData for multipart/form-data request
+  const formData = new FormData()
+  formData.append('client_id', selectedClient.value.id) // Assuming client has an ID
+  formData.append('loan_amount', creditDetails.amount)
+  formData.append('retention_amount', creditDetails.retention)
+  formData.append('net_received', creditDetails.netReceived)
+  formData.append('weekly_payment', creditDetails.weeklyPayment)
+  formData.append('total_to_pay', creditDetails.totalToPay || 0)
+  formData.append('loan_type', creditDetails.loanType)
+  formData.append('user', storedUserName) // Real logged-in user
+
+  // Calculate weeks to map for init. For 10% Semanal, we just want ONE progressive row.
+  const weeksToGenerate = creditDetails.loanType === '10% Semanal' ? 1 : 12;
+  formData.append('weeks', creditDetails.loanType === '10% Semanal' ? 1 : 12)
+
+  // Generate payment schedule
+  const paymentSchedule = []
+  const startDate = new Date()
+  // Find next Saturday (dayOfWeek: 0=Sun, 6=Sat)
+  const dayOfWeek = startDate.getDay()
+  const daysUntilNextSaturday = dayOfWeek === 6 ? 7 : (6 - dayOfWeek)
+  const firstPaymentDate = new Date(startDate)
+  firstPaymentDate.setDate(startDate.getDate() + daysUntilNextSaturday)
+  firstPaymentDate.setHours(0, 0, 0, 0)
+
+  for (let i = 0; i < weeksToGenerate; i++) {
+    const paymentDate = new Date(firstPaymentDate)
+    paymentDate.setDate(firstPaymentDate.getDate() + (i * 7)) // week 1 = first Saturday, week 2 = +7, ...
+    paymentSchedule.push({
+      week: i + 1,
+      date: paymentDate.toISOString().split('T')[0],
+      amount: creditDetails.weeklyPayment,
+      status: 'pending'
+    })
+  }
+  formData.append('payment_schedule', JSON.stringify(paymentSchedule))
+
+  // Add aval data
+  formData.append('aval_name', avalData.name)
+  formData.append('aval_phone', avalData.phone)
+  formData.append('aval_email', avalData.email)
+  formData.append('aval_address', avalData.address)
+  formData.append('aval_has_ine', avalData.hasIne ? '1' : '0')
+  formData.append('aval_has_address_proof', avalData.hasAddressProof ? '1' : '0')
+
+  try {
+    // Simulate API call
+    console.log('Sending approval request with data:', Object.fromEntries(formData.entries()))
+    // await api.post('/credits', formData) // Uncomment and replace with actual API call
+    alert('Crédito aprobado exitosamente!')
+    showApproveModal.value = false
+    router.push('/creditos') // Redirect to credits list
+  } catch (error) {
+    console.error('Error approving credit:', error)
+    alert('Error al aprobar el crédito. Intente de nuevo.')
+  }
+}
+
+const handleReject = () => {
+  if (!selectedClient.value) return
+  alert(`Crédito para ${selectedClient.value.name} rechazado.`)
+  router.push('/simulador')
 }
 
 // Helpers
@@ -494,12 +585,12 @@ const printPagare = () => {
   const { day, month, year } = getFormattedDate()
 
   // ── Paleta ──────────────────────────────────────────────
-  const colorPrimary  = [30, 90, 160]   // azul institucional
+  const colorPrimary  = [0, 0, 0]   // negro
   const colorDark     = [20, 20, 20]
   const colorGray     = [100, 100, 100]
-  const colorLightBg  = [245, 247, 250]
-  const colorBorder   = [200, 210, 220]
-  const colorLine     = [170, 185, 200]
+  const colorLightBg  = [245, 245, 245]
+  const colorBorder   = [200, 200, 200]
+  const colorLine     = [170, 170, 170]
 
   // ── Helpers ─────────────────────────────────────────────
   const setFont = (style = 'normal', size = 10, color = colorDark) => {
@@ -543,9 +634,9 @@ const printPagare = () => {
   doc.text('PAGARÉ', mx, sy + 12)
 
   // número de folio (cosmético)
-  setFont('normal', 8, [200, 220, 255])
+  setFont('normal', 8, [220, 220, 220])
   doc.text('Zamora, Michoacán', mr, sy + 7, { align: 'right' })
-  setFont('bold', 8, [200, 220, 255])
+  setFont('bold', 8, [220, 220, 220])
   doc.text(`No. ${Date.now().toString().slice(-6)}`, mr, sy + 13, { align: 'right' })
 
   sy += 22
@@ -583,7 +674,15 @@ const printPagare = () => {
   line2(mx, sy + 1, mr, sy + 1, colorPrimary, 0.5)
   sy += 6
 
-  const orden = 'FINANCIERA ZAMORA'  // denominación del acreedor — puedes parametrizar
+  const authUserStr = localStorage.getItem('auth_user')
+  let currentUserName = ''
+  if (authUserStr) {
+    try {
+      const userObj = JSON.parse(authUserStr)
+      currentUserName = userObj.nombre || userObj.name || ''
+    } catch(e) {}
+  }
+  const orden = currentUserName ? currentUserName.toUpperCase() : 'FINANCIERA ZAMORA'
   setFont('normal', 9, colorDark)
   const promesaText = `Debo y pagaré incondicionalmente a la orden de ${orden}, la cantidad de ${amountFmt} (${amountWords}), en moneda nacional.`
   const promesaLines = doc.splitTextToSize(promesaText, pageW - mx * 2)
@@ -650,7 +749,7 @@ const printPagare = () => {
 
   // ── Divisor de secciones ──────────────────────────────────────────
   const divY = 145
-  line2(0, divY, pageW, divY, [150, 170, 200], 0.8)
+  line2(0, divY, pageW, divY, [150, 150, 150], 0.8)
 
   // --- línea de recorte zig-zag simulada ---
   setFont('normal', 7, [180, 180, 180])
@@ -666,7 +765,7 @@ const printPagare = () => {
   rect2(0, ey, pageW, 14, colorPrimary, colorPrimary)
   setFont('bold', 11, [255, 255, 255])
   doc.text('DATOS DEL DEUDOR', mx, ey + 10)
-  setFont('normal', 8, [200, 220, 255])
+  setFont('normal', 8, [220, 220, 220])
   doc.text('Datos del Aval  ▶', mr, ey + 10, { align: 'right' })
 
   ey += 18

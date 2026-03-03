@@ -76,6 +76,14 @@
                 <span class="block text-lg font-bold text-gray-800 dark:text-white">{{ formatCurrency(creditDetails.totalToPay) }}</span>
               </div>
               <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                <span class="block text-xs font-medium text-gray-500 dark:text-gray-400">Retención Administ. (10%)</span>
+                <span class="block text-lg font-bold text-error-500">-{{ formatCurrency(creditDetails.retention) }}</span>
+              </div>
+              <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                <span class="block text-xs font-medium text-gray-500 dark:text-gray-400">Recibe Neto</span>
+                <span class="block text-lg font-bold text-success-600">{{ formatCurrency(creditDetails.netReceived) }}</span>
+              </div>
+              <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                 <span class="block text-xs font-medium text-gray-500 dark:text-gray-400">Calificación del Cliente</span>
                 <div class="flex items-center gap-2 mt-1">
                   <component 
@@ -321,7 +329,9 @@ const isSubmitting = ref(false)
 const creditDetails = reactive({
   amount: 0,
   weeklyPayment: 0,
-  totalToPay: 0
+  totalToPay: 0,
+  retention: 0,
+  netReceived: 0,
 })
 
 onMounted(() => {
@@ -330,6 +340,9 @@ onMounted(() => {
     creditDetails.amount = Number(route.query.amount)
     creditDetails.weeklyPayment = Number(route.query.weeklyPayment)
     creditDetails.totalToPay = Number(route.query.totalToPay)
+    creditDetails.loanType = route.query.loanType || 'Tradicional'
+    creditDetails.retention = Number(route.query.retention) || (creditDetails.amount * 0.10)
+    creditDetails.netReceived = Number(route.query.netReceived) || (creditDetails.amount - (creditDetails.amount * 0.10))
   }
   // Fetch real clients from API
   fetchClients()
@@ -448,12 +461,12 @@ const buildPagare = () => {
   const year = now.getFullYear()
 
   // Colores
-  const PRIMARY  = [30, 90, 160]
+  const PRIMARY  = [0, 0, 0]
   const DARK     = [20, 20, 20]
   const GRAY     = [100, 100, 100]
-  const LIGHTBG  = [245, 247, 250]
-  const BORDER   = [200, 210, 220]
-  const LINE     = [170, 185, 200]
+  const LIGHTBG  = [245, 245, 245]
+  const BORDER   = [200, 200, 200]
+  const LINE     = [170, 170, 170]
 
   const setFont = (style = 'normal', size = 10, color = DARK) => {
     doc.setFont('helvetica', style)
@@ -485,9 +498,9 @@ const buildPagare = () => {
   fillRect(0, y, pageW, 18, PRIMARY, PRIMARY)
   setFont('bold', 16, [255, 255, 255])
   doc.text('PAGARÉ', mx, y + 12)
-  setFont('normal', 8, [200, 220, 255])
+  setFont('normal', 8, [220, 220, 220])
   doc.text('Zamora, Michoacán', mr, y + 7, { align: 'right' })
-  setFont('bold', 8, [200, 220, 255])
+  setFont('bold', 8, [220, 220, 220])
   doc.text(`No. ${Date.now().toString().slice(-6)}`, mr, y + 13, { align: 'right' })
   y += 22
 
@@ -517,7 +530,7 @@ const buildPagare = () => {
   hline(mx, y + 1, mr, y + 1, PRIMARY, 0.5)
   y += 6
   setFont('normal', 9, DARK)
-  const acreedor = 'FINANCIERA ZAMORA'
+  const acreedor = userName.value ? userName.value.toUpperCase() : 'FINANCIERA ZAMORA'
   const promText = `Debo y pagaré incondicionalmente a la orden de ${acreedor}, la cantidad de ${amtFmt} (${amountWords}), en moneda nacional.`
   const promLines = doc.splitTextToSize(promText, pageW - mx * 2)
   doc.text(promLines, mx, y)
@@ -578,7 +591,7 @@ const buildPagare = () => {
 
   // ── Línea divisoria ────────────────────────────────────────
   const divY = 148
-  hline(0, divY, pageW, divY, [150, 170, 200], 0.8)
+  hline(0, divY, pageW, divY, [150, 150, 150], 0.8)
   setFont('normal', 7, [180, 180, 180])
   doc.text('✂  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─', mx, divY + 4)
 
@@ -591,7 +604,7 @@ const buildPagare = () => {
   fillRect(0, ey, pageW, 14, PRIMARY, PRIMARY)
   setFont('bold', 11, [255, 255, 255])
   doc.text('DATOS DEL DEUDOR', mx, ey + 10)
-  setFont('normal', 8, [200, 220, 255])
+  setFont('normal', 8, [220, 220, 220])
   doc.text('Datos del Aval  ▶', mr, ey + 10, { align: 'right' })
   ey += 18
 
@@ -700,7 +713,9 @@ const confirmApproval = async () => {
     const retentionAmount = creditDetails.amount * 0.10
     const netReceived = creditDetails.amount - retentionAmount
     
-    // Generate payment schedule (12 weekly payments starting on next Saturday)
+    // Generate payment schedule (if Tradicional, 12 weeks. If 10% Semanal, maybe 1 week indefinitely or as needed)
+    // Para 10% Semanal, mandaremos un solo registro base
+    const weeksToGenerate = creditDetails.loanType === '10% Semanal' ? 1 : 12;
     const paymentSchedule = []
     const startDate = new Date()
     // Find next Saturday (dayOfWeek: 0=Sun, 6=Sat)
@@ -710,7 +725,7 @@ const confirmApproval = async () => {
     firstPaymentDate.setDate(startDate.getDate() + daysUntilNextSaturday)
     firstPaymentDate.setHours(0, 0, 0, 0)
 
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < weeksToGenerate; i++) {
       const paymentDate = new Date(firstPaymentDate)
       paymentDate.setDate(firstPaymentDate.getDate() + (i * 7)) // week 1 = first Saturday, week 2 = +7, ...
       paymentSchedule.push({
@@ -728,8 +743,9 @@ const confirmApproval = async () => {
     formData.append('retention_amount', retentionAmount)
     formData.append('net_received', netReceived)
     formData.append('weekly_payment', creditDetails.weeklyPayment)
-    formData.append('total_to_pay', creditDetails.totalToPay)
-    formData.append('weeks', 12)
+    formData.append('total_to_pay', creditDetails.totalToPay || 0)
+    formData.append('weeks', creditDetails.loanType === '10% Semanal' ? 1 : 12)
+    formData.append('loan_type', creditDetails.loanType)
     formData.append('user', userName.value || 'admin') // Real logged-in user
     formData.append('guarantor_name', avalData.name)
     formData.append('guarantor_phone', avalData.phone)
