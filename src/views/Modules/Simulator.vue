@@ -314,6 +314,18 @@
 
       </div>
     </ComponentCard>
+
+    <!-- Botón Continuar ABAJO -->
+    <div v-if="isValidAmount" class="mt-6 flex justify-end">
+      <button
+        @click="handleContinue"
+        class="inline-flex items-center justify-center gap-2.5 rounded-full py-3 px-10 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10 bg-green-600"
+      >
+        <Check class="w-5 h-5 text-current" />
+        Continuar
+      </button>
+    </div>
+
   </AdminLayout>
 </template>
 
