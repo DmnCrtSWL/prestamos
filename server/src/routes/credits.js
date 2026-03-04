@@ -132,7 +132,8 @@ router.post('/restructure', async (req, res) => {
         guarantor_name,
         guarantor_phone,
         guarantor_address,
-        user
+        user,
+        loan_type
     } = req.body;
 
     if (!old_credit_id || !client_id || !new_loan_amount || !weeks) {
@@ -220,7 +221,7 @@ router.post('/restructure', async (req, res) => {
                 guarantor_phone,
                 guarantor_address,
                 JSON.stringify(payment_schedule),
-                'Tradicional',
+                loan_type || 'Tradicional',
                 'approved'
             ]
         );

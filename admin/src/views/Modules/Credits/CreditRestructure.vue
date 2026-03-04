@@ -150,34 +150,28 @@
                   <label class="mb-2 block text-sm font-medium text-black dark:text-white">
                     Nuevo Monto a Solicitar
                   </label>
-                  <input
-                    type="number"
-                    v-model="newLoanAmount"
-                    placeholder="Ej. 30000"
-                    class="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary text-xl"
-                  />
-                </div>
-
-                <!-- Plazo fijo: no editable -->
-                <div>
-                  <label class="mb-2 block text-sm font-medium text-black dark:text-white">
-                    Plazo (Semanas)
-                  </label>
-                  <div class="w-full rounded border-[1.5px] border-stroke bg-gray-100 dark:bg-gray-700 py-3 px-5 text-black dark:text-white text-base flex items-center gap-2">
-                    <span class="font-semibold">12 semanas</span>
-                    <span class="text-xs text-gray-500 dark:text-gray-400">(fijo — crédito tradicional)</span>
+                  <div class="relative">
+                    <span class="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 px-4 text-gray-500 dark:text-gray-400 text-xl font-medium">$</span>
+                    <input
+                      type="number"
+                      v-model="newLoanAmount"
+                      placeholder="Ej. 30000"
+                      class="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 pl-10 pr-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary text-xl"
+                    />
                   </div>
                 </div>
 
-                <!-- Interés fijo: no editable -->
                 <div>
                   <label class="mb-2 block text-sm font-medium text-black dark:text-white">
-                    Interés
+                    Tipo de Crédito Nuevo
                   </label>
-                  <div class="w-full rounded border-[1.5px] border-stroke bg-gray-100 dark:bg-gray-700 py-3 px-5 text-black dark:text-white text-base flex items-center gap-2">
-                    <span class="font-semibold">30%</span>
-                    <span class="text-xs text-gray-500 dark:text-gray-400">(fijo — crédito tradicional)</span>
-                  </div>
+                  <select
+                    v-model="newLoanType"
+                    class="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary text-lg"
+                  >
+                    <option value="Tradicional">Crédito Tradicional</option>
+                    <option value="Personalizado">Crédito Personalizado (36 meses)</option>
+                  </select>
                 </div>
               </div>
 
@@ -205,6 +199,17 @@
                   <span class="font-bold text-2xl" :class="isValidRestructure ? 'text-green-600' : 'text-red-500'">
                     {{ formatCurrency(netToReceive) }}
                   </span>
+                </div>
+                
+                <div v-if="newLoanAmount > 0" class="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                  <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Nuevo Total a Pagar:</span>
+                    <span class="font-medium text-black dark:text-white">{{ formatCurrency(newTotalToPay) }}</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Nuevo Pago Semanal (x{{ currentWeeks }}):</span>
+                    <span class="font-medium text-brand-600 dark:text-brand-500">{{ formatCurrency(newWeeklyPayment) }}</span>
+                  </div>
                 </div>
                 
                 <p v-if="!isValidRestructure && newLoanAmount > 0" class="text-sm text-red-500 mt-2 text-right">
@@ -248,10 +253,13 @@ const isLoading = ref(true)
 const credit = ref(null)
 const incomes = ref([])
 
-// Form state — plazo e interés son fijos igual que crédito tradicional
+// Form state
 const newLoanAmount = ref(0)
-const FIXED_WEEKS = 12
-const FIXED_INTEREST_RATE = 30 // 30% igual que crédito tradicional
+const newLoanType = ref('Tradicional')
+
+const currentWeeks = computed(() => newLoanType.value === 'Personalizado' ? 36 : 12)
+const currentInterestRate = computed(() => newLoanType.value === 'Personalizado' ? 125 : 50)
+
 const isSubmittingRestructure = ref(false)
 
 const fetchData = async () => {
@@ -398,6 +406,9 @@ const netToReceive = computed(() => newLoanAmount.value - newRetention.value - o
 
 const isValidRestructure = computed(() => netToReceive.value > 0)
 
+const newTotalToPay = computed(() => newLoanAmount.value * (1 + (currentInterestRate.value / 100)))
+const newWeeklyPayment = computed(() => currentWeeks.value > 0 ? newTotalToPay.value / currentWeeks.value : 0)
+
 const submitRestructure = async () => {
   if (!isValidRestructure.value) return;
 
@@ -411,14 +422,15 @@ const submitRestructure = async () => {
       old_credit_id: credit.value.id,
       client_id: credit.value.client_id,
       new_loan_amount: newLoanAmount.value,
-      weeks: FIXED_WEEKS,
-      interest_rate: FIXED_INTEREST_RATE,
+      weeks: currentWeeks.value,
+      interest_rate: currentInterestRate.value,
       old_debt: oldDebt.value,
       net_delivery: netToReceive.value,
       guarantor_name: credit.value.guarantor_name,
       guarantor_phone: credit.value.guarantor_phone,
       guarantor_address: credit.value.guarantor_address,
-      user: userName.value || 'admin'
+      user: userName.value || 'admin',
+      loan_type: newLoanType.value
     }
 
     const response = await fetch(`${import.meta.env.VITE_API_URL}/credits/restructure`, {
