@@ -66,7 +66,11 @@
               <td class="px-5 py-4 sm:px-6">
                 <span :class="[
                   'rounded-full px-2 py-0.5 text-theme-xs font-medium',
-                   user.rol === 'Administrador' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-500' : 'bg-gray-50 text-gray-700 dark:bg-gray-500/15 dark:text-gray-400'
+                  user.rol === 'Administrador'
+                    ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-500'
+                    : user.rol === 'Empleados'
+                    ? 'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-500'
+                    : 'bg-gray-50 text-gray-700 dark:bg-gray-500/15 dark:text-gray-400'
                 ]">
                   {{ user.rol }}
                 </span>

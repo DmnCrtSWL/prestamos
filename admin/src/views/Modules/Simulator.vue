@@ -438,7 +438,10 @@ const handleContinue = () => {
     finalWeeklyPay = weeklyPayment.value;
     finalTotalPay = totalToPay.value;
   } else if (loanType.value === '10% Semanal') {
-    finalWeeklyPay = amount.value * 0.1;
+    finalWeeklyPay = weeklyPaySemanal.value && weeklyPaySemanal.value > 0
+      ? weeklyPaySemanal.value
+      : amount.value * 0.1
+    finalTotalPay = amount.value  // saldo restante = capital prestado
   } else if (loanType.value === 'Personalizado') {
     finalWeeklyPay = personalizadoWeeklyPayment.value;
     finalTotalPay = personalizadoTotalToPay.value;

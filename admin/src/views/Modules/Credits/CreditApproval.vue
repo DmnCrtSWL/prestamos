@@ -72,7 +72,9 @@
                 <span class="block text-lg font-bold text-brand-600">{{ formatCurrency(creditDetails.weeklyPayment) }}</span>
               </div>
                <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                <span class="block text-xs font-medium text-gray-500 dark:text-gray-400">Total a Pagar</span>
+                 <span class="block text-xs font-medium text-gray-500 dark:text-gray-400">
+                   {{ creditDetails.loanType === '10% Semanal' ? 'Saldo del Crédito' : 'Total a Pagar' }}
+                 </span>
                 <span class="block text-lg font-bold text-gray-800 dark:text-white">{{ formatCurrency(creditDetails.totalToPay) }}</span>
               </div>
               <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
@@ -308,7 +310,23 @@ import { Printer, Smile, Meh, Frown, Camera, Check, Upload, AlertTriangle } from
 
 const route = useRoute()
 const router = useRouter()
-const { userName } = useAuth()
+const { userName, isEmpleados } = useAuth()
+
+// Nombre del administrador (usado en pagaré cuando el usuario es Empleados)
+const adminName = ref('')
+
+const fetchAdminName = async () => {
+  if (!isEmpleados.value) return
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/users?rol=Administrador`)
+    if (response.ok) {
+      const admins = await response.json()
+      if (admins.length > 0) adminName.value = admins[0].nombre
+    }
+  } catch (e) {
+    console.error('Error fetching admin name:', e)
+  }
+}
 
 // Datos del Aval
 const avalData = reactive({
@@ -346,6 +364,8 @@ onMounted(() => {
   }
   // Fetch real clients from API
   fetchClients()
+  // Fetch admin name if current user is Empleados
+  fetchAdminName()
 })
 
 // Lógica de búsqueda de cliente (Real Data from API)
@@ -530,7 +550,9 @@ const buildPagare = () => {
   hline(mx, y + 1, mr, y + 1, PRIMARY, 0.5)
   y += 6
   setFont('normal', 9, DARK)
-  const acreedor = userName.value ? userName.value.toUpperCase() : 'FINANCIERA ZAMORA'
+  const acreedor = isEmpleados.value
+    ? (adminName.value ? adminName.value.toUpperCase() : 'FINANCIERA ZAMORA')
+    : (userName.value ? userName.value.toUpperCase() : 'FINANCIERA ZAMORA')
   const promText = `Debo y pagaré incondicionalmente a la orden de ${acreedor}, la cantidad de ${amtFmt} (${amountWords}), en moneda nacional.`
   const promLines = doc.splitTextToSize(promText, pageW - mx * 2)
   doc.text(promLines, mx, y)

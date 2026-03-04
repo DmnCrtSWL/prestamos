@@ -4,12 +4,18 @@ import pool from '../config/database.js';
 
 const router = express.Router();
 
-// GET all users (excluding deleted)
+// GET all users (excluding deleted), optional filter ?rol=
 router.get('/', async (req, res) => {
     try {
-        const result = await pool.query(
-            'SELECT id, nombre, usuario, rol, created_at, updated_at FROM users WHERE deleted_at IS NULL ORDER BY created_at DESC'
-        );
+        const { rol } = req.query;
+        let query = 'SELECT id, nombre, usuario, rol, created_at, updated_at FROM users WHERE deleted_at IS NULL';
+        const values = [];
+        if (rol) {
+            query += ' AND rol = $1';
+            values.push(rol);
+        }
+        query += ' ORDER BY created_at ASC';
+        const result = await pool.query(query, values);
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching users:', error);
@@ -50,9 +56,9 @@ router.post('/', async (req, res) => {
         }
 
         // Validate rol
-        if (!['Administrador', 'Sucursal'].includes(rol)) {
+        if (!['Administrador', 'Sucursal', 'Empleados'].includes(rol)) {
             return res.status(400).json({
-                error: 'Rol debe ser "Administrador" o "Sucursal"'
+                error: 'Rol debe ser "Administrador", "Sucursal" o "Empleados"'
             });
         }
 
@@ -134,9 +140,9 @@ router.put('/:id', async (req, res) => {
         }
 
         if (rol) {
-            if (!['Administrador', 'Sucursal'].includes(rol)) {
+            if (!['Administrador', 'Sucursal', 'Empleados'].includes(rol)) {
                 return res.status(400).json({
-                    error: 'Rol debe ser "Administrador" o "Sucursal"'
+                    error: 'Rol debe ser "Administrador", "Sucursal" o "Empleados"'
                 });
             }
             updates.push(`rol = $${paramCount++}`);

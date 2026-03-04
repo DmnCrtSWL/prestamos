@@ -16,6 +16,8 @@ export function useAuth() {
 
     const isAuthenticated = computed(() => !!token.value)
     const isAdmin = computed(() => user.value?.rol === 'Administrador')
+    const isSucursal = computed(() => user.value?.rol === 'Sucursal')
+    const isEmpleados = computed(() => user.value?.rol === 'Empleados')
     const userRole = computed(() => user.value?.rol || null)
     const userName = computed(() => user.value?.nombre || '')
 
@@ -51,6 +53,8 @@ export function useAuth() {
         user,
         isAuthenticated,
         isAdmin,
+        isSucursal,
+        isEmpleados,
         userRole,
         userName,
         login,
