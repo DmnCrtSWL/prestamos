@@ -297,7 +297,7 @@ const extendedSchedule = computed(() => {
   if (typeof credit.value.payment_schedule === 'string') {
     try {
       schedule = JSON.parse(credit.value.payment_schedule)
-    } catch (e) {
+    } catch {
       return []
     }
   } else {
@@ -360,7 +360,7 @@ const penaltyAmount = computed(() => {
   const sortedIncomes = [...incomes.value].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
   let totalPenalty = 0;
-  let currentDate = new Date(firstDate);
+  const currentDate = new Date(firstDate);
   currentDate.setDate(currentDate.getDate() + 1); // Start penalty computation the day AFTER the due date
   currentDate.setHours(23, 59, 59, 999);
   
@@ -459,16 +459,6 @@ const formatCurrency = (value) => {
     style: 'currency',
     currency: 'MXN',
   }).format(value || 0)
-}
-
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString('es-MX', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
 }
 
 const getFileUrl = (path) => {

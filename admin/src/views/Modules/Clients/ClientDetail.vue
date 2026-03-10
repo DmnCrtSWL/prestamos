@@ -123,6 +123,68 @@
             </div>
           </div>
         </ComponentCard>
+        
+        <!-- Historial de Créditos -->
+        <ComponentCard title="Historial de Créditos" class="lg:col-span-2">
+          <div v-if="loadingCredits" class="flex justify-center py-4">
+            <p class="text-sm text-gray-500">Cargando créditos...</p>
+          </div>
+          <div v-else-if="credits.length === 0" class="flex justify-center py-4">
+            <p class="text-sm text-gray-500">Este cliente no tiene créditos registrados.</p>
+          </div>
+          <div v-else class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead>
+                <tr class="border-b border-gray-200 dark:border-gray-700">
+                  <th class="py-3 px-4 font-medium text-gray-900 dark:text-white">ID</th>
+                  <th class="py-3 px-4 font-medium text-gray-900 dark:text-white">Fecha</th>
+                  <th class="py-3 px-4 font-medium text-gray-900 dark:text-white">Monto Solicitado</th>
+                  <th class="py-3 px-4 font-medium text-gray-900 dark:text-white">Tipo</th>
+                  <th class="py-3 px-4 font-medium text-gray-900 dark:text-white">Total Pagado</th>
+                  <th class="py-3 px-4 font-medium text-gray-900 dark:text-white">Estado</th>
+                  <th class="py-3 px-4 text-center font-medium text-gray-900 dark:text-white">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="credit in credits"
+                  :key="credit.id"
+                  class="border-b border-gray-200 dark:border-gray-700 last:border-0"
+                >
+                  <td class="py-3 px-4 text-gray-700 dark:text-gray-300">#{{ credit.id }}</td>
+                  <td class="py-3 px-4 text-gray-700 dark:text-gray-300">{{ formatDate(credit.created_at) }}</td>
+                  <td class="py-3 px-4 text-gray-700 dark:text-gray-300 font-semibold">{{ formatCurrency(credit.loan_amount) }}</td>
+                  <td class="py-3 px-4 text-gray-700 dark:text-gray-300">{{ credit.loan_type || 'Tradicional' }}</td>
+                  <td class="py-3 px-4 text-gray-700 dark:text-gray-300">
+                    <span class="text-success-600 font-medium">{{ formatCurrency(credit.paid_amount) }}</span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span :class="[
+                      'inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium',
+                      credit.status === 'approved' || credit.status === 'active'
+                        ? 'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-500'
+                        : credit.status === 'rejected' || credit.status === 'defaulted'
+                        ? 'bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-500'
+                        : credit.status === 'completed'
+                        ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-500'
+                        : 'bg-yellow-50 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-500',
+                    ]">
+                      {{ getStatusLabel(credit.status) }}
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-center">
+                    <router-link
+                      :to="`/creditos/${credit.id}`"
+                      class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-500 dark:hover:text-blue-400"
+                    >
+                      Ver Detalle
+                    </router-link>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </ComponentCard>
       </div>
     </div>
   </AdminLayout>
@@ -130,17 +192,26 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import ComponentCard from '@/components/common/ComponentCard.vue'
 import { Pencil, FileText } from 'lucide-vue-next'
 
 const route = useRoute()
-const router = useRouter()
 
 const client = ref(null)
 const loading = ref(true)
 const error = ref('')
+
+const credits = ref([])
+const loadingCredits = ref(false)
+
+const formatCurrency = (value) => {
+  return new Intl.NumberFormat('es-MX', {
+    style: 'currency',
+    currency: 'MXN',
+  }).format(value || 0)
+}
 
 const formatDate = (dateString) => {
   if (!dateString) return ''
@@ -149,6 +220,18 @@ const formatDate = (dateString) => {
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const year = date.getFullYear()
   return `${day}/${month}/${year}`
+}
+
+const getStatusLabel = (status) => {
+  const map = {
+    pending: 'Pendiente',
+    approved: 'Aprobado',
+    active: 'Activo',
+    completed: 'Completado',
+    rejected: 'Rechazado',
+    defaulted: 'En Mora'
+  }
+  return map[status] || status
 }
 
 const fetchClient = async () => {
@@ -163,11 +246,26 @@ const fetchClient = async () => {
     }
     
     client.value = await response.json()
+    fetchCredits()
   } catch (err) {
     console.error('Error fetching client:', err)
     error.value = err.message || 'Error al cargar el cliente'
   } finally {
     loading.value = false
+  }
+}
+
+const fetchCredits = async () => {
+  loadingCredits.value = true
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/credits?client_id=${route.params.id}`)
+    if (response.ok) {
+      credits.value = await response.json()
+    }
+  } catch(err) {
+    console.error('Error fetching credit history:', err)
+  } finally {
+    loadingCredits.value = false
   }
 }
 
