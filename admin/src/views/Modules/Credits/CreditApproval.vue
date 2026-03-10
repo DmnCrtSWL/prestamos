@@ -739,17 +739,37 @@ const confirmApproval = async () => {
     // Para 10% Semanal, mandaremos un solo registro base
     const weeksToGenerate = creditDetails.loanType === '10% Semanal' ? 1 : (creditDetails.loanType === 'Personalizado' ? 36 : 12);
     const paymentSchedule = []
+    
     const startDate = new Date()
-    // Find next Saturday (dayOfWeek: 0=Sun, 6=Sat)
     const dayOfWeek = startDate.getDay()
-    const daysUntilNextSaturday = dayOfWeek === 6 ? 7 : (6 - dayOfWeek)
+    
+    let daysUntilFirstPayment = 0
+    let daysUntilSecondPaymentOffset = 7
+    
+    // Si es Sabado (6), Domingo (0), Lunes (1), Martes (2) o Miercoles (3): pago el miercoles
+    if ([0, 1, 2, 3, 6].includes(dayOfWeek)) {
+      daysUntilFirstPayment = dayOfWeek === 6 ? 4 : (3 - dayOfWeek)
+      daysUntilSecondPaymentOffset = 3 // De Miercoles a Sabado
+    } else { 
+      // Jueves (4), Viernes (5): pago el sabado
+      daysUntilFirstPayment = 6 - dayOfWeek
+      daysUntilSecondPaymentOffset = 7 // De Sabado a Sabado
+    }
+
     const firstPaymentDate = new Date(startDate)
-    firstPaymentDate.setDate(startDate.getDate() + daysUntilNextSaturday)
     firstPaymentDate.setHours(0, 0, 0, 0)
+    firstPaymentDate.setDate(startDate.getDate() + daysUntilFirstPayment)
 
     for (let i = 0; i < weeksToGenerate; i++) {
       const paymentDate = new Date(firstPaymentDate)
-      paymentDate.setDate(firstPaymentDate.getDate() + (i * 7)) // week 1 = first Saturday, week 2 = +7, ...
+      
+      let daysToAdd = 0
+      if (i > 0) {
+        daysToAdd = daysUntilSecondPaymentOffset + ((i - 1) * 7)
+      }
+      
+      paymentDate.setDate(firstPaymentDate.getDate() + daysToAdd)
+      
       paymentSchedule.push({
         week: i + 1,
         date: paymentDate.toISOString().split('T')[0],
