@@ -127,6 +127,17 @@
                 <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Fecha de Creación</label>
                 <div class="font-medium text-black dark:text-white">{{ formatDate(credit.created_at) }}</div>
               </div>
+              <div class="col-span-2 border-t border-stroke pt-4 mt-2 dark:border-strokedark">
+                <label class="mb-1 block text-sm text-gray-500 dark:text-gray-400">Fondos Provistos Por</label>
+                <div class="font-medium text-black dark:text-white">
+                  <span v-if="fundings.length > 0">
+                    <span v-for="(funding, index) in fundings" :key="funding.id">
+                      {{ funding.provider_name }} <span class="text-sm text-gray-500 dark:text-gray-400">({{ formatCurrency(funding.amount) }})</span><span v-if="index < fundings.length - 1">, &nbsp;</span>
+                    </span>
+                  </span>
+                  <span v-else class="text-orange-500 font-medium">Sin fondear</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -465,6 +476,7 @@ const { userName } = useAuth()
 const isLoading = ref(true)
 const credit = ref(null)
 const incomes = ref([])
+const fundings = ref([])
 
 // Quick pay modal state
 const showPayModal = ref(false)
@@ -486,6 +498,12 @@ const fetchData = async () => {
     const incomesRes = await fetch(`${import.meta.env.VITE_API_URL}/incomes?credit_id=${route.params.id}`)
     if (incomesRes.ok) {
       incomes.value = await incomesRes.json()
+    }
+
+    const fundingRes = await fetch(`${import.meta.env.VITE_API_URL}/credits/${route.params.id}/funding-info`)
+    if (fundingRes.ok) {
+      const fData = await fundingRes.json()
+      fundings.value = fData.fundings || []
     }
   } catch (error) {
     console.error('Error:', error)
