@@ -400,16 +400,35 @@ const filteredClients = computed(() => {
   )
 })
 
-const clientRating = computed(() => {
-  if (!selectedClient.value) return { text: 'N/A', color: 'text-gray-400', icon: Meh }
-  
-  // For now, default to good rating since we don't have status in clients table yet
-  return { text: 'Cliente nuevo', color: 'text-green-500', icon: Smile }
-})
+const clientRating = ref({ text: 'N/A', color: 'text-gray-400', icon: Meh })
 
-const selectClient = (client) => {
+const selectClient = async (client) => {
   selectedClient.value = client
   searchQuery.value = client.name
+  clientRating.value = { text: 'Calculando...', color: 'text-blue-500', icon: Meh }
+  
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/clients/${client.id}/rating`)
+    if (response.ok) {
+       const data = await response.json()
+       if (data.rating === 'nuevo') {
+          clientRating.value = { text: 'Cliente Nuevo', color: 'text-green-500', icon: Smile }
+       } else if (data.rating === 'bueno') {
+          clientRating.value = { text: 'Cliente Bueno', color: 'text-green-500', icon: Smile }
+       } else if (data.rating === 'riesgo') {
+          clientRating.value = { text: 'Cliente de Riesgo', color: 'text-orange-500', icon: Meh }
+       } else if (data.rating === 'moroso') {
+          clientRating.value = { text: 'Cliente Moroso', color: 'text-red-500', icon: Frown }
+       } else {
+          clientRating.value = { text: 'Estado Desconocido', color: 'text-gray-500', icon: Meh }
+       }
+    } else {
+       clientRating.value = { text: 'Error', color: 'text-red-500', icon: Frown }
+    }
+  } catch(error) {
+     console.error('Error fetching client rating:', error)
+     clientRating.value = { text: 'Error', color: 'text-red-500', icon: Frown }
+  }
 }
 
 const handleFileUpload = (event, fieldName) => {
