@@ -61,7 +61,7 @@
 
             <button
               type="submit"
-              class="flex w-full justify-center rounded bg-primary p-3 font-medium text-gray hover:bg-opacity-90"
+              class="flex w-full justify-center rounded-lg bg-blue-600 p-3 font-medium text-white shadow-theme-xs hover:bg-blue-700 focus:outline-hidden focus:ring-3 focus:ring-blue-500/50 disabled:bg-gray-400 disabled:cursor-not-allowed"
               :disabled="isLoading"
             >
               {{ isLoading ? 'Guardando...' : (isEditing ? 'Actualizar Proveedor' : 'Crear Proveedor') }}

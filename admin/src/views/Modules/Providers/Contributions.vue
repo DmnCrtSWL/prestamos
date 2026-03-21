@@ -70,7 +70,7 @@
 
             <button
               type="submit"
-              class="mt-6 flex w-full justify-center rounded bg-primary p-3 font-medium text-gray hover:bg-opacity-90 xl:w-auto xl:px-8"
+              class="mt-6 inline-flex items-center justify-center rounded-lg bg-blue-600 px-10 py-3 text-sm font-medium text-white shadow-theme-xs hover:bg-blue-700 focus:outline-hidden focus:ring-3 focus:ring-blue-500/50 disabled:bg-gray-400 disabled:cursor-not-allowed xl:w-auto"
               :disabled="isSubmitting"
             >
               {{ isSubmitting ? 'Guardando...' : 'Agregar Aportación' }}

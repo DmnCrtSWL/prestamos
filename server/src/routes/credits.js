@@ -11,7 +11,7 @@ const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-import { storage } from '../config/cloudinary.js';
+import { storage, uploadToCloudinary } from '../config/cloudinary.js';
 
 const upload = multer({
     storage: storage,
@@ -60,16 +60,34 @@ router.post('/', upload.fields([
             });
         }
 
-        // Get uploaded file paths
-        const guarantorIneFront = req.files['guarantor_ine_front']
-            ? req.files['guarantor_ine_front'][0].path
-            : null;
-        const guarantorIneBack = req.files['guarantor_ine_back']
-            ? req.files['guarantor_ine_back'][0].path
-            : null;
-        const guarantorAddressProof = req.files['guarantor_address_proof']
-            ? req.files['guarantor_address_proof'][0].path
-            : null;
+        // Upload files to Cloudinary
+        let guarantorIneFront = null;
+        let guarantorIneBack = null;
+        let guarantorAddressProof = null;
+
+        if (req.files['guarantor_ine_front']) {
+            const result = await uploadToCloudinary(
+                req.files['guarantor_ine_front'][0].buffer,
+                req.files['guarantor_ine_front'][0].mimetype
+            );
+            guarantorIneFront = result.secure_url;
+        }
+
+        if (req.files['guarantor_ine_back']) {
+            const result = await uploadToCloudinary(
+                req.files['guarantor_ine_back'][0].buffer,
+                req.files['guarantor_ine_back'][0].mimetype
+            );
+            guarantorIneBack = result.secure_url;
+        }
+
+        if (req.files['guarantor_address_proof']) {
+            const result = await uploadToCloudinary(
+                req.files['guarantor_address_proof'][0].buffer,
+                req.files['guarantor_address_proof'][0].mimetype
+            );
+            guarantorAddressProof = result.secure_url;
+        }
 
         // Parse payment_schedule if it's a string
         let parsedPaymentSchedule = payment_schedule;
@@ -547,25 +565,34 @@ router.put('/:id', upload.fields([
             paramCount++;
         }
 
-        // Handle file uploads
+        // Handle file uploads to Cloudinary
         if (req.files['guarantor_ine_front']) {
-            const filePath = req.files['guarantor_ine_front'][0].path;
+            const result = await uploadToCloudinary(
+                req.files['guarantor_ine_front'][0].buffer,
+                req.files['guarantor_ine_front'][0].mimetype
+            );
             updates.push(`guarantor_ine_front = $${paramCount}`);
-            values.push(filePath);
+            values.push(result.secure_url);
             paramCount++;
         }
 
         if (req.files['guarantor_ine_back']) {
-            const filePath = req.files['guarantor_ine_back'][0].path;
+            const result = await uploadToCloudinary(
+                req.files['guarantor_ine_back'][0].buffer,
+                req.files['guarantor_ine_back'][0].mimetype
+            );
             updates.push(`guarantor_ine_back = $${paramCount}`);
-            values.push(filePath);
+            values.push(result.secure_url);
             paramCount++;
         }
 
         if (req.files['guarantor_address_proof']) {
-            const filePath = req.files['guarantor_address_proof'][0].path;
+            const result = await uploadToCloudinary(
+                req.files['guarantor_address_proof'][0].buffer,
+                req.files['guarantor_address_proof'][0].mimetype
+            );
             updates.push(`guarantor_address_proof = $${paramCount}`);
-            values.push(filePath);
+            values.push(result.secure_url);
             paramCount++;
         }
 
