@@ -321,7 +321,12 @@ const fetchAdminName = async () => {
     const response = await fetch(`${import.meta.env.VITE_API_URL}/users?rol=Administrador`)
     if (response.ok) {
       const admins = await response.json()
-      if (admins.length > 0) adminName.value = admins[0].nombre
+      // Buscamos el primer administrador activo
+      if (admins.length > 0) {
+        adminName.value = admins[0].nombre
+      } else {
+        console.warn('No se encontró ningún usuario con rol Administrador')
+      }
     }
   } catch (e) {
     console.error('Error fetching admin name:', e)
@@ -569,9 +574,16 @@ const buildPagare = () => {
   hline(mx, y + 1, mr, y + 1, PRIMARY, 0.5)
   y += 6
   setFont('normal', 9, DARK)
-  const acreedor = isEmpleados.value
-    ? (adminName.value ? adminName.value.toUpperCase() : 'FINANCIERA ZAMORA')
-    : (userName.value ? userName.value.toUpperCase() : 'FINANCIERA ZAMORA')
+  let acreedor = 'FINANCIERA ZAMORA'
+  
+  if (isEmpleados.value) {
+    // Si es empleado, el responsable es el Administrador
+    acreedor = adminName.value ? adminName.value.toUpperCase() : 'ADMINISTRADOR'
+  } else {
+    // Si es Admin o Sucursal, el responsable es él mismo
+    acreedor = userName.value ? userName.value.toUpperCase() : 'FINANCIERA ZAMORA'
+  }
+  
   const promText = `Debo y pagaré incondicionalmente a la orden de ${acreedor}, la cantidad de ${amtFmt} (${amountWords}), en moneda nacional.`
   const promLines = doc.splitTextToSize(promText, pageW - mx * 2)
   doc.text(promLines, mx, y)
