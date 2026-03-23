@@ -12,7 +12,7 @@
           </div>
           <div>
             <h4 class="text-title-md2 font-bold text-gray-800 dark:text-white">
-              37
+              0
             </h4>
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
               Créditos Activos
@@ -29,7 +29,7 @@
           </div>
           <div>
             <h4 class="text-title-md2 font-bold text-gray-800 dark:text-white">
-              $80,345.00
+              $0.00
             </h4>
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
               Montos Cobrados del Mes
@@ -46,7 +46,7 @@
           </div>
           <div>
              <h4 class="text-title-md2 font-bold text-gray-800 dark:text-white">
-              $40,177.50
+              $0.00
             </h4>
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
               Ganancias Netas del Mes
@@ -66,7 +66,7 @@
           </div>
           <div>
              <h4 class="text-title-md2 font-bold text-gray-800 dark:text-white">
-              $123,456.00
+              $0.00
             </h4>
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
               Monto en Circulación
@@ -83,7 +83,7 @@
           </div>
           <div>
              <h4 class="text-title-md2 font-bold text-gray-800 dark:text-white">
-              $750,123.00
+              $0.00
             </h4>
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
               Monto Disponible
@@ -100,7 +100,7 @@
           </div>
           <div>
             <h4 class="text-title-md2 font-bold text-gray-800 dark:text-white">
-              14
+              0
             </h4>
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
               Clientes por cobrar
@@ -226,22 +226,7 @@ const formatDate = (dateString) => {
   })
 }
 
-const morosos = ref([
-  { name: 'Roberto Sánchez', phone: '55 1234 5678', amountOwed: 15400.50, regularizeAmount: 1500.00, dueDate: '2025-12-15' },
-  { name: 'Elena Torres', phone: '55 8765 4321', amountOwed: 8200.00, regularizeAmount: 850.00, dueDate: '2025-11-20' },
-  { name: 'Miguel Ángel Ruiz', phone: '55 4567 8901', amountOwed: 25000.00, regularizeAmount: 2500.00, dueDate: '2026-01-05' },
-  { name: 'Patricia Morales', phone: '55 1122 3344', amountOwed: 3450.75, regularizeAmount: 350.00, dueDate: '2025-12-30' },
-  { name: 'Javier Castillo', phone: '55 9988 7766', amountOwed: 12000.00, regularizeAmount: 1200.00, dueDate: '2025-10-10' },
-  { name: 'Gabriela Mendoza', phone: '55 5544 3322', amountOwed: 6700.25, regularizeAmount: 680.00, dueDate: '2025-12-05' },
-  { name: 'Fernando Vara', phone: '55 6677 8899', amountOwed: 18900.00, regularizeAmount: 1950.00, dueDate: '2026-01-08' },
-  { name: 'Lucía Jiménez', phone: '55 2233 4455', amountOwed: 5600.50, regularizeAmount: 580.00, dueDate: '2025-11-25' },
-  { name: 'Alejandro Castro', phone: '55 7788 9900', amountOwed: 45000.00, regularizeAmount: 4500.00, dueDate: '2025-09-15' },
-  { name: 'Rosa Ortiz', phone: '55 0011 2233', amountOwed: 2100.00, regularizeAmount: 250.00, dueDate: '2026-01-10' },
-  { name: 'Héctor Ramírez', phone: '55 3344 5566', amountOwed: 10500.80, regularizeAmount: 1100.00, dueDate: '2025-12-20' },
-  { name: 'Mónica Vega', phone: '55 8899 0011', amountOwed: 9250.00, regularizeAmount: 950.00, dueDate: '2025-11-05' },
-  { name: 'Ricardo Silva', phone: '55 1212 3434', amountOwed: 30000.00, regularizeAmount: 3100.00, dueDate: '2025-10-25' },
-  { name: 'Verónica Gil', phone: '55 5656 7878', amountOwed: 4200.00, regularizeAmount: 450.00, dueDate: '2026-01-02' }
-])
+const morosos = ref([])
 
 const totalPages = computed(() => Math.ceil(morosos.value.length / itemsPerPage))
 

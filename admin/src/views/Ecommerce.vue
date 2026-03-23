@@ -12,7 +12,7 @@
           </div>
           <div>
             <h4 class="text-title-md2 font-bold text-gray-800 dark:text-white">
-              37
+              0
             </h4>
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
               Créditos Activos
@@ -29,7 +29,7 @@
           </div>
           <div>
             <h4 class="text-title-md2 font-bold text-gray-800 dark:text-white">
-              $80,345.00
+              $0.00
             </h4>
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
               Montos Cobrados del Mes
@@ -46,7 +46,7 @@
           </div>
           <div>
              <h4 class="text-title-md2 font-bold text-gray-800 dark:text-white">
-              $40,177.50
+              $0.00
             </h4>
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
               Ganancias Netas del Mes
@@ -66,7 +66,7 @@
           </div>
           <div>
              <h4 class="text-title-md2 font-bold text-gray-800 dark:text-white">
-              $123,456.00
+              $0.00
             </h4>
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
               Monto en Circulación
@@ -83,7 +83,7 @@
           </div>
           <div>
              <h4 class="text-title-md2 font-bold text-gray-800 dark:text-white">
-              $750,123.00
+              $0.00
             </h4>
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
               Monto Disponible
@@ -100,7 +100,7 @@
           </div>
           <div>
             <h4 class="text-title-md2 font-bold text-gray-800 dark:text-white">
-              14
+              0
             </h4>
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
               Clientes por cobrar
@@ -317,37 +317,9 @@ const formatDate = (dateString) => {
   })
 }
 
-const morosos = ref([
-  { name: 'Roberto Sánchez', username: 'rsanchez', amountOwed: 15400.50, overduePayment: 1500.00 },
-  { name: 'Elena Torres', username: 'etorres', amountOwed: 8200.00, overduePayment: 850.00 },
-  { name: 'Miguel Ángel Ruiz', username: 'maruiz', amountOwed: 25000.00, overduePayment: 2500.00 },
-  { name: 'Patricia Morales', username: 'pmorales', amountOwed: 3450.75, overduePayment: 350.00 },
-  { name: 'Javier Castillo', username: 'jcastillo', amountOwed: 12000.00, overduePayment: 1200.00 },
-  { name: 'Gabriela Mendoza', username: 'gmendoza', amountOwed: 6700.25, overduePayment: 680.00 },
-  { name: 'Fernando Vara', username: 'fvara', amountOwed: 18900.00, overduePayment: 1950.00 },
-  { name: 'Lucía Jiménez', username: 'ljimenez', amountOwed: 5600.50, overduePayment: 580.00 },
-  { name: 'Alejandro Castro', username: 'acastro', amountOwed: 45000.00, overduePayment: 4500.00 },
-  { name: 'Rosa Ortiz', username: 'rortiz', amountOwed: 2100.00, overduePayment: 250.00 },
-  { name: 'Héctor Ramírez', username: 'hramirez', amountOwed: 10500.80, overduePayment: 1100.00 },
-  { name: 'Mónica Vega', username: 'mvega', amountOwed: 9250.00, overduePayment: 950.00 },
-  { name: 'Ricardo Silva', username: 'rsilva', amountOwed: 30000.00, overduePayment: 3100.00 },
-  { name: 'Verónica Gil', username: 'vgil', amountOwed: 4200.00, overduePayment: 450.00 }
-])
+const morosos = ref([])
 
-const proximosIngresos = ref([
-  { name: 'Carlos Méndez', paymentDate: '2026-02-15', amount: 2500.00, status: 'Pendiente' },
-  { name: 'Ana López', paymentDate: '2026-02-16', amount: 1800.00, status: 'Confirmado' },
-  { name: 'Jorge Ramírez', paymentDate: '2026-02-17', amount: 3200.00, status: 'Pendiente' },
-  { name: 'María Fernández', paymentDate: '2026-02-18', amount: 1500.00, status: 'Confirmado' },
-  { name: 'Pedro Sánchez', paymentDate: '2026-02-19', amount: 2800.00, status: 'Pendiente' },
-  { name: 'Laura Martínez', paymentDate: '2026-02-20', amount: 2100.00, status: 'Confirmado' },
-  { name: 'Diego Torres', paymentDate: '2026-02-21', amount: 1900.00, status: 'Pendiente' },
-  { name: 'Carmen Ruiz', paymentDate: '2026-02-22', amount: 3500.00, status: 'Confirmado' },
-  { name: 'Antonio García', paymentDate: '2026-02-23', amount: 2200.00, status: 'Pendiente' },
-  { name: 'Isabel Moreno', paymentDate: '2026-02-24', amount: 1700.00, status: 'Confirmado' },
-  { name: 'Francisco Díaz', paymentDate: '2026-02-25', amount: 2900.00, status: 'Pendiente' },
-  { name: 'Teresa Álvarez', paymentDate: '2026-02-26', amount: 2400.00, status: 'Confirmado' }
-])
+const proximosIngresos = ref([])
 
 // Morosos pagination
 const totalPagesMorosos = computed(() => Math.ceil(morosos.value.length / itemsPerPage))
