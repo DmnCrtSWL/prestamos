@@ -159,17 +159,17 @@
                   <!-- INE Frontal Upload -->
                   <div class="rounded-lg border border-dashed border-gray-300 p-6 flex flex-col items-center justify-center text-center hover:bg-gray-50 transition-colors dark:border-gray-700 dark:hover:bg-white/5">
                     <div class="mb-4 rounded-full bg-blue-50 p-3 text-blue-600 dark:bg-blue-500/15 dark:text-blue-500">
-                      <Camera v-if="!avalData.ineFrontalFile" class="h-6 w-6" />
+                      <Loader2 v-if="compressing['ineFrontalFile']" class="h-6 w-6 animate-spin text-blue-500" />
+                      <Camera v-else-if="!avalData.ineFrontalFile" class="h-6 w-6" />
                       <Check v-else class="h-6 w-6 text-green-600" />
                     </div>
-                    <h4 class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {{ avalData.ineFrontalFile ? avalData.ineFrontalFile.name : 'INE Frontal' }}
+                    <h4 class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {{ compressing['ineFrontalFile'] ? 'Comprimiendo...' : avalData.ineFrontalFile ? avalData.ineFrontalFile.name : 'INE Frontal' }}
                     </h4>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                      Toma una foto o selecciona el archivo
-                    </p>
+                    <p v-if="fileSizes['ineFrontalFile']" class="text-xs text-green-600 font-medium mb-3">{{ fileSizes['ineFrontalFile'] }}</p>
+                    <p v-else class="text-xs text-gray-500 dark:text-gray-400 mb-4">Toma una foto o selecciona el archivo</p>
                     <label class="cursor-pointer inline-flex items-center justify-center rounded-lg border border-brand-500 px-4 py-2 text-sm font-medium text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/15">
-                      <input type="file" accept="image/*,application/pdf" class="hidden" @change="(e) => handleFileUpload(e, 'ineFrontalFile')" />
+                      <input type="file" accept="image/*,application/pdf" class="hidden" @change="(e) => handleFileUpload(e, 'ineFrontalFile')" :disabled="compressing['ineFrontalFile']" />
                       <Upload class="mr-2 h-4 w-4" />
                       Seleccionar
                     </label>
@@ -178,17 +178,17 @@
                   <!-- INE Reverso Upload -->
                   <div class="rounded-lg border border-dashed border-gray-300 p-6 flex flex-col items-center justify-center text-center hover:bg-gray-50 transition-colors dark:border-gray-700 dark:hover:bg-white/5">
                     <div class="mb-4 rounded-full bg-blue-50 p-3 text-blue-600 dark:bg-blue-500/15 dark:text-blue-500">
-                      <Camera v-if="!avalData.ineReversoFile" class="h-6 w-6" />
+                      <Loader2 v-if="compressing['ineReversoFile']" class="h-6 w-6 animate-spin text-blue-500" />
+                      <Camera v-else-if="!avalData.ineReversoFile" class="h-6 w-6" />
                       <Check v-else class="h-6 w-6 text-green-600" />
                     </div>
-                    <h4 class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {{ avalData.ineReversoFile ? avalData.ineReversoFile.name : 'INE Reverso' }}
+                    <h4 class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {{ compressing['ineReversoFile'] ? 'Comprimiendo...' : avalData.ineReversoFile ? avalData.ineReversoFile.name : 'INE Reverso' }}
                     </h4>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                      Toma una foto o selecciona el archivo
-                    </p>
+                    <p v-if="fileSizes['ineReversoFile']" class="text-xs text-green-600 font-medium mb-3">{{ fileSizes['ineReversoFile'] }}</p>
+                    <p v-else class="text-xs text-gray-500 dark:text-gray-400 mb-4">Toma una foto o selecciona el archivo</p>
                     <label class="cursor-pointer inline-flex items-center justify-center rounded-lg border border-brand-500 px-4 py-2 text-sm font-medium text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/15">
-                      <input type="file" accept="image/*,application/pdf" class="hidden" @change="(e) => handleFileUpload(e, 'ineReversoFile')" />
+                      <input type="file" accept="image/*,application/pdf" class="hidden" @change="(e) => handleFileUpload(e, 'ineReversoFile')" :disabled="compressing['ineReversoFile']" />
                       <Upload class="mr-2 h-4 w-4" />
                       Seleccionar
                     </label>
@@ -197,17 +197,17 @@
                   <!-- Comprobante de Domicilio Upload -->
                   <div class="rounded-lg border border-dashed border-gray-300 p-6 flex flex-col items-center justify-center text-center hover:bg-gray-50 transition-colors dark:border-gray-700 dark:hover:bg-white/5">
                     <div class="mb-4 rounded-full bg-blue-50 p-3 text-blue-600 dark:bg-blue-500/15 dark:text-blue-500">
-                      <Camera v-if="!avalData.addressProofFile" class="h-6 w-6" />
+                      <Loader2 v-if="compressing['addressProofFile']" class="h-6 w-6 animate-spin text-blue-500" />
+                      <Camera v-else-if="!avalData.addressProofFile" class="h-6 w-6" />
                       <Check v-else class="h-6 w-6 text-green-600" />
                     </div>
-                    <h4 class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                       {{ avalData.addressProofFile ? avalData.addressProofFile.name : 'Comprobante de Domicilio' }}
+                    <h4 class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {{ compressing['addressProofFile'] ? 'Comprimiendo...' : avalData.addressProofFile ? avalData.addressProofFile.name : 'Comprobante de Domicilio' }}
                     </h4>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                      Toma una foto o selecciona el archivo
-                    </p>
+                    <p v-if="fileSizes['addressProofFile']" class="text-xs text-green-600 font-medium mb-3">{{ fileSizes['addressProofFile'] }}</p>
+                    <p v-else class="text-xs text-gray-500 dark:text-gray-400 mb-4">Toma una foto o selecciona el archivo</p>
                     <label class="cursor-pointer inline-flex items-center justify-center rounded-lg border border-brand-500 px-4 py-2 text-sm font-medium text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/15">
-                      <input type="file" accept="image/*,application/pdf" class="hidden" @change="(e) => handleFileUpload(e, 'addressProofFile')" />
+                      <input type="file" accept="image/*,application/pdf" class="hidden" @change="(e) => handleFileUpload(e, 'addressProofFile')" :disabled="compressing['addressProofFile']" />
                       <Upload class="mr-2 h-4 w-4" />
                       Seleccionar
                     </label>
@@ -306,7 +306,8 @@ import ComponentCard from '@/components/common/ComponentCard.vue'
 import { useAuth } from '@/composables/useAuth'
 import jsPDF from 'jspdf'
 
-import { Printer, Smile, Meh, Frown, Camera, Check, Upload, AlertTriangle } from 'lucide-vue-next'
+import { Printer, Smile, Meh, Frown, Camera, Check, Upload, AlertTriangle, Loader2 } from 'lucide-vue-next'
+import { compressImage } from '@/composables/useImageCompressor'
 
 const route = useRoute()
 const router = useRouter()
@@ -347,6 +348,8 @@ const avalData = reactive({
 const showApprovalModal = ref(false)
 const pagarePrinted = ref(false)
 const isSubmitting = ref(false)
+const compressing = ref<Record<string, boolean>>({})
+const fileSizes = ref<Record<string, string>>({})
 
 // Detalles del Crédito recibidos desde el simulador
 const creditDetails = reactive({
@@ -436,10 +439,24 @@ const selectClient = async (client) => {
   }
 }
 
-const handleFileUpload = (event, fieldName) => {
+const handleFileUpload = async (event, fieldName) => {
   const file = event.target.files[0]
-  if (file) {
+  if (!file) return
+
+  compressing.value[fieldName] = true
+  fileSizes.value[fieldName] = ''
+  try {
+    const compressed = await compressImage(file)
+    avalData[fieldName] = compressed
+    const kb = Math.round(compressed.size / 1024)
+    fileSizes.value[fieldName] = kb < 1024
+      ? `${kb} KB`
+      : `${(kb / 1024).toFixed(1)} MB`
+  } catch (err) {
+    console.error('Error comprimiendo imagen:', err)
     avalData[fieldName] = file
+  } finally {
+    compressing.value[fieldName] = false
   }
 }
 
