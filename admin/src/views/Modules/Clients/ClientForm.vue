@@ -194,8 +194,8 @@ const isSubmitting = ref(false)
 const isLoading = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
-const compressing = ref<Record<string, boolean>>({})
-const fileSizes = ref<Record<string, string>>({})
+const compressing = ref({})
+const fileSizes = ref({})
 
 // Load client data if in edit mode
 const loadClientData = async () => {

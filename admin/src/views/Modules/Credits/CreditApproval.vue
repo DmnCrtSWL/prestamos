@@ -348,8 +348,8 @@ const avalData = reactive({
 const showApprovalModal = ref(false)
 const pagarePrinted = ref(false)
 const isSubmitting = ref(false)
-const compressing = ref<Record<string, boolean>>({})
-const fileSizes = ref<Record<string, string>>({})
+const compressing = ref({})
+const fileSizes = ref({})
 
 // Detalles del Crédito recibidos desde el simulador
 const creditDetails = reactive({
