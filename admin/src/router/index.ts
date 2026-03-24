@@ -129,25 +129,25 @@ const router = createRouter({
       path: '/proveedores',
       name: 'Proveedores',
       component: () => import('../views/Modules/Providers.vue'),
-      meta: { title: 'Proveedores', requiresAuth: true, requiresAdmin: true },
+      meta: { title: 'Proveedores', requiresAuth: true },
     },
     {
       path: '/proveedores/nuevo',
       name: 'NewProvider',
       component: () => import('../views/Modules/Providers/ProviderForm.vue'),
-      meta: { title: 'Nuevo Proveedor', requiresAuth: true, requiresAdmin: true },
+      meta: { title: 'Nuevo Proveedor', requiresAuth: true },
     },
     {
       path: '/proveedores/editar/:id',
       name: 'EditProvider',
       component: () => import('../views/Modules/Providers/ProviderForm.vue'),
-      meta: { title: 'Editar Proveedor', requiresAuth: true, requiresAdmin: true },
+      meta: { title: 'Editar Proveedor', requiresAuth: true },
     },
     {
       path: '/proveedores/aportaciones/:id',
       name: 'ProviderContributions',
       component: () => import('../views/Modules/Providers/Contributions.vue'),
-      meta: { title: 'Aportaciones', requiresAuth: true, requiresAdmin: true },
+      meta: { title: 'Aportaciones', requiresAuth: true },
     },
 
     // Misc / legacy

@@ -272,7 +272,7 @@ const allMenuItems = [
     icon: BoxCubeIcon,
     name: "Proveedores",
     path: "/proveedores",
-    adminOnly: true,
+    adminOnly: false,
   },
 ];
 
