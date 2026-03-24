@@ -29,6 +29,9 @@
                 <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Teléfono</p>
               </th>
               <th class="px-5 py-3 text-left sm:px-6">
+                <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Inversión Total</p>
+              </th>
+              <th class="px-5 py-3 text-left sm:px-6">
                 <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Capital Disponible</p>
               </th>
               <th class="px-5 py-3 text-left sm:px-6">
@@ -56,7 +59,12 @@
                 <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ provider.phone || '-' }}</p>
               </td>
               <td class="px-5 py-4 sm:px-6">
-                <p class="text-gray-500 text-theme-sm dark:text-gray-400 font-bold">{{ formatCurrency(provider.total_capital) }}</p>
+                <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ formatCurrency(provider.total_invested) }}</p>
+              </td>
+              <td class="px-5 py-4 sm:px-6">
+                <p class="text-gray-500 text-theme-sm dark:text-gray-400 font-bold" :class="provider.total_capital < 0 ? 'text-red-500' : 'text-green-600'">
+                  {{ formatCurrency(provider.total_capital) }}
+                </p>
               </td>
               <td class="px-5 py-4 sm:px-6">
                 <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ formatDate(provider.created_at) }}</p>
@@ -95,12 +103,12 @@
               </td>
             </tr>
             <tr v-if="providers.length === 0 && !isLoading">
-              <td :colspan="isAdmin ? 6 : 5" class="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
+              <td :colspan="isAdmin ? 7 : 6" class="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
                 No hay proveedores registrados.
               </td>
             </tr>
             <tr v-if="isLoading">
-              <td :colspan="isAdmin ? 6 : 5" class="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
+              <td :colspan="isAdmin ? 7 : 6" class="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
                 Cargando...
               </td>
             </tr>

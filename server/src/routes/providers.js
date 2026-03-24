@@ -12,12 +12,22 @@ router.get('/', async (req, res) => {
         const query = `
             SELECT 
                 p.*,
-                (COALESCE(p.initial_contribution, 0) + COALESCE(
-                    (SELECT SUM(amount) 
-                     FROM provider_contributions 
-                     WHERE provider_id = p.id AND deleted_at IS NULL), 0)
-                ) as total_capital
+                (COALESCE(p.initial_contribution, 0) + COALESCE(contributions.total, 0)) as total_invested,
+                (COALESCE(p.initial_contribution, 0) + COALESCE(contributions.total, 0) - COALESCE(fundings.total, 0)) as total_capital
             FROM providers p
+            LEFT JOIN (
+                SELECT provider_id, SUM(amount) as total
+                FROM provider_contributions
+                WHERE deleted_at IS NULL
+                GROUP BY provider_id
+            ) contributions ON p.id = contributions.provider_id
+            LEFT JOIN (
+                SELECT cf.provider_id, SUM(cf.amount) as total
+                FROM credit_fundings cf
+                JOIN credits c ON cf.credit_id = c.id
+                WHERE c.deleted_at IS NULL
+                GROUP BY cf.provider_id
+            ) fundings ON p.id = fundings.provider_id
             WHERE p.deleted_at IS NULL 
             ${onlyVisible ? 'AND p.visible_empleados = TRUE' : ''}
             ORDER BY p.created_at DESC
@@ -57,7 +67,7 @@ router.get('/:id/contributions', async (req, res) => {
             FROM credit_fundings cf
             JOIN credits c ON cf.credit_id = c.id
             JOIN clients cl ON c.client_id = cl.id
-            WHERE cf.provider_id = $1
+            WHERE cf.provider_id = $1 AND c.deleted_at IS NULL
 
             ORDER BY created_at DESC
         `;
