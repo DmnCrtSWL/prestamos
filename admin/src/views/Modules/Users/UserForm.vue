@@ -70,7 +70,7 @@
                   <option value="" disabled selected>Selecciona un rol</option>
                   <option value="Administrador">Administrador</option>
                   <option value="Sucursal">Sucursal</option>
-                  <option value="Empleados">Empleados</option>
+                  <option value="Empleado">Empleado</option>
                 </select>
                 <span class="absolute right-4 top-1/2 -translate-y-1/2 z-30 pointer-events-none text-gray-500 dark:text-gray-400">
                    <svg

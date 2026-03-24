@@ -7,7 +7,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     try {
         const { rol } = req.query;
-        const onlyVisible = rol === 'Empleados';
+        const onlyVisible = rol === 'Empleado';
 
         const query = `
             SELECT 

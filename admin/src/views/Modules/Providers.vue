@@ -216,8 +216,8 @@ const fetchProviders = async () => {
   try {
     // Si es Empleado, solo traer los marcados como visibles
     const rol = userRole.value
-    const url = rol === 'Empleados'
-      ? `${import.meta.env.VITE_API_URL}/providers?rol=Empleados`
+    const url = rol === 'Empleado'
+      ? `${import.meta.env.VITE_API_URL}/providers?rol=Empleado`
       : `${import.meta.env.VITE_API_URL}/providers`
 
     const response = await fetch(url)

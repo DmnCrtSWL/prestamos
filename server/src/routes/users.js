@@ -56,9 +56,9 @@ router.post('/', async (req, res) => {
         }
 
         // Validate rol
-        if (!['Administrador', 'Sucursal', 'Empleados'].includes(rol)) {
+        if (!['Administrador', 'Sucursal', 'Empleado'].includes(rol)) {
             return res.status(400).json({
-                error: 'Rol debe ser "Administrador", "Sucursal" o "Empleados"'
+                error: 'Rol debe ser "Administrador", "Sucursal" o "Empleado"'
             });
         }
 
@@ -140,9 +140,9 @@ router.put('/:id', async (req, res) => {
         }
 
         if (rol) {
-            if (!['Administrador', 'Sucursal', 'Empleados'].includes(rol)) {
+            if (!['Administrador', 'Sucursal', 'Empleado'].includes(rol)) {
                 return res.status(400).json({
-                    error: 'Rol debe ser "Administrador", "Sucursal" o "Empleados"'
+                    error: 'Rol debe ser "Administrador", "Sucursal" o "Empleado"'
                 });
             }
             updates.push(`rol = $${paramCount++}`);
