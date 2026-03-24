@@ -6,6 +6,9 @@ const router = express.Router();
 // GET /api/providers - List all active providers with total capital
 router.get('/', async (req, res) => {
     try {
+        const { rol } = req.query;
+        const onlyVisible = rol === 'Empleados';
+
         const query = `
             SELECT 
                 p.*,
@@ -16,6 +19,7 @@ router.get('/', async (req, res) => {
                 ) as total_capital
             FROM providers p
             WHERE p.deleted_at IS NULL 
+            ${onlyVisible ? 'AND p.visible_empleados = TRUE' : ''}
             ORDER BY p.created_at DESC
         `;
         const result = await pool.query(query);
@@ -110,6 +114,35 @@ router.delete('/:id/contributions/:contributionId', async (req, res) => {
     } catch (error) {
         console.error('Error deleting contribution:', error);
         res.status(500).json({ error: 'Error al eliminar aportación' });
+    }
+});
+
+// PATCH /api/providers/:id/visible-empleados - Toggle visibility for Empleados
+router.patch('/:id/visible-empleados', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { visible } = req.body;
+
+        if (typeof visible !== 'boolean') {
+            return res.status(400).json({ error: 'El campo visible debe ser booleano' });
+        }
+
+        const query = `
+            UPDATE providers
+            SET visible_empleados = $1, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $2 AND deleted_at IS NULL
+            RETURNING id, visible_empleados
+        `;
+        const result = await pool.query(query, [visible, id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Proveedor no encontrado' });
+        }
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error updating visible_empleados:', error);
+        res.status(500).json({ error: 'Error al actualizar visibilidad' });
     }
 });
 
