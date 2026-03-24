@@ -387,4 +387,26 @@ router.get("/:id/rating", async (req, res) => {
   }
 });
 
+// DELETE single client (soft delete)
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Perform soft delete by setting deleted_at
+    const result = await pool.query(
+      "UPDATE clients SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted_at IS NULL RETURNING id",
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Cliente no encontrado o ya eliminado" });
+    }
+
+    res.json({ message: "Cliente eliminado exitosamente" });
+  } catch (error) {
+    console.error("Error deleting client:", error);
+    res.status(500).json({ error: "Error al eliminar cliente" });
+  }
+});
+
 export default router;
