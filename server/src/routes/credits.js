@@ -424,8 +424,9 @@ router.get('/', async (req, res) => {
         const { status, client_id, user } = req.query;
 
         let query = `
-      SELECT 
+      SELECT
         c.*,
+        (c.created_at AT TIME ZONE 'America/Mexico_City') as created_at_cdmx,
         cl.name as client_name,
         cl.phone as client_phone,
         cl.curp as client_curp,

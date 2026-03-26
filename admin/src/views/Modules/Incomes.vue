@@ -229,8 +229,8 @@ endDate.value = today
 
 const setFilter = (type) => {
     filterType.value = type
-    currentPage.value = 1 // Reset pagination on filter change
-    if (type === 'today') {
+    currentPage.value = 1
+    if (type === 'today' || type === 'all') {
         fetchIncomes()
     }
 }
