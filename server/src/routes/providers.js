@@ -15,13 +15,21 @@ router.get('/', async (req, res) => {
         let whereClause = 'WHERE p.deleted_at IS NULL';
 
         if (rol === 'Empleado') {
-            // Empleados only see providers marked as visible by admin
-            whereClause += ' AND p.visible_empleados = TRUE';
+            // Empleados: solo proveedores habilitados por el admin (created_by = Administrador)
+            // Los proveedores de Sucursales son privados y nunca visibles a empleados
+            whereClause += `
+                AND p.visible_empleados = TRUE
+                AND EXISTS (
+                    SELECT 1 FROM users u
+                    WHERE u.id = p.created_by
+                      AND u.rol = 'Administrador'
+                      AND u.deleted_at IS NULL
+                )`;
         } else if (rol === 'Sucursal') {
-            // Sucursales only see providers they created
+            // Sucursales: solo sus propios proveedores, nunca los del admin ni otras sucursales
             whereClause += ` AND p.created_by = ${parseInt(id)}`;
         }
-        // Administrador sees all providers (no additional filter)
+        // Administrador: ve todos sin restricción
 
         const query = `
             SELECT
