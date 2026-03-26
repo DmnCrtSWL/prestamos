@@ -73,6 +73,18 @@
                         </span>
                       </div>
                     </div>
+                    <!-- Recuérdame -->
+                    <div class="flex items-center">
+                      <input
+                        v-model="rememberMe"
+                        type="checkbox"
+                        id="rememberMe"
+                        class="w-4 h-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900"
+                      />
+                      <label for="rememberMe" class="ml-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+                        Recuérdame
+                      </label>
+                    </div>
                     <!-- Button -->
                     <div>
                       <button
@@ -120,11 +132,13 @@ import { useAuth } from '@/composables/useAuth'
 const router = useRouter()
 const { login } = useAuth()
 
-const usuario = ref('')
+const savedUser = localStorage.getItem('remembered_user')
+const usuario = ref(savedUser || '')
 const password = ref('')
 const showPassword = ref(false)
 const isLoading = ref(false)
 const errorMessage = ref('')
+const rememberMe = ref(!!savedUser)
 
 const handleSubmit = async () => {
   if (!usuario.value || !password.value) {
@@ -136,7 +150,7 @@ const handleSubmit = async () => {
   errorMessage.value = ''
 
   try {
-    await login(usuario.value, password.value)
+    await login(usuario.value, password.value, rememberMe.value)
     router.push('/')
   } catch (error: any) {
     errorMessage.value = error.message || 'Error al iniciar sesión'

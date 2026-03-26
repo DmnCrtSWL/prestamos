@@ -751,7 +751,7 @@ const printPagare = () => {
   }
 
   // ── Divisor de secciones ──────────────────────────────────────────
-  const divY = 145
+  const divY = 142
   line2(0, divY, pageW, divY, [150, 150, 150], 0.8)
 
   // --- línea de recorte zig-zag simulada ---
@@ -759,86 +759,69 @@ const printPagare = () => {
   doc.text('✂  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─', mx, divY + 4)
 
   // =================================================================
-  // SECCIÓN 2 — DATOS DEL DEUDOR Y AVAL  (mitad inferior: y = 152 a 270)
+  // SECCIÓN 2 — DATOS DEL DEUDOR Y AVAL  (Stacked Layout)
   // =================================================================
-  let ey = divY + 10
-  const hMid = pageW / 2  // center x
+  let ey = divY + 8
 
   // — Encabezado sec. 2
-  rect2(0, ey, pageW, 14, colorPrimary, colorPrimary)
-  setFont('bold', 11, [255, 255, 255])
-  doc.text('DATOS DEL DEUDOR', mx, ey + 10)
-  setFont('normal', 8, [220, 220, 220])
-  doc.text('Datos del Aval  ▶', mr, ey + 10, { align: 'right' })
+  rect2(0, ey, pageW, 10, colorPrimary, colorPrimary)
+  setFont('bold', 10, [255, 255, 255])
+  doc.text('DATOS COMPLEMENTARIOS (DEUDOR Y AVAL)', mx, ey + 6.5)
 
-  ey += 18
+  ey += 14
+  const fieldW = pageW - mx * 2
 
-  // — Columna izquierda: Datos del Deudor
-  const colW = (pageW - mx * 2 - 8) / 2
-  const col1x = mx
-  const col2x = mx + colW + 8
-
-  // Deudor
-  setFont('bold', 8, colorPrimary)
-  doc.text('DATOS DEL DEUDOR', col1x, ey)
-  line2(col1x, ey + 1, col1x + colW, ey + 1, colorPrimary, 0.4)
-  ey += 7
+  // — Sub-sección: Deudor
+  setFont('bold', 9, colorPrimary)
+  doc.text('I. DATOS DEL DEUDOR', mx, ey)
+  line2(mx, ey + 1, mx + 40, ey + 1, colorPrimary, 0.4)
+  ey += 6
 
   const deudorFields = [
     ['Nombre completo:', client?.name || ''],
     ['Domicilio:', client?.address || ''],
-    ['Teléfono:', client?.phone || ''],
   ]
 
   deudorFields.forEach(([label, value]) => {
-    setFont('bold', 8, colorGray)
-    doc.text(label, col1x, ey)
-    ey += 5
-    rect2(col1x, ey, colW, 8, [255, 255, 255], colorBorder)
-    setFont('normal', 9, colorDark)
-    doc.text(value, col1x + 2, ey + 5.5, { maxWidth: colW - 4 })
-    ey += 11
+    setFont('bold', 7, colorGray)
+    doc.text(label, mx, ey)
+    ey += 4
+    rect2(mx, ey, fieldW, 7, [255, 255, 255], colorBorder)
+    setFont('normal', 8, colorDark)
+    doc.text(value || '', mx + 2, ey + 4.5, { maxWidth: fieldW - 4 })
+    ey += 9
   })
 
-  // Firma del deudor (col 1)
+  // Teléfono y Firma Deudor
+  setFont('bold', 7, colorGray)
+  doc.text('Teléfono:', mx, ey)
+  doc.text('Firma del Deudor:', mx + 80, ey)
   ey += 4
-  signatureLine(col1x, ey + 6, colW - 4)
-  setFont('bold', 8, colorGray)
-  doc.text('FIRMA DEL DEUDOR', col1x, ey + 11)
-  if (client) {
-    setFont('normal', 7.5, colorDark)
-    doc.text(client.name, col1x, ey + 16)
-  }
+  rect2(mx, ey, 60, 7, [255, 255, 255], colorBorder)
+  setFont('normal', 8, colorDark)
+  doc.text(client?.phone || '', mx + 2, ey + 4.5)
+  
+  signatureLine(mx + 80, ey + 7, fieldW - 80)
+  ey += 12
 
-  // — Columna derecha: Datos del Aval
-  let ay = divY + 10 + 18
+  // — Sub-sección: Aval
+  setFont('bold', 9, colorPrimary)
+  doc.text('II. DATOS DEL AVAL', mx, ey)
+  line2(mx, ey + 1, mx + 35, ey + 1, colorPrimary, 0.4)
+  ey += 5
 
-  setFont('bold', 8, colorPrimary)
-  doc.text('DATOS DEL AVAL', col2x, ay)
-  line2(col2x, ay + 1, col2x + colW, ay + 1, colorPrimary, 0.4)
-  ay += 7
-
-  // Texto aval solidario
-  setFont('italic', 8, colorGray)
+  setFont('italic', 7.5, colorGray)
   const avalText = 'Por medio del presente, el suscrito se constituye como aval solidario, obligándose en los mismos términos que el deudor principal.'
-  const avalTextLines = doc.splitTextToSize(avalText, colW)
-  doc.text(avalTextLines, col2x, ay)
-  ay += avalTextLines.length * 4.5 + 5
+  const avalTextLines = doc.splitTextToSize(avalText, fieldW)
+  doc.text(avalTextLines, mx, ey)
+  ey += avalTextLines.length * 4 + 3
 
   const avalFields = [
-    ['Nombre completo:', avalData.name],
-    ['Domicilio:', avalData.address],
-    ['Teléfono:', avalData.phone],
+    ['Nombre completo del Aval:', avalData.name || ''],
+    ['Domicilio del Aval:', avalData.address || ''],
   ]
 
   avalFields.forEach(([label, value]) => {
-    setFont('bold', 8, colorGray)
-    doc.text(label, col2x, ay)
-    ay += 5
-    rect2(col2x, ay, colW, 8, [255, 255, 255], colorBorder)
-    setFont('normal', 9, colorDark)
-    doc.text(value || '', col2x + 2, ay + 5.5, { maxWidth: colW - 4 })
-    ay += 11
   })
 
   // Firma del aval

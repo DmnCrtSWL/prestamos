@@ -5,12 +5,6 @@
         <h2 class="text-title-md2 font-bold text-black dark:text-white">
           Registrar Nuevo Ingreso
         </h2>
-        <button
-          @click="router.back()"
-          class="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-white/10"
-        >
-          Cancelar
-        </button>
       </div>
 
       <div class="grid grid-cols-1 gap-9">
@@ -117,7 +111,7 @@
             </div>
 
             <button
-              class="flex w-full justify-center rounded bg-primary p-3 font-medium text-gray"
+              class="flex w-full justify-center rounded-lg bg-brand-500 p-3 font-medium text-white transition hover:bg-brand-600 disabled:opacity-60 disabled:cursor-not-allowed shadow-theme-xs"
               type="submit"
               :disabled="isSubmitting"
             >

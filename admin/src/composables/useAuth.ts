@@ -8,8 +8,12 @@ interface AuthUser {
     rol: string
 }
 
-const token = ref<string | null>(localStorage.getItem('auth_token'))
-const user = ref<AuthUser | null>(JSON.parse(localStorage.getItem('auth_user') || 'null'))
+const token = ref<string | null>(
+    localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')
+)
+const user = ref<AuthUser | null>(
+    JSON.parse(localStorage.getItem('auth_user') || sessionStorage.getItem('auth_user') || 'null')
+)
 
 export function useAuth() {
     const router = useRouter()
@@ -21,7 +25,7 @@ export function useAuth() {
     const userRole = computed(() => user.value?.rol || null)
     const userName = computed(() => user.value?.nombre || '')
 
-    const login = async (usuario: string, password: string): Promise<void> => {
+    const login = async (usuario: string, password: string, rememberMe = false): Promise<void> => {
         const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -36,8 +40,20 @@ export function useAuth() {
 
         token.value = data.token
         user.value = data.user
-        localStorage.setItem('auth_token', data.token)
-        localStorage.setItem('auth_user', JSON.stringify(data.user))
+
+        if (rememberMe) {
+            localStorage.setItem('auth_token', data.token)
+            localStorage.setItem('auth_user', JSON.stringify(data.user))
+            localStorage.setItem('remembered_user', usuario)
+            sessionStorage.removeItem('auth_token')
+            sessionStorage.removeItem('auth_user')
+        } else {
+            sessionStorage.setItem('auth_token', data.token)
+            sessionStorage.setItem('auth_user', JSON.stringify(data.user))
+            localStorage.removeItem('auth_token')
+            localStorage.removeItem('auth_user')
+            localStorage.removeItem('remembered_user')
+        }
     }
 
     const logout = () => {
@@ -45,6 +61,8 @@ export function useAuth() {
         user.value = null
         localStorage.removeItem('auth_token')
         localStorage.removeItem('auth_user')
+        sessionStorage.removeItem('auth_token')
+        sessionStorage.removeItem('auth_user')
         router.push('/signin')
     }
 

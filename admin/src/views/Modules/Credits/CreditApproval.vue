@@ -660,96 +660,95 @@ const buildPagare = () => {
   }
 
   // ── Línea divisoria ────────────────────────────────────────
-  const divY = 148
+  const divY = 142
   hline(0, divY, pageW, divY, [150, 150, 150], 0.8)
   setFont('normal', 7, [180, 180, 180])
   doc.text('✂  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─', mx, divY + 4)
 
   // ═══════════════════════════════════════════════════════════
-  // SECCIÓN 2 — DEUDOR & AVAL  (y = divY+10 … final)
+  // SECCIÓN 2 — DEUDOR & AVAL  (Stacked Layout)
   // ═══════════════════════════════════════════════════════════
-  let ey = divY + 10
+  let ey = divY + 8
 
   // Cabecera sec.2
-  fillRect(0, ey, pageW, 14, PRIMARY, PRIMARY)
-  setFont('bold', 11, [255, 255, 255])
-  doc.text('DATOS DEL DEUDOR', mx, ey + 10)
-  setFont('normal', 8, [220, 220, 220])
-  doc.text('Datos del Aval  ▶', mr, ey + 10, { align: 'right' })
-  ey += 18
+  fillRect(0, ey, pageW, 10, PRIMARY, PRIMARY)
+  setFont('bold', 10, [255, 255, 255])
+  doc.text('DATOS COMPLEMENTARIOS (DEUDOR Y AVAL)', mx, ey + 6.5)
+  ey += 14
 
-  const colW = (pageW - mx * 2 - 8) / 2
-  const col1 = mx
-  const col2 = mx + colW + 8
-
-  // — Columna 1: Deudor
-  setFont('bold', 8, PRIMARY)
-  doc.text('DATOS DEL DEUDOR', col1, ey)
-  hline(col1, ey + 1, col1 + colW, ey + 1, PRIMARY, 0.4)
-  ey += 7
+  const fieldW = pageW - mx * 2
+  
+  // — Sub-sección: Deudor
+  setFont('bold', 9, PRIMARY)
+  doc.text('I. DATOS DEL DEUDOR', mx, ey)
+  hline(mx, ey + 1, mx + 40, ey + 1, PRIMARY, 0.4)
+  ey += 6
 
   const deudorFields = [
     ['Nombre completo:', client?.name || ''],
     ['Domicilio:', client?.address || ''],
-    ['Teléfono:', client?.phone || ''],
   ]
-  let ey2 = ey // parallel tracker for col2
 
   deudorFields.forEach(([label, value]) => {
-    setFont('bold', 8, GRAY)
-    doc.text(label, col1, ey)
-    ey += 5
-    fillRect(col1, ey, colW, 8, [255, 255, 255], BORDER)
-    setFont('normal', 9, DARK)
-    doc.text(value, col1 + 2, ey + 5.5, { maxWidth: colW - 4 })
-    ey += 11
+    setFont('bold', 7, GRAY)
+    doc.text(label, mx, ey)
+    ey += 4
+    fillRect(mx, ey, fieldW, 7, [255, 255, 255], BORDER)
+    setFont('normal', 8, DARK)
+    doc.text(value, mx + 2, ey + 4.5, { maxWidth: fieldW - 4 })
+    ey += 9
   })
 
+  // Teléfono y Firma Deudor en la misma línea para ahorrar espacio
+  setFont('bold', 7, GRAY)
+  doc.text('Teléfono:', mx, ey)
+  doc.text('Firma del Deudor:', mx + 80, ey)
   ey += 4
-  signLine(col1, ey + 6, colW - 4)
-  setFont('bold', 8, GRAY)
-  doc.text('FIRMA DEL DEUDOR', col1, ey + 11)
-  if (client) {
-    setFont('normal', 7.5, DARK)
-    doc.text(client.name, col1, ey + 16)
-  }
+  fillRect(mx, ey, 60, 7, [255, 255, 255], BORDER)
+  setFont('normal', 8, DARK)
+  doc.text(client?.phone || '', mx + 2, ey + 4.5)
+  
+  signLine(mx + 80, ey + 7, fieldW - 80)
+  ey += 12
 
-  // — Columna 2: Aval
-  setFont('bold', 8, PRIMARY)
-  doc.text('DATOS DEL AVAL', col2, ey2)
-  hline(col2, ey2 + 1, col2 + colW, ey2 + 1, PRIMARY, 0.4)
-  ey2 += 7
+  // — Sub-sección: Aval
+  setFont('bold', 9, PRIMARY)
+  doc.text('II. DATOS DEL AVAL', mx, ey)
+  hline(mx, ey + 1, mx + 35, ey + 1, PRIMARY, 0.4)
+  ey += 5
 
-  setFont('italic', 8, GRAY)
-  const avalText = 'Por medio del presente, el suscrito se constituye como aval solidario, obligándose en los mismos términos que el deudor principal.'
-  const avalTextLines = doc.splitTextToSize(avalText, colW)
-  doc.text(avalTextLines, col2, ey2)
-  ey2 += avalTextLines.length * 4.5 + 5
+  setFont('italic', 7.5, GRAY)
+  const avalDisclaimer = 'Por medio del presente, el suscrito se constituye como aval solidario, obligándose en los mismos términos que el deudor principal.'
+  const disclaimerLines = doc.splitTextToSize(avalDisclaimer, fieldW)
+  doc.text(disclaimerLines, mx, ey)
+  ey += disclaimerLines.length * 4 + 3
 
   const avalFields = [
-    ['Nombre completo:', avalData.name || ''],
-    ['Domicilio:', avalData.address || ''],
-    ['Teléfono:', avalData.phone || ''],
+    ['Nombre completo del Aval:', avalData.name || ''],
+    ['Domicilio del Aval:', avalData.address || ''],
   ]
 
   avalFields.forEach(([label, value]) => {
-    setFont('bold', 8, GRAY)
-    doc.text(label, col2, ey2)
-    ey2 += 5
-    fillRect(col2, ey2, colW, 8, [255, 255, 255], BORDER)
-    setFont('normal', 9, DARK)
-    doc.text(value, col2 + 2, ey2 + 5.5, { maxWidth: colW - 4 })
-    ey2 += 11
+    setFont('bold', 7, GRAY)
+    doc.text(label, mx, ey)
+    ey += 4
+    fillRect(mx, ey, fieldW, 7, [255, 255, 255], BORDER)
+    setFont('normal', 8, DARK)
+    doc.text(value, mx + 2, ey + 4.5, { maxWidth: fieldW - 4 })
+    ey += 9
   })
 
-  ey2 += 4
-  signLine(col2, ey2 + 6, colW - 4)
-  setFont('bold', 8, GRAY)
-  doc.text('FIRMA DEL AVAL', col2, ey2 + 11)
-  if (avalData.name) {
-    setFont('normal', 7.5, DARK)
-    doc.text(avalData.name, col2, ey2 + 16)
-  }
+  // Teléfono y Firma Aval
+  setFont('bold', 7, GRAY)
+  doc.text('Teléfono Aval:', mx, ey)
+  doc.text('Firma del Aval:', mx + 80, ey)
+  ey += 4
+  fillRect(mx, ey, 60, 7, [255, 255, 255], BORDER)
+  setFont('normal', 8, DARK)
+  doc.text(avalData.phone || '', mx + 2, ey + 4.5)
+  
+  signLine(mx + 80, ey + 7, fieldW - 80)
+  ey += 8
 
   // Pie de página
   hline(mx, pageH - 11, mr, pageH - 11, BORDER, 0.3)
