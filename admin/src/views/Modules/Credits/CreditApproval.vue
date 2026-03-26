@@ -789,18 +789,25 @@ const confirmApproval = async () => {
     
     const startDate = new Date()
     const dayOfWeek = startDate.getDay()
-    
+
     let daysUntilFirstPayment = 0
     let daysUntilSecondPaymentOffset = 7
-    
-    // Si es Sabado (6), Domingo (0), Lunes (1), Martes (2) o Miercoles (3): pago el miercoles
-    if ([0, 1, 2, 3, 6].includes(dayOfWeek)) {
-      daysUntilFirstPayment = dayOfWeek === 6 ? 4 : (3 - dayOfWeek)
-      daysUntilSecondPaymentOffset = 3 // De Miercoles a Sabado
-    } else { 
-      // Jueves (4), Viernes (5): pago el sabado
-      daysUntilFirstPayment = 6 - dayOfWeek
-      daysUntilSecondPaymentOffset = 7 // De Sabado a Sabado
+
+    if (isEmpleados.value) {
+      // Empleados: primer pago el siguiente sábado (nunca el mismo día aunque sea sábado)
+      daysUntilFirstPayment = dayOfWeek === 6 ? 7 : (6 - dayOfWeek)
+      daysUntilSecondPaymentOffset = 7 // Todos los sábados siguientes
+    } else {
+      // Admin / Sucursal:
+      // Dom(0), Lun(1), Mar(2), Mié(3) → ese mismo miércoles
+      if ([0, 1, 2, 3].includes(dayOfWeek)) {
+        daysUntilFirstPayment = 3 - dayOfWeek
+        daysUntilSecondPaymentOffset = 3 // De miércoles al sábado siguiente
+      } else {
+        // Jue(4), Vie(5), Sáb(6) → ese mismo sábado
+        daysUntilFirstPayment = 6 - dayOfWeek
+        daysUntilSecondPaymentOffset = 7 // De sábado a sábado
+      }
     }
 
     const firstPaymentDate = new Date(startDate)
