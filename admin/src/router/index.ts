@@ -177,8 +177,8 @@ export default router
 router.beforeEach((to, from, next) => {
   document.title = `${to.meta.title || 'Admin'} | Prestamos`
 
-  const token = localStorage.getItem('auth_token')
-  const userRaw = localStorage.getItem('auth_user')
+  const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')
+  const userRaw = localStorage.getItem('auth_user') || sessionStorage.getItem('auth_user')
   const user = userRaw ? JSON.parse(userRaw) : null
 
   // Redirect to signin if not authenticated and route requires auth
