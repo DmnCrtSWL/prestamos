@@ -78,6 +78,11 @@
 
     <!-- Removed separate Filter Card -->
 
+    <!-- Error message -->
+    <div v-if="fetchError" class="mb-4 rounded-lg bg-red-50 p-3 dark:bg-red-500/10">
+      <p class="text-sm font-medium text-red-800 dark:text-red-400">{{ fetchError }}</p>
+    </div>
+
     <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
       <div class="max-w-full overflow-x-auto custom-scrollbar">
         <table class="min-w-full">
@@ -140,7 +145,7 @@
                 <p class="text-gray-500 text-theme-sm dark:text-gray-400 font-bold">{{ formatCurrency(income.amount) }}</p>
               </td>
               <td class="px-5 py-4 sm:px-6">
-                <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ formatDate(income.created_at) }}</p>
+                <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ formatDate(income.created_at_cdmx || income.created_at) }}</p>
               </td>
             </tr>
             <tr v-if="incomes.length === 0 && !isLoading">
@@ -197,6 +202,7 @@ import { Plus as PlusIcon, Search as SearchIcon, ChevronLeft as ChevronLeftIcon,
 const router = useRouter()
 const incomes = ref([])
 const isLoading = ref(false)
+const fetchError = ref('')
 
 // Pagination state
 const currentPage = ref(1)
@@ -208,8 +214,15 @@ const customDate = ref('')
 const startDate = ref('')
 const endDate = ref('')
 
-// Initialize dates
-const today = new Date().toISOString().split('T')[0]
+const getLocalDateStr = (date = new Date()) => {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+}
+
+// Initialize dates with local date (not UTC)
+const today = getLocalDateStr()
 customDate.value = today
 startDate.value = today
 endDate.value = today
@@ -228,13 +241,14 @@ const createIncome = () => {
 
 const fetchIncomes = async () => {
     isLoading.value = true
+    fetchError.value = ''
     try {
         let url = `${import.meta.env.VITE_API_URL}/incomes`
-        
+
         let queryParams = []
-        
+
         if (filterType.value === 'today') {
-            const todayStr = new Date().toISOString().split('T')[0]
+            const todayStr = getLocalDateStr()
             queryParams.push(`startDate=${todayStr}`)
             queryParams.push(`endDate=${todayStr}`)
         } else if (filterType.value === 'specific' && customDate.value) {
@@ -245,18 +259,23 @@ const fetchIncomes = async () => {
             queryParams.push(`endDate=${endDate.value}`)
         }
         // 'all' sends no dates, returning everything
-        
+
         if (queryParams.length > 0) {
             url += '?' + queryParams.join('&')
         }
 
         const response = await fetch(url)
-        if (!response.ok) throw new Error('Error fetching incomes')
-        incomes.value = await response.json()
-        currentPage.value = 1 // Reset to first page on new data
+        const data = await response.json()
+        if (!response.ok) {
+            fetchError.value = data.error || 'Error al cargar ingresos'
+            incomes.value = []
+            return
+        }
+        incomes.value = data
+        currentPage.value = 1
     } catch (error) {
+        fetchError.value = 'No se pudo conectar con el servidor'
         console.error('Error:', error)
-         // Graceful error handling in UI implied by empty state or alert
     } finally {
         isLoading.value = false
     }

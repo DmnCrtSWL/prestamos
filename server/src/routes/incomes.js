@@ -3,6 +3,9 @@ import pool from '../config/database.js';
 
 const router = express.Router();
 
+// CDMX es UTC-6 permanente (México abolió el horario de verano en 2023)
+const CDMX_TZ = 'America/Mexico_City';
+
 // Helper to generate random alphanumeric folio XXXX-XXXX-XXXX
 const generateFolio = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -18,16 +21,20 @@ const generateFolio = () => {
 router.get('/', async (req, res) => {
     try {
         const { credit_id, startDate, endDate } = req.query;
+
+        // Convertimos created_at a timezone CDMX para que el filtro de fechas
+        // sea correcto independientemente del timezone del servidor
         let query = `
-      SELECT 
-        i.*,
-        c.loan_amount as credit_amount,
-        cl.name as client_name
-      FROM incomes i
-      LEFT JOIN credits c ON i.credit_id = c.id
-      LEFT JOIN clients cl ON i.client_id = cl.id
-      WHERE i.deleted_at IS NULL
-    `;
+            SELECT
+                i.*,
+                (i.created_at AT TIME ZONE '${CDMX_TZ}') as created_at_cdmx,
+                c.loan_amount as credit_amount,
+                cl.name as client_name
+            FROM incomes i
+            LEFT JOIN credits c ON i.credit_id = c.id
+            LEFT JOIN clients cl ON i.client_id = cl.id
+            WHERE i.deleted_at IS NULL
+        `;
 
         const params = [];
         let paramCount = 1;
@@ -39,14 +46,15 @@ router.get('/', async (req, res) => {
         }
 
         if (startDate) {
-            query += ` AND i.created_at >= $${paramCount}`;
-            params.push(`${startDate} 00:00:00`);
+            // Comparar contra la fecha en CDMX, no en UTC del servidor
+            query += ` AND (i.created_at AT TIME ZONE '${CDMX_TZ}')::date >= $${paramCount}::date`;
+            params.push(startDate);
             paramCount++;
         }
 
         if (endDate) {
-            query += ` AND i.created_at <= $${paramCount}`;
-            params.push(`${endDate} 23:59:59`);
+            query += ` AND (i.created_at AT TIME ZONE '${CDMX_TZ}')::date <= $${paramCount}::date`;
+            params.push(endDate);
             paramCount++;
         }
 
@@ -56,7 +64,7 @@ router.get('/', async (req, res) => {
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching incomes:', error);
-        res.status(500).json({ error: 'Error al obtener ingresos' });
+        res.status(500).json({ error: `Error al obtener ingresos: ${error.message}` });
     }
 });
 
@@ -70,7 +78,6 @@ router.post('/', async (req, res) => {
         }
 
         let folio = generateFolio();
-        // Ensure unique folio (simple check, in high concurrency might need DB constraint handling)
         let folioExists = true;
         while (folioExists) {
             const check = await pool.query('SELECT id FROM incomes WHERE folio = $1', [folio]);
@@ -82,10 +89,10 @@ router.post('/', async (req, res) => {
         }
 
         const query = `
-      INSERT INTO incomes (folio, credit_id, client_id, payment_method, amount, "user")
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING *
-    `;
+            INSERT INTO incomes (folio, credit_id, client_id, payment_method, amount, "user")
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING *
+        `;
 
         const values = [folio, credit_id, client_id, payment_method, amount, user || null];
         const result = await pool.query(query, values);
@@ -93,7 +100,7 @@ router.post('/', async (req, res) => {
         res.status(201).json(result.rows[0]);
     } catch (error) {
         console.error('Error creating income:', error);
-        res.status(500).json({ error: 'Error al registrar ingreso' });
+        res.status(500).json({ error: `Error al registrar ingreso: ${error.message}` });
     }
 });
 
