@@ -154,7 +154,7 @@ import { Plus as PlusIcon, Pencil as PencilIcon, Trash2 as TrashIcon, ChevronLef
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
-const { isAdmin, isEmpleados, userRole } = useAuth()
+const { isAdmin, isEmpleados, token } = useAuth()
 
 const providers = ref([])
 const isLoading = ref(false)
@@ -180,7 +180,8 @@ const deleteProvider = async (id) => {
 
   try {
     const response = await fetch(`${import.meta.env.VITE_API_URL}/providers/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token.value}` }
     })
     if (!response.ok) throw new Error('Error al eliminar')
 
@@ -199,7 +200,7 @@ const toggleVisibleEmpleados = async (provider) => {
   try {
     const response = await fetch(`${import.meta.env.VITE_API_URL}/providers/${provider.id}/visible-empleados`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token.value}` },
       body: JSON.stringify({ visible: newValue })
     })
     if (!response.ok) throw new Error('Error al actualizar')
@@ -214,13 +215,10 @@ const toggleVisibleEmpleados = async (provider) => {
 const fetchProviders = async () => {
   isLoading.value = true
   try {
-    // Si es Empleado, solo traer los marcados como visibles
-    const rol = userRole.value
-    const url = rol === 'Empleado'
-      ? `${import.meta.env.VITE_API_URL}/providers?rol=Empleado`
-      : `${import.meta.env.VITE_API_URL}/providers`
-
-    const response = await fetch(url)
+    const url = `${import.meta.env.VITE_API_URL}/providers`
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${token.value}` }
+    })
     if (!response.ok) throw new Error('Error fetching providers')
     providers.value = await response.json()
   } catch (error) {

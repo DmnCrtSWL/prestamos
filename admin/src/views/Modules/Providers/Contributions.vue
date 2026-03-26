@@ -176,9 +176,11 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { Trash2 as TrashIcon } from 'lucide-vue-next'
+import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
 const route = useRoute()
+const { token } = useAuth()
 const providerId = route.params.id
 
 const provider = ref(null)
@@ -193,7 +195,9 @@ const form = ref({
 
 const fetchProvider = async () => {
     try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/providers/${providerId}`)
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/providers/${providerId}`, {
+            headers: { 'Authorization': `Bearer ${token.value}` }
+        })
         if (!response.ok) throw new Error('Error fetching provider')
         provider.value = await response.json()
     } catch (error) {
@@ -204,7 +208,9 @@ const fetchProvider = async () => {
 
 const fetchContributions = async () => {
     try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/providers/${providerId}/contributions`)
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/providers/${providerId}/contributions`, {
+            headers: { 'Authorization': `Bearer ${token.value}` }
+        })
         if (!response.ok) throw new Error('Error fetching contributions')
         contributions.value = await response.json()
     } catch (error) {
@@ -217,7 +223,7 @@ const submitContribution = async () => {
     try {
         const response = await fetch(`${import.meta.env.VITE_API_URL}/providers/${providerId}/contributions`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token.value}` },
             body: JSON.stringify(form.value)
         })
 
@@ -243,7 +249,8 @@ const deleteContribution = async (id) => {
 
     try {
         const response = await fetch(`${import.meta.env.VITE_API_URL}/providers/${providerId}/contributions/${id}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token.value}` }
         })
          if (!response.ok) throw new Error('Error deleting contribution')
          await fetchContributions()

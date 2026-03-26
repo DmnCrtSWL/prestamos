@@ -1,16 +1,30 @@
 import express from 'express';
 import pool from '../config/database.js';
+import { verifyToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// GET /api/providers - List all active providers with total capital
+// Apply auth middleware to all routes
+router.use(verifyToken);
+
+// GET /api/providers - List providers filtered by role
 router.get('/', async (req, res) => {
     try {
-        const { rol } = req.query;
-        const onlyVisible = rol === 'Empleado';
+        const { rol, id } = req.user;
+
+        let whereClause = 'WHERE p.deleted_at IS NULL';
+
+        if (rol === 'Empleado') {
+            // Empleados only see providers marked as visible by admin
+            whereClause += ' AND p.visible_empleados = TRUE';
+        } else if (rol === 'Sucursal') {
+            // Sucursales only see providers they created
+            whereClause += ` AND p.created_by = ${parseInt(id)}`;
+        }
+        // Administrador sees all providers (no additional filter)
 
         const query = `
-            SELECT 
+            SELECT
                 p.*,
                 (COALESCE(p.initial_contribution, 0) + COALESCE(contributions.total, 0)) as total_invested,
                 (COALESCE(p.initial_contribution, 0) + COALESCE(contributions.total, 0) - COALESCE(fundings.total, 0)) as total_capital
@@ -28,8 +42,7 @@ router.get('/', async (req, res) => {
                 WHERE c.deleted_at IS NULL
                 GROUP BY cf.provider_id
             ) fundings ON p.id = fundings.provider_id
-            WHERE p.deleted_at IS NULL 
-            ${onlyVisible ? 'AND p.visible_empleados = TRUE' : ''}
+            ${whereClause}
             ORDER BY p.created_at DESC
         `;
         const result = await pool.query(query);
@@ -45,19 +58,19 @@ router.get('/:id/contributions', async (req, res) => {
     try {
         const { id } = req.params;
         const query = `
-            SELECT 
+            SELECT
                 id,
-                amount, 
-                payment_date, 
+                amount,
+                payment_date,
                 note,
                 created_at,
                 'contribution' as type
-            FROM provider_contributions 
+            FROM provider_contributions
             WHERE provider_id = $1 AND deleted_at IS NULL
-            
+
             UNION ALL
-            
-            SELECT 
+
+            SELECT
                 cf.id,
                 -cf.amount as amount, -- Negative amount for deduction
                 cf.created_at::date as payment_date,
@@ -161,7 +174,7 @@ router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const query = `
-            SELECT * FROM providers 
+            SELECT * FROM providers
             WHERE id = $1 AND deleted_at IS NULL
         `;
         const result = await pool.query(query, [id]);
@@ -187,12 +200,12 @@ router.post('/', async (req, res) => {
         }
 
         const query = `
-            INSERT INTO providers (name, phone, initial_contribution)
-            VALUES ($1, $2, $3)
+            INSERT INTO providers (name, phone, initial_contribution, created_by)
+            VALUES ($1, $2, $3, $4)
             RETURNING *
         `;
 
-        const values = [name, phone, initial_contribution || 0];
+        const values = [name, phone, initial_contribution || 0, req.user.id];
         const result = await pool.query(query, values);
 
         res.status(201).json(result.rows[0]);
@@ -203,7 +216,6 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/providers/:id - Update provider
-router.update = router.put; // Alias for consistency if needed, though standard is use PUT
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -214,7 +226,7 @@ router.put('/:id', async (req, res) => {
         }
 
         const query = `
-            UPDATE providers 
+            UPDATE providers
             SET name = $1, phone = $2, initial_contribution = $3, updated_at = CURRENT_TIMESTAMP
             WHERE id = $4 AND deleted_at IS NULL
             RETURNING *
@@ -239,8 +251,8 @@ router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const query = `
-            UPDATE providers 
-            SET deleted_at = CURRENT_TIMESTAMP 
+            UPDATE providers
+            SET deleted_at = CURRENT_TIMESTAMP
             WHERE id = $1 AND deleted_at IS NULL
             RETURNING id
         `;

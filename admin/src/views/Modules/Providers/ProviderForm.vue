@@ -77,9 +77,11 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
+import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
 const route = useRoute()
+const { token } = useAuth()
 
 const isLoading = ref(false)
 const isEditing = computed(() => route.params.id !== undefined)
@@ -94,7 +96,9 @@ const fetchProvider = async () => {
     if (!isEditing.value) return
     
     try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/providers/${route.params.id}`)
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/providers/${route.params.id}`, {
+            headers: { 'Authorization': `Bearer ${token.value}` }
+        })
         if (!response.ok) throw new Error('Error fetching provider')
         const data = await response.json()
         form.value = {
@@ -121,7 +125,8 @@ const submitForm = async () => {
         const response = await fetch(url, {
             method,
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token.value}`
             },
             body: JSON.stringify(form.value)
         })
