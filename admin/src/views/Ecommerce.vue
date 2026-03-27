@@ -12,7 +12,7 @@
           </div>
           <div>
             <h4 class="text-title-md2 font-bold text-gray-800 dark:text-white">
-              0
+              {{ stats.creditosActivos }}
             </h4>
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
               Créditos Activos
@@ -20,7 +20,7 @@
           </div>
         </div>
 
-        <!-- Card 2: Montos Cobrados del Mes -->
+        <!-- Card 2: Montos Cobrados -->
         <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
           <div class="flex items-center justify-between mb-4">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-500">
@@ -29,15 +29,15 @@
           </div>
           <div>
             <h4 class="text-title-md2 font-bold text-gray-800 dark:text-white">
-              $0.00
+              {{ formatCurrency(stats.montosCobradosMes) }}
             </h4>
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
-              Montos Cobrados del Mes
+              Montos Cobrados
             </span>
           </div>
         </div>
 
-        <!-- Card 3: Ganancias netas del mes -->
+        <!-- Card 3: Ganancias netas -->
         <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
           <div class="flex items-center justify-between mb-4">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-500">
@@ -46,10 +46,10 @@
           </div>
           <div>
              <h4 class="text-title-md2 font-bold text-gray-800 dark:text-white">
-              $0.00
+              {{ formatCurrency(stats.gananciasNetasMes) }}
             </h4>
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
-              Ganancias Netas del Mes
+              Ganancias Netas
             </span>
           </div>
         </div>
@@ -66,7 +66,7 @@
           </div>
           <div>
              <h4 class="text-title-md2 font-bold text-gray-800 dark:text-white">
-              $0.00
+              {{ formatCurrency(stats.montoCirculacion) }}
             </h4>
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
               Monto en Circulación
@@ -83,7 +83,7 @@
           </div>
           <div>
              <h4 class="text-title-md2 font-bold text-gray-800 dark:text-white">
-              $0.00
+              {{ formatCurrency(stats.montoDisponible) }}
             </h4>
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
               Monto Disponible
@@ -100,7 +100,7 @@
           </div>
           <div>
             <h4 class="text-title-md2 font-bold text-gray-800 dark:text-white">
-              0
+              {{ stats.clientesPorCobrar }}
             </h4>
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
               Clientes por cobrar
@@ -169,12 +169,15 @@
                     </button>
                   </td>
                 </tr>
+                <tr v-if="morosos.length === 0">
+                  <td colspan="5" class="px-5 py-8 text-center text-gray-400 text-sm">Sin clientes morosos</td>
+                </tr>
               </tbody>
             </table>
           </div>
-          
+
           <!-- Pagination -->
-          <div class="mt-4 flex items-center justify-between border-t border-gray-200 pt-4 dark:border-gray-700">
+          <div v-if="morosos.length > 0" class="mt-4 flex items-center justify-between border-t border-gray-200 pt-4 dark:border-gray-700">
             <div class="flex flex-1 justify-between sm:hidden">
               <button @click="prevPageMorosos" :disabled="currentPageMorosos === 1" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">Anterior</button>
               <button @click="nextPageMorosos" :disabled="currentPageMorosos === totalPagesMorosos" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">Siguiente</button>
@@ -254,12 +257,15 @@
                     </span>
                   </td>
                 </tr>
+                <tr v-if="proximosIngresos.length === 0">
+                  <td colspan="4" class="px-5 py-8 text-center text-gray-400 text-sm">Sin ingresos próximos</td>
+                </tr>
               </tbody>
             </table>
           </div>
-          
+
           <!-- Pagination -->
-          <div class="mt-4 flex items-center justify-between border-t border-gray-200 pt-4 dark:border-gray-700">
+          <div v-if="proximosIngresos.length > 0" class="mt-4 flex items-center justify-between border-t border-gray-200 pt-4 dark:border-gray-700">
             <div class="flex flex-1 justify-between sm:hidden">
               <button @click="prevPageIngresos" :disabled="currentPageIngresos === 1" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">Anterior</button>
               <button @click="nextPageIngresos" :disabled="currentPageIngresos === totalPagesIngresos" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">Siguiente</button>
@@ -292,13 +298,53 @@
 
 <script setup>
 import AdminLayout from '@/components/layout/AdminLayout.vue'
-import { ref, computed } from 'vue'
-import { DollarSign, HandCoins, TrendingUp, Activity, Briefcase, User, ArrowUpDown, ChevronLeft, ChevronRight, Eye } from 'lucide-vue-next'
+import { ref, computed, onMounted } from 'vue'
+import { DollarSign, HandCoins, TrendingUp, Activity, Briefcase, User, ChevronLeft, ChevronRight, Eye } from 'lucide-vue-next'
+import { useAuth } from '@/composables/useAuth'
 
-const itemsPerPage = 10
-const currentPageMorosos = ref(1)
-const currentPageIngresos = ref(1)
+const { isAdmin, userName } = useAuth()
+const API_URL = import.meta.env.VITE_API_URL
 
+// ── Stats ─────────────────────────────────────────────────────────────────────
+const stats = ref({
+  creditosActivos: 0,
+  montosCobradosMes: 0,
+  gananciasNetasMes: 0,
+  montoCirculacion: 0,
+  montoDisponible: 0,
+  clientesPorCobrar: 0
+})
+
+const morosos = ref([])
+const proximosIngresos = ref([])
+
+const fetchDashboard = async () => {
+  try {
+    const url = new URL(`${API_URL}/dashboard`)
+    if (!isAdmin.value) {
+      url.searchParams.set('user', userName.value)
+    }
+    const res = await fetch(url.toString())
+    if (!res.ok) throw new Error('Error al cargar dashboard')
+    const data = await res.json()
+    stats.value = {
+      creditosActivos: data.creditosActivos,
+      montosCobradosMes: data.montosCobradosMes,
+      gananciasNetasMes: data.gananciasNetasMes,
+      montoCirculacion: data.montoCirculacion,
+      montoDisponible: data.montoDisponible,
+      clientesPorCobrar: data.clientesPorCobrar
+    }
+    morosos.value = data.morosos
+    proximosIngresos.value = data.proximosIngresos
+  } catch (err) {
+    console.error('Dashboard error:', err)
+  }
+}
+
+onMounted(fetchDashboard)
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 const formatCurrency = (value) => {
   if (!value) return '$0.00'
   return new Intl.NumberFormat('es-MX', {
@@ -317,49 +363,24 @@ const formatDate = (dateString) => {
   })
 }
 
-const morosos = ref([])
+// ── Pagination ────────────────────────────────────────────────────────────────
+const itemsPerPage = 10
+const currentPageMorosos = ref(1)
+const currentPageIngresos = ref(1)
 
-const proximosIngresos = ref([])
-
-// Morosos pagination
 const totalPagesMorosos = computed(() => Math.ceil(morosos.value.length / itemsPerPage))
-
 const paginatedMorosos = computed(() => {
   const start = (currentPageMorosos.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return morosos.value.slice(start, end)
+  return morosos.value.slice(start, start + itemsPerPage)
 })
+const nextPageMorosos = () => { if (currentPageMorosos.value < totalPagesMorosos.value) currentPageMorosos.value++ }
+const prevPageMorosos = () => { if (currentPageMorosos.value > 1) currentPageMorosos.value-- }
 
-const nextPageMorosos = () => {
-  if (currentPageMorosos.value < totalPagesMorosos.value) {
-    currentPageMorosos.value++
-  }
-}
-
-const prevPageMorosos = () => {
-  if (currentPageMorosos.value > 1) {
-    currentPageMorosos.value--
-  }
-}
-
-// Próximos Ingresos pagination
 const totalPagesIngresos = computed(() => Math.ceil(proximosIngresos.value.length / itemsPerPage))
-
 const paginatedIngresos = computed(() => {
   const start = (currentPageIngresos.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return proximosIngresos.value.slice(start, end)
+  return proximosIngresos.value.slice(start, start + itemsPerPage)
 })
-
-const nextPageIngresos = () => {
-  if (currentPageIngresos.value < totalPagesIngresos.value) {
-    currentPageIngresos.value++
-  }
-}
-
-const prevPageIngresos = () => {
-  if (currentPageIngresos.value > 1) {
-    currentPageIngresos.value--
-  }
-}
+const nextPageIngresos = () => { if (currentPageIngresos.value < totalPagesIngresos.value) currentPageIngresos.value++ }
+const prevPageIngresos = () => { if (currentPageIngresos.value > 1) currentPageIngresos.value-- }
 </script>
