@@ -102,7 +102,12 @@
                 </div>
               </td>
             </tr>
-            <tr v-if="providers.length === 0 && !isLoading">
+            <tr v-if="fetchError">
+              <td :colspan="isAdmin ? 7 : 6" class="px-5 py-8 text-center text-red-500 dark:text-red-400 font-medium">
+                {{ fetchError }}
+              </td>
+            </tr>
+            <tr v-else-if="providers.length === 0 && !isLoading">
               <td :colspan="isAdmin ? 7 : 6" class="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
                 No hay proveedores registrados.
               </td>
@@ -158,6 +163,7 @@ const { isAdmin, isEmpleados, token } = useAuth()
 
 const providers = ref([])
 const isLoading = ref(false)
+const fetchError = ref('')
 
 // Pagination state
 const currentPage = ref(1)
@@ -214,15 +220,25 @@ const toggleVisibleEmpleados = async (provider) => {
 
 const fetchProviders = async () => {
   isLoading.value = true
+  fetchError.value = ''
   try {
     const url = `${import.meta.env.VITE_API_URL}/providers`
     const response = await fetch(url, {
       headers: { 'Authorization': `Bearer ${token.value}` }
     })
-    if (!response.ok) throw new Error('Error fetching providers')
+    if (response.status === 401) {
+      fetchError.value = 'Sesión expirada. Por favor vuelve a iniciar sesión.'
+      return
+    }
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}))
+      fetchError.value = body.error || `Error ${response.status} al cargar proveedores`
+      return
+    }
     providers.value = await response.json()
   } catch (error) {
     console.error('Error:', error)
+    fetchError.value = 'No se pudo conectar con el servidor.'
   } finally {
     isLoading.value = false
   }
