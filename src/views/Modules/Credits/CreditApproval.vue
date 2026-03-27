@@ -587,6 +587,9 @@ const printPagare = () => {
   const amountWords = numberToWords(amount)
   const { day, month, year } = getFormattedDate()
 
+  // ── Folio compartido ──────────────────────────────────────────
+  const folioNum = `No. ${Date.now().toString().slice(-6)}`
+
   // ── Paleta ──────────────────────────────────────────────
   const colorPrimary  = [0, 0, 0]   // negro
   const colorDark     = [20, 20, 20]
@@ -623,10 +626,9 @@ const printPagare = () => {
   }
 
   // =================================================================
-  // SECCIÓN 1 — PAGARÉ  (mitad superior: y = 8 a 135)
+  // PÁGINA 1 — PAGARÉ
   // =================================================================
   let sy = 8  // start y
-  const sectionH = 133 // height of this half
   const mx = 16  // left margin
   const mr = pageW - 16  // right edge
 
@@ -636,11 +638,10 @@ const printPagare = () => {
   setFont('bold', 16, [255, 255, 255])
   doc.text('PAGARÉ', mx, sy + 12)
 
-  // número de folio (cosmético)
   setFont('normal', 8, [220, 220, 220])
   doc.text('Zamora, Michoacán', mr, sy + 7, { align: 'right' })
   setFont('bold', 8, [220, 220, 220])
-  doc.text(`No. ${Date.now().toString().slice(-6)}`, mr, sy + 13, { align: 'right' })
+  doc.text(folioNum, mr, sy + 13, { align: 'right' })
 
   sy += 22
 
@@ -648,7 +649,7 @@ const printPagare = () => {
   rect2(mx, sy, pageW - mx * 2, 12, colorLightBg, colorBorder)
   setFont('bold', 8, colorGray)
   doc.text('LUGAR Y FECHA', mx + 3, sy + 4.5)
-  setFont('normal', 9, colorDark)
+  setFont('normal', 10, colorDark)
   doc.text(
     `En la ciudad de Zamora, Mich.,  a  ${day}  de  ${month}  de  ${year}.`,
     mx + 3, sy + 10
@@ -662,20 +663,20 @@ const printPagare = () => {
   sy += 6
 
   rect2(mx, sy, pageW - mx * 2, 12, [255, 255, 255], colorBorder)
-  setFont('bold', 11, colorPrimary)
+  setFont('bold', 12, colorPrimary)
   const amountFmt = `$${Number(amount).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
   doc.text(amountFmt, mx + 3, sy + 8)
-  setFont('normal', 8.5, colorDark)
+  setFont('normal', 9, colorDark)
   const wordsStr = `(${amountWords})`
-  doc.text(wordsStr, mx + 30, sy + 8, { maxWidth: pageW - mx * 2 - 34 })
+  doc.text(wordsStr, mx + 35, sy + 8, { maxWidth: pageW - mx * 2 - 38 })
 
-  sy += 16
+  sy += 18
 
   // — Promesa de pago
   setFont('bold', 9, colorPrimary)
   doc.text('PROMESA DE PAGO', mx, sy)
   line2(mx, sy + 1, mr, sy + 1, colorPrimary, 0.5)
-  sy += 6
+  sy += 8
 
   const authUserStr = localStorage.getItem('auth_user')
   let currentUserName = ''
@@ -686,11 +687,11 @@ const printPagare = () => {
     } catch(e) {}
   }
   const orden = currentUserName ? currentUserName.toUpperCase() : 'FINANCIERA ZAMORA'
-  setFont('normal', 9, colorDark)
+  setFont('normal', 10, colorDark)
   const promesaText = `Debo y pagaré incondicionalmente a la orden de ${orden}, la cantidad de ${amountFmt} (${amountWords}), en moneda nacional.`
   const promesaLines = doc.splitTextToSize(promesaText, pageW - mx * 2)
   doc.text(promesaLines, mx, sy)
-  sy += promesaLines.length * 5 + 3
+  sy += promesaLines.length * 6 + 4
 
   // — Tipo de crédito y pagos
   rect2(mx, sy, pageW - mx * 2, 14, colorLightBg, colorBorder)
@@ -698,7 +699,7 @@ const printPagare = () => {
   doc.text('TIPO DE CRÉDITO', mx + 3, sy + 4.5)
   doc.text('PAGO SEMANAL', mx + 70, sy + 4.5)
   doc.text('TOTAL A PAGAR', mx + 130, sy + 4.5)
-  setFont('bold', 10, colorPrimary)
+  setFont('bold', 11, colorPrimary)
   doc.text(creditDetails.loanType || 'Tradicional', mx + 3, sy + 11)
   doc.text(
     creditDetails.weeklyPayment
@@ -713,132 +714,158 @@ const printPagare = () => {
     mx + 130, sy + 11
   )
 
-  sy += 18
+  sy += 20
 
   // — Intereses
   setFont('bold', 9, colorPrimary)
   doc.text('INTERESES', mx, sy)
   line2(mx, sy + 1, mr, sy + 1, colorPrimary, 0.5)
-  sy += 6
+  sy += 8
 
   const intRate = creditDetails.loanType === '10% Semanal' ? '10' : '20'
   const morRate = creditDetails.loanType === '10% Semanal' ? '10' : '20'
-  setFont('normal', 9, colorDark)
+  setFont('normal', 10, colorDark)
   const interesText = `La cantidad adeudada causará intereses ordinarios a razón del ${intRate}% mensual. En caso de mora, causará intereses moratorios a razón del ${morRate}% mensual, desde el día siguiente al vencimiento y hasta la total liquidación.`
   const interesLines = doc.splitTextToSize(interesText, pageW - mx * 2)
   doc.text(interesLines, mx, sy)
-  sy += interesLines.length * 5 + 3
+  sy += interesLines.length * 6 + 4
 
   // — Jurisdicción
   setFont('bold', 9, colorPrimary)
   doc.text('JURISDICCIÓN', mx, sy)
   line2(mx, sy + 1, mr, sy + 1, colorPrimary, 0.5)
-  sy += 6
+  sy += 8
 
-  setFont('normal', 8.5, colorDark)
+  setFont('normal', 9, colorDark)
   const jurisText = 'Este pagaré es de naturaleza mercantil conforme a la Ley General de Títulos y Operaciones de Crédito. Para su interpretación y cumplimiento, las partes se someten a las leyes y tribunales competentes de la ciudad de Zamora, Michoacán, renunciando a cualquier otro fuero.'
   const jurisLines = doc.splitTextToSize(jurisText, pageW - mx * 2)
   doc.text(jurisLines, mx, sy)
-  sy += jurisLines.length * 4.5 + 5
+  sy += jurisLines.length * 5 + 10
 
   // — Firma del deudor
-  signatureLine(mx, sy + 6)
-  setFont('bold', 8, colorGray)
-  doc.text('FIRMA DEL DEUDOR', mx, sy + 11)
+  sy += 10
+  signatureLine(mx, sy + 8, 70)
+  setFont('bold', 9, colorGray)
+  doc.text('FIRMA DEL DEUDOR', mx, sy + 14)
   if (client) {
-    setFont('normal', 8, colorDark)
-    doc.text(client.name, mx, sy + 16)
+    setFont('normal', 10, colorDark)
+    doc.text(client.name, mx, sy + 20)
   }
 
-  // ── Divisor de secciones ──────────────────────────────────────────
-  const divY = 142
-  line2(0, divY, pageW, divY, [150, 150, 150], 0.8)
-
-  // --- línea de recorte zig-zag simulada ---
-  setFont('normal', 7, [180, 180, 180])
-  doc.text('✂  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─', mx, divY + 4)
+  // — Pie de página (Pág 1)
+  const footerY = pageH - 8
+  line2(mx, footerY - 3, mr, footerY - 3, colorBorder, 0.3)
+  setFont('normal', 7.5, colorGray)
+  doc.text('PAGARÉ - PÁGINA 1 DE 2', mx, footerY)
+  doc.text('Documento generado electrónicamente. Válido legalmente.', pageW / 2, footerY, { align: 'center' })
+  doc.text(folioNum, mr, footerY, { align: 'right' })
 
   // =================================================================
-  // SECCIÓN 2 — DATOS DEL DEUDOR Y AVAL  (Stacked Layout)
+  // PÁGINA 2 — DATOS DEL DEUDOR Y AVAL
   // =================================================================
-  let ey = divY + 8
+  doc.addPage()
+  let ey = 8  // Reset ey para la nueva página
 
   // — Encabezado sec. 2
-  rect2(0, ey, pageW, 10, colorPrimary, colorPrimary)
-  setFont('bold', 10, [255, 255, 255])
-  doc.text('DATOS COMPLEMENTARIOS (DEUDOR Y AVAL)', mx, ey + 6.5)
+  rect2(0, ey, pageW, 18, colorPrimary, colorPrimary)
+  setFont('bold', 14, [255, 255, 255])
+  doc.text('DATOS COMPLEMENTARIOS', mx, ey + 12)
+  
+  setFont('normal', 8, [220, 220, 220])
+  doc.text('Zamora, Michoacán', mr, ey + 7, { align: 'right' })
+  setFont('bold', 8, [220, 220, 220])
+  doc.text(folioNum, mr, ey + 13, { align: 'right' })
 
-  ey += 14
+  ey += 28
   const fieldW = pageW - mx * 2
 
   // — Sub-sección: Deudor
-  setFont('bold', 9, colorPrimary)
+  setFont('bold', 11, colorPrimary)
   doc.text('I. DATOS DEL DEUDOR', mx, ey)
-  line2(mx, ey + 1, mx + 40, ey + 1, colorPrimary, 0.4)
-  ey += 6
+  line2(mx, ey + 1, mx + 50, ey + 1, colorPrimary, 0.5)
+  ey += 12
 
   const deudorFields = [
-    ['Nombre completo:', client?.name || ''],
-    ['Domicilio:', client?.address || ''],
+    ['NOMBRE COMPLETO:', client?.name || ''],
+    ['DOMICILIO:', client?.address || ''],
   ]
 
   deudorFields.forEach(([label, value]) => {
-    setFont('bold', 7, colorGray)
-    doc.text(label, mx, ey)
-    ey += 4
-    rect2(mx, ey, fieldW, 7, [255, 255, 255], colorBorder)
-    setFont('normal', 8, colorDark)
-    doc.text(value || '', mx + 2, ey + 4.5, { maxWidth: fieldW - 4 })
-    ey += 9
+    setFont('bold', 8, colorGray)
+    doc.text(label, mx + 4, ey)
+    ey += 5
+    rect2(mx + 4, ey, fieldW - 4, 10, [255, 255, 255], colorBorder)
+    setFont('normal', 10, colorDark)
+    doc.text(value || '', mx + 6, ey + 6.5, { maxWidth: fieldW - 8 })
+    ey += 15
   })
 
   // Teléfono y Firma Deudor
-  setFont('bold', 7, colorGray)
-  doc.text('Teléfono:', mx, ey)
-  doc.text('Firma del Deudor:', mx + 80, ey)
-  ey += 4
-  rect2(mx, ey, 60, 7, [255, 255, 255], colorBorder)
-  setFont('normal', 8, colorDark)
-  doc.text(client?.phone || '', mx + 2, ey + 4.5)
+  setFont('bold', 8, colorGray)
+  doc.text('TELÉFONO:', mx + 4, ey)
+  doc.text('FIRMA DEL DEUDOR:', mx + 100, ey)
+  ey += 5
+  rect2(mx + 4, ey, 80, 10, [255, 255, 255], colorBorder)
+  setFont('normal', 10, colorDark)
+  doc.text(client?.phone || '', mx + 6, ey + 6.5)
   
-  signatureLine(mx + 80, ey + 7, fieldW - 80)
-  ey += 12
+  signatureLine(mx + 100, ey + 10, fieldW - 100)
+  ey += 25
 
   // — Sub-sección: Aval
-  setFont('bold', 9, colorPrimary)
+  setFont('bold', 11, colorPrimary)
   doc.text('II. DATOS DEL AVAL', mx, ey)
-  line2(mx, ey + 1, mx + 35, ey + 1, colorPrimary, 0.4)
-  ey += 5
+  line2(mx, ey + 1, mx + 45, ey + 1, colorPrimary, 0.5)
+  ey += 8
 
-  setFont('italic', 7.5, colorGray)
+  setFont('italic', 8.5, colorGray)
   const avalText = 'Por medio del presente, el suscrito se constituye como aval solidario, obligándose en los mismos términos que el deudor principal.'
   const avalTextLines = doc.splitTextToSize(avalText, fieldW)
   doc.text(avalTextLines, mx, ey)
-  ey += avalTextLines.length * 4 + 3
+  ey += avalTextLines.length * 5 + 8
 
   const avalFields = [
-    ['Nombre completo del Aval:', avalData.name || ''],
-    ['Domicilio del Aval:', avalData.address || ''],
+    ['NOMBRE COMPLETO DEL AVAL:', avalData.name || ''],
+    ['DOMICILIO DEL AVAL:', avalData.address || ''],
   ]
 
   avalFields.forEach(([label, value]) => {
+    setFont('bold', 8, colorGray)
+    doc.text(label, mx + 4, ey)
+    ey += 5
+    rect2(mx + 4, ey, fieldW - 4, 10, [255, 255, 255], colorBorder)
+    setFont('normal', 10, colorDark)
+    doc.text(value || '', mx + 6, ey + 6.5, { maxWidth: fieldW - 8 })
+    ey += 15
   })
 
-  // Firma del aval
-  ay += 4
-  signatureLine(col2x, ay + 6, colW - 4)
+  // Teléfono y Firma Aval
   setFont('bold', 8, colorGray)
-  doc.text('FIRMA DEL AVAL', col2x, ay + 11)
+  doc.text('TELÉFONO AVAL:', mx + 4, ey)
+  doc.text('FIRMA DEL AVAL:', mx + 100, ey)
+  ey += 5
+  rect2(mx + 4, ey, 80, 10, [255, 255, 255], colorBorder)
+  setFont('normal', 10, colorDark)
+  doc.text(avalData.phone || '', mx + 6, ey + 6.5)
+  
+  signatureLine(mx + 100, ey + 10, fieldW - 100)
+  
   if (avalData.name) {
-    setFont('normal', 7.5, colorDark)
-    doc.text(avalData.name, col2x, ay + 16)
+    setFont('normal', 8.5, colorDark)
+    doc.text(avalData.name, mx + 100, ey + 16, { maxWidth: fieldW - 100 })
   }
 
-  // — Pie de página
-  const footerY = pageH - 8
-  line2(mx, footerY - 3, mr, footerY - 3, colorBorder, 0.3)
-  setFont('normal', 7, colorGray)
-  doc.text('Documento generado electrónicamente. Válido como título de crédito con valor legal.', pageW / 2, footerY, { align: 'center' })
+  // — Pie de página (Pág 2)
+  const footerY2 = pageH - 8
+  line2(mx, footerY2 - 3, mr, footerY2 - 3, colorBorder, 0.3)
+  setFont('normal', 7.5, colorGray)
+  doc.text('DATOS COMPLEMENTARIOS - PÁGINA 2 DE 2', mx, footerY2)
+  doc.text('Documento generado electrónicamente. Válido legalmente.', pageW / 2, footerY2, { align: 'center' })
+  doc.text(folioNum, mr, footerY2, { align: 'right' })
+
+  // — Imprimir
+  doc.autoPrint()
+  window.open(doc.output('bloburl'), '_blank')
 
   // — Imprimir
   doc.autoPrint()
