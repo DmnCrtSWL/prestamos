@@ -132,6 +132,12 @@ const router = createRouter({
       meta: { title: 'Proveedores', requiresAuth: true },
     },
     {
+      path: '/personal',
+      name: 'Personal',
+      component: () => import('../views/Modules/Personal.vue'),
+      meta: { title: 'Personal', requiresAuth: true, requiresAdmin: true },
+    },
+    {
       path: '/proveedores/nuevo',
       name: 'NewProvider',
       component: () => import('../views/Modules/Providers/ProviderForm.vue'),

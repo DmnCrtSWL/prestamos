@@ -211,6 +211,7 @@ import {
   UserCircleIcon,
   ChatIcon,
   MailIcon,
+  LockIcon,
   DocsIcon,
   PieChartIcon,
   ChevronDownIcon,
@@ -273,6 +274,12 @@ const allMenuItems = [
     name: "Proveedores",
     path: "/proveedores",
     adminOnly: false,
+  },
+  {
+    icon: LockIcon,
+    name: "Personal",
+    path: "/personal",
+    adminOnly: true,
   },
 ];
 
