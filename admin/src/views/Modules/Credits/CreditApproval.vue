@@ -594,8 +594,7 @@ const buildPagare = () => {
   let acreedor = 'FINANCIERA ZAMORA'
   
   if (isEmpleados.value) {
-    // Si es empleado, el responsable es el Administrador
-    acreedor = adminName.value ? adminName.value.toUpperCase() : 'ADMINISTRADOR'
+    acreedor = 'MARÍA CRISTINA VERDUZCO ÁLVAREZ'
   } else {
     // Si es Admin o Sucursal, el responsable es él mismo
     acreedor = userName.value ? userName.value.toUpperCase() : 'FINANCIERA ZAMORA'
