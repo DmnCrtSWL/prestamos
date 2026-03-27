@@ -20,7 +20,7 @@
           </div>
         </div>
 
-        <!-- Card 2: Montos Cobrados del Mes -->
+        <!-- Card 2: Montos Cobrados -->
         <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
           <div class="flex items-center justify-between mb-4">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-500">
@@ -32,12 +32,12 @@
               $0.00
             </h4>
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
-              Montos Cobrados del Mes
+              Montos Cobrados
             </span>
           </div>
         </div>
 
-        <!-- Card 3: Ganancias netas del mes -->
+        <!-- Card 3: Ganancias netas -->
         <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
           <div class="flex items-center justify-between mb-4">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-500">
@@ -49,7 +49,7 @@
               $0.00
             </h4>
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
-              Ganancias Netas del Mes
+              Ganancias Netas
             </span>
           </div>
         </div>
