@@ -22,13 +22,21 @@
       <router-link to="/">
         <img
           v-if="isExpanded || isHovered || isMobileOpen"
-          src="/logo.png"
+          class="dark:hidden"
+          src="/images/logo/logo.svg"
+          alt="Logo"
+          width="150"
+        />
+        <img
+          v-if="isExpanded || isHovered || isMobileOpen"
+          class="hidden dark:block"
+          src="/images/logo/logo-dark.svg"
           alt="Logo"
           width="150"
         />
         <img
           v-else
-          src="/logo.png"
+          src="/images/logo/logo-icon.svg"
           alt="Logo"
           width="32"
           height="32"
