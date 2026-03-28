@@ -109,8 +109,7 @@
             <common-grid-shape />
             <div class="flex flex-col items-center max-w-xs">
               <router-link to="/" class="block mb-4">
-                <img src="/images/logo/logo.svg" alt="Logo" class="max-w-[200px] dark:hidden" />
-                <img src="/images/logo/logo-dark.svg" alt="Logo" class="max-w-[200px] hidden dark:block" />
+                <img src="/logo.png" alt="Logo" class="max-w-[200px]" />
               </router-link>
               <p class="text-center text-gray-400 dark:text-white/60">
                 Sistema de Gestión de Préstamos

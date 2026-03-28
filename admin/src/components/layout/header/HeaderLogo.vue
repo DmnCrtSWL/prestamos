@@ -1,7 +1,6 @@
 <template>
   <router-link to="/" class="lg:hidden">
-    <img src="/images/logo/logo.svg" alt="Logo" class="dark:hidden" />
-    <img src="/images/logo/logo-dark.svg" alt="Logo" class="hidden dark:block" />
+    <img src="/logo.png" alt="Logo" />
   </router-link>
 </template>
 
