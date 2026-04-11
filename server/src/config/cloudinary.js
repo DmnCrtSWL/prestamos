@@ -19,16 +19,20 @@ cloudinary.config({
 const storage = multer.memoryStorage();
 
 // Helper function to upload buffer to Cloudinary via stream
-const uploadToCloudinary = (buffer, mimetype) => {
+// extraOptions: optional object merged into upload_stream options
+const uploadToCloudinary = (buffer, mimetype, extraOptions = {}) => {
     return new Promise((resolve, reject) => {
         const isPdf = mimetype === 'application/pdf';
 
+        const options = {
+            folder: 'prestamos-app',
+            resource_type: 'auto',
+            format: isPdf ? 'pdf' : undefined,
+            ...extraOptions,
+        };
+
         const uploadStream = cloudinary.uploader.upload_stream(
-            {
-                folder: 'prestamos-app',
-                resource_type: 'auto',
-                format: isPdf ? 'pdf' : undefined
-            },
+            options,
             (error, result) => {
                 if (error) return reject(error);
                 resolve(result);

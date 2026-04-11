@@ -138,6 +138,24 @@ const router = createRouter({
       meta: { title: 'Personal', requiresAuth: true, requiresAdmin: true },
     },
     {
+      path: '/personal/nuevo',
+      name: 'NewPersonal',
+      component: () => import('../views/Modules/Personal/PersonalForm.vue'),
+      meta: { title: 'Nuevo Bien Personal', requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/personal/editar/:id',
+      name: 'EditPersonal',
+      component: () => import('../views/Modules/Personal/PersonalForm.vue'),
+      meta: { title: 'Editar Bien Personal', requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/personal/:id',
+      name: 'PersonalDetail',
+      component: () => import('../views/Modules/Personal/PersonalDetail.vue'),
+      meta: { title: 'Detalles del Bien', requiresAuth: true, requiresAdmin: true },
+    },
+    {
       path: '/proveedores/nuevo',
       name: 'NewProvider',
       component: () => import('../views/Modules/Providers/ProviderForm.vue'),

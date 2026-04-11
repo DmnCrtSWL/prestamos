@@ -10,6 +10,7 @@ import incomesRouter from './routes/incomes.js';
 import providersRouter from './routes/providers.js';
 import authRouter from './routes/auth.js';
 import dashboardRouter from './routes/dashboard.js';
+import personalRouter from './routes/personal.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -41,6 +42,7 @@ app.use('/api/credits', creditsRouter);
 app.use('/api/incomes', incomesRouter);
 app.use('/api/providers', providersRouter);
 app.use('/api/dashboard', dashboardRouter);
+app.use('/api/personal', personalRouter);
 
 // Health check
 app.get('/health', (req, res) => {
