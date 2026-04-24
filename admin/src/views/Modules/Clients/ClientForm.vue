@@ -11,7 +11,7 @@
     </div>
 
     <ComponentCard :title="isEditMode ? 'Editar Cliente' : 'Nuevo Cliente'">
-      <form @submit.prevent="handleSubmit">
+      <form @submit.prevent="handleSubmit" @keydown="preventScrollKeys">
         <div class="space-y-6">
           
           <!-- Información del Cliente -->
@@ -305,6 +305,16 @@ const handleSubmit = async () => {
     errorMessage.value = error.message || `Error al ${isEditMode.value ? 'actualizar' : 'crear'} cliente`
   } finally {
     isSubmitting.value = false
+  }
+}
+
+const preventScrollKeys = (e) => {
+  const tag = e.target?.tagName
+  if (tag !== 'INPUT' && tag !== 'TEXTAREA') return
+  // ArrowUp/Down have no meaningful behavior in single-line inputs
+  // but Safari on iPadOS with physical keyboard uses them to scroll the page
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault()
   }
 }
 
