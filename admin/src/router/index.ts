@@ -105,6 +105,12 @@ const router = createRouter({
       component: () => import('../views/Modules/Credits/CreditRestructure.vue'),
       meta: { title: 'Reestructuración', requiresAuth: true },
     },
+    {
+      path: '/corte',
+      name: 'Corte',
+      component: () => import('../views/Modules/Corte.vue'),
+      meta: { title: 'Corte de Caja', requiresAuth: true },
+    },
 
     // Admin-only routes
     {

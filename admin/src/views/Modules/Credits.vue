@@ -5,6 +5,16 @@
         Lista de Créditos
       </h2>
       <div class="flex items-center gap-3">
+        <select
+          v-model="selectedProvider"
+          class="dark:bg-dark-900 h-11 rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+        >
+          <option value="">TODOS</option>
+          <option v-for="provider in providers" :key="provider.id" :value="provider.name">
+            {{ provider.name }}
+          </option>
+        </select>
+
         <div class="relative">
           <input
             type="text"
@@ -36,6 +46,9 @@
               </th>
               <th class="px-5 py-3 text-left sm:px-6">
                 <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Tipo</p>
+              </th>
+              <th class="px-5 py-3 text-left sm:px-6">
+                <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Proveedor</p>
               </th>
               <th class="px-5 py-3 text-left sm:px-6 cursor-pointer" @click="sortBy('weeklyPayment')">
                 <div class="flex items-center gap-1.5">
@@ -94,6 +107,9 @@
                 >
                   {{ credit.loan_type || 'Tradicional' }}
                 </span>
+              </td>
+              <td class="px-5 py-4 sm:px-6">
+                <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ credit.provider_names || '-' }}</p>
               </td>
               <td class="px-5 py-4 sm:px-6">
                 <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ formatCurrency(credit.weekly_payment) }}</p>
@@ -179,19 +195,25 @@ import { Search, ArrowUpDown, Eye, Edit, User, Check, Calculator } from 'lucide-
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
-const { isAdmin } = useAuth()
+const { isAdmin, token } = useAuth()
 
 const searchQuery = ref('')
 const sortColumn = ref('created_at')
 const sortDirection = ref('desc')
 const credits = ref([])
+const providers = ref([])
+const selectedProvider = ref('')
 const isLoading = ref(false)
 
 // Fetch credits from API
 const fetchCredits = async () => {
   isLoading.value = true
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/credits`)
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/credits`, {
+      headers: {
+        'Authorization': `Bearer ${token.value}`
+      }
+    })
     if (!response.ok) {
       throw new Error('Error al cargar créditos')
     }
@@ -204,19 +226,48 @@ const fetchCredits = async () => {
   }
 }
 
+const fetchProviders = async () => {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/providers`, {
+      headers: {
+        'Authorization': `Bearer ${token.value}`
+      }
+    })
+    if (response.ok) {
+      providers.value = await response.json()
+    }
+  } catch (error) {
+    console.error('Error fetching providers:', error)
+  }
+}
+
 onMounted(() => {
   fetchCredits()
+  fetchProviders()
 })
 
 const filteredCredits = computed(() => {
-  if (!searchQuery.value) return credits.value
+  let result = credits.value
+
+  // Filter by provider
+  if (selectedProvider.value) {
+    result = result.filter((credit) => 
+      credit.provider_names?.includes(selectedProvider.value)
+    )
+  }
+
+  // Filter by search query
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter((credit) =>
+      credit.client_name?.toLowerCase().includes(query) ||
+      credit.client_phone?.includes(query) ||
+      credit.guarantor_name?.toLowerCase().includes(query) ||
+      credit.provider_names?.toLowerCase().includes(query)
+    )
+  }
   
-  const query = searchQuery.value.toLowerCase()
-  return credits.value.filter((credit) =>
-    credit.client_name?.toLowerCase().includes(query) ||
-    credit.client_phone?.includes(query) ||
-    credit.guarantor_name?.toLowerCase().includes(query)
-  )
+  return result
 })
 
 const sortedCredits = computed(() => {

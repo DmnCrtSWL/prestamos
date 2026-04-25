@@ -140,6 +140,7 @@
                   <th class="py-3 px-4 font-medium text-gray-900 dark:text-white">Fecha</th>
                   <th class="py-3 px-4 font-medium text-gray-900 dark:text-white">Monto Solicitado</th>
                   <th class="py-3 px-4 font-medium text-gray-900 dark:text-white">Tipo</th>
+                  <th class="py-3 px-4 font-medium text-gray-900 dark:text-white">Proveedor</th>
                   <th class="py-3 px-4 font-medium text-gray-900 dark:text-white">Total Pagado</th>
                   <th class="py-3 px-4 font-medium text-gray-900 dark:text-white">Estado</th>
                   <th class="py-3 px-4 text-center font-medium text-gray-900 dark:text-white">Acciones</th>
@@ -155,6 +156,7 @@
                   <td class="py-3 px-4 text-gray-700 dark:text-gray-300">{{ formatDate(credit.created_at) }}</td>
                   <td class="py-3 px-4 text-gray-700 dark:text-gray-300 font-semibold">{{ formatCurrency(credit.loan_amount) }}</td>
                   <td class="py-3 px-4 text-gray-700 dark:text-gray-300">{{ credit.loan_type || 'Tradicional' }}</td>
+                  <td class="py-3 px-4 text-gray-700 dark:text-gray-300">{{ credit.provider_names || '-' }}</td>
                   <td class="py-3 px-4 text-gray-700 dark:text-gray-300">
                     <span class="text-success-600 font-medium">{{ formatCurrency(credit.paid_amount) }}</span>
                   </td>

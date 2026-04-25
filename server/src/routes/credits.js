@@ -431,13 +431,15 @@ router.get('/', async (req, res) => {
         cl.phone as client_phone,
         cl.curp as client_curp,
         COALESCE(fundings.total, 0) as funded_amount,
+        fundings.provider_names,
         COALESCE(inc.total, 0) as paid_amount
       FROM credits c
       LEFT JOIN clients cl ON c.client_id = cl.id
       LEFT JOIN (
-        SELECT credit_id, SUM(amount) as total
-        FROM credit_fundings
-        GROUP BY credit_id
+        SELECT cf.credit_id, SUM(cf.amount) as total, STRING_AGG(p.name, ', ') as provider_names
+        FROM credit_fundings cf
+        JOIN providers p ON cf.provider_id = p.id
+        GROUP BY cf.credit_id
       ) fundings ON c.id = fundings.credit_id
       LEFT JOIN (
         SELECT credit_id, SUM(amount) as total
@@ -491,13 +493,15 @@ router.get('/:id', async (req, res) => {
         cl.phone as client_phone,
         cl.curp as client_curp,
         cl.address as client_address,
-        COALESCE(fundings.total, 0) as funded_amount
+        COALESCE(fundings.total, 0) as funded_amount,
+        fundings.provider_names
       FROM credits c
       LEFT JOIN clients cl ON c.client_id = cl.id
       LEFT JOIN (
-        SELECT credit_id, SUM(amount) as total
-        FROM credit_fundings
-        GROUP BY credit_id
+        SELECT cf.credit_id, SUM(cf.amount) as total, STRING_AGG(p.name, ', ') as provider_names
+        FROM credit_fundings cf
+        JOIN providers p ON cf.provider_id = p.id
+        GROUP BY cf.credit_id
       ) fundings ON c.id = fundings.credit_id
       WHERE c.id = $1 AND c.deleted_at IS NULL
     `;

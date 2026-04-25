@@ -281,6 +281,12 @@ const allMenuItems = [
     path: "/personal",
     adminOnly: true,
   },
+  {
+    icon: DocsIcon,
+    name: "Corte",
+    path: "/corte",
+    adminOnly: false,
+  },
 ];
 
 const menuGroups = computed(() => [
