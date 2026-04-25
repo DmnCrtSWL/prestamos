@@ -52,13 +52,14 @@ router.get('/', async (req, res) => {
         for (const provider of providersResult.rows) {
             // Contributions in date range
             const contribResult = await pool.query(`
-                SELECT id, amount, payment_date, note, created_at
+                SELECT id, amount, payment_date, note, created_at,
+                       COALESCE(payment_date, created_at::date) AS effective_date
                 FROM provider_contributions
                 WHERE provider_id = $1
                   AND deleted_at IS NULL
-                  AND payment_date::date >= $2::date
-                  AND payment_date::date <= $3::date
-                ORDER BY payment_date DESC
+                  AND COALESCE(payment_date, created_at::date) >= $2::date
+                  AND COALESCE(payment_date, created_at::date) <= $3::date
+                ORDER BY COALESCE(payment_date, created_at::date) DESC
             `, [provider.id, start_date, end_date]);
 
             const contributions = contribResult.rows;

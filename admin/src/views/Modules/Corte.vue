@@ -144,7 +144,7 @@
                   </thead>
                   <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
                     <tr v-for="c in pReport.contributions" :key="c.id">
-                      <td class="py-2 text-gray-600 dark:text-gray-300">{{ formatDate(c.payment_date) }}</td>
+                      <td class="py-2 text-gray-600 dark:text-gray-300">{{ formatDate(c.effective_date || c.payment_date) }}</td>
                       <td class="py-2 text-gray-500 dark:text-gray-400">{{ c.note || '—' }}</td>
                       <td class="py-2 text-right font-medium text-gray-800 dark:text-white">{{ formatCurrency(c.amount) }}</td>
                       <td class="py-2 text-right text-orange-600 dark:text-orange-400">-{{ formatCurrency(c.amount * 0.09) }}</td>
@@ -592,7 +592,7 @@ const generatePDF = async () => {
         currentY += 8
       } else {
         const contribBody = pr.contributions.map(c => [
-          formatDate(c.payment_date),
+          formatDate(c.effective_date || c.payment_date),
           c.note || '—',
           { content: currency(c.amount), styles: { halign: 'right' } },
           { content: `-${currency(c.amount * 0.09)}`, styles: { halign: 'right', textColor: ORANGE } },
