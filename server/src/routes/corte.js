@@ -50,7 +50,7 @@ router.get('/', async (req, res) => {
         const providerReports = [];
 
         for (const provider of providersResult.rows) {
-            // Contributions in date range
+            // Contributions in date range (including initial contribution from registration)
             const contribResult = await pool.query(`
                 SELECT id, amount, payment_date, note, created_at,
                        COALESCE(payment_date, created_at::date) AS effective_date
@@ -59,7 +59,20 @@ router.get('/', async (req, res) => {
                   AND deleted_at IS NULL
                   AND COALESCE(payment_date, created_at::date) >= $2::date
                   AND COALESCE(payment_date, created_at::date) <= $3::date
-                ORDER BY COALESCE(payment_date, created_at::date) DESC
+
+                UNION ALL
+
+                SELECT NULL AS id, initial_contribution AS amount, NULL AS payment_date,
+                       'Aportación Inicial (Registro)' AS note, created_at,
+                       created_at::date AS effective_date
+                FROM providers
+                WHERE id = $1
+                  AND deleted_at IS NULL
+                  AND initial_contribution > 0
+                  AND created_at::date >= $2::date
+                  AND created_at::date <= $3::date
+
+                ORDER BY effective_date DESC
             `, [provider.id, start_date, end_date]);
 
             const contributions = contribResult.rows;
