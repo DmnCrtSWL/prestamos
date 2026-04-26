@@ -109,7 +109,7 @@ const router = createRouter({
       path: '/corte',
       name: 'Corte',
       component: () => import('../views/Modules/Corte.vue'),
-      meta: { title: 'Corte de Caja', requiresAuth: true },
+      meta: { title: 'Corte de Caja', requiresAuth: true, requiresAdmin: true },
     },
 
     // Admin-only routes

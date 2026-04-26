@@ -285,7 +285,7 @@ const allMenuItems = [
     icon: DocsIcon,
     name: "Corte",
     path: "/corte",
-    adminOnly: false,
+    adminOnly: true,
   },
 ];
 

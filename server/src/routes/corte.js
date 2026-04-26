@@ -30,16 +30,17 @@ function getSaturdaysInRange(startDate, endDate) {
 router.get('/', async (req, res) => {
     try {
         const { provider_id, start_date, end_date, user_id } = req.query;
-        const { rol, id: currentUserId } = req.user;
+        const { rol } = req.user;
+
+        if (rol !== 'Administrador') {
+            return res.status(403).json({ error: 'Acceso restringido a Administradores' });
+        }
 
         if (!start_date || !end_date) {
             return res.status(400).json({ error: 'Se requieren start_date y end_date' });
         }
 
-        // Non-admins can only see their own movements
-        const effectiveUserId = rol === 'Administrador'
-            ? (user_id ? parseInt(user_id) : null)
-            : parseInt(currentUserId);
+        const effectiveUserId = user_id ? parseInt(user_id) : null;
 
         // Get providers
         let providersQuery = 'SELECT id, name FROM providers WHERE deleted_at IS NULL';
