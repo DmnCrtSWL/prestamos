@@ -26,14 +26,20 @@ function getSaturdaysInRange(startDate, endDate) {
     return saturdays;
 }
 
-// GET /api/corte?provider_id=X&start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
+// GET /api/corte?provider_id=X&start_date=YYYY-MM-DD&end_date=YYYY-MM-DD&user_id=Y
 router.get('/', async (req, res) => {
     try {
-        const { provider_id, start_date, end_date } = req.query;
+        const { provider_id, start_date, end_date, user_id } = req.query;
+        const { rol, id: currentUserId } = req.user;
 
         if (!start_date || !end_date) {
             return res.status(400).json({ error: 'Se requieren start_date y end_date' });
         }
+
+        // Non-admins can only see their own movements
+        const effectiveUserId = rol === 'Administrador'
+            ? (user_id ? parseInt(user_id) : null)
+            : parseInt(currentUserId);
 
         // Get providers
         let providersQuery = 'SELECT id, name FROM providers WHERE deleted_at IS NULL';
@@ -83,7 +89,14 @@ router.get('/', async (req, res) => {
             const salary_weeks = saturdays.map(date => ({ date, amount: WEEKLY_SALARY }));
             const total_salary = salary_weeks.length * WEEKLY_SALARY;
 
-            // All credits funded by this provider (not date-filtered — full portfolio)
+            // All credits funded by this provider, optionally filtered by user
+            const creditsParams = [provider.id];
+            let userWhereClause = '';
+            if (effectiveUserId) {
+                creditsParams.push(effectiveUserId);
+                userWhereClause = `AND c."user" = (SELECT nombre FROM users WHERE id = $${creditsParams.length} AND deleted_at IS NULL)`;
+            }
+
             const creditsResult = await pool.query(`
                 SELECT
                     c.id,
@@ -108,8 +121,9 @@ router.get('/', async (req, res) => {
                 ) inc ON c.id = inc.credit_id
                 WHERE cf.provider_id = $1
                   AND c.deleted_at IS NULL
+                  ${userWhereClause}
                 ORDER BY c.created_at DESC
-            `, [provider.id]);
+            `, creditsParams);
 
             const credits = creditsResult.rows.map(c => {
                 const loan_amount = Number(c.loan_amount);

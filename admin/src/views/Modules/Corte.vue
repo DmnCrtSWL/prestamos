@@ -33,6 +33,24 @@
           </select>
         </div>
 
+        <!-- User filter: dropdown for admins, label for others -->
+        <div v-if="isAdmin" class="flex flex-col gap-1.5">
+          <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Usuario</label>
+          <select
+            v-model="selectedUser"
+            class="h-10 rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+          >
+            <option value="">TODOS</option>
+            <option v-for="u in users" :key="u.id" :value="u.id">{{ u.nombre }}</option>
+          </select>
+        </div>
+        <div v-else class="flex flex-col gap-1.5">
+          <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Usuario</label>
+          <div class="h-10 flex items-center rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+            {{ user?.nombre || '—' }}
+          </div>
+        </div>
+
         <div class="flex flex-col gap-1.5">
           <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Desde</label>
           <input
@@ -271,11 +289,13 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { ChevronDownIcon } from '@/icons'
 import { useAuth } from '@/composables/useAuth'
 
-const { token } = useAuth()
+const { token, user, isAdmin } = useAuth()
 const API_URL = import.meta.env.VITE_API_URL
 
 const providers = ref([])
+const users = ref([])
 const selectedProvider = ref('')
+const selectedUser = ref('')
 const startDate = ref('')
 const endDate = ref('')
 const loading = ref(false)
@@ -303,6 +323,16 @@ const fetchProviders = async () => {
   } catch { /* optional */ }
 }
 
+const fetchUsers = async () => {
+  if (!isAdmin.value) return
+  try {
+    const res = await fetch(`${API_URL}/users`, {
+      headers: { Authorization: `Bearer ${token.value}` }
+    })
+    if (res.ok) users.value = await res.json()
+  } catch { /* optional */ }
+}
+
 const fetchCorte = async () => {
   if (!startDate.value || !endDate.value) return
   loading.value = true
@@ -312,6 +342,7 @@ const fetchCorte = async () => {
   try {
     const params = new URLSearchParams({ start_date: startDate.value, end_date: endDate.value })
     if (selectedProvider.value) params.append('provider_id', selectedProvider.value)
+    if (isAdmin.value && selectedUser.value) params.append('user_id', selectedUser.value)
 
     const res = await fetch(`${API_URL}/corte?${params}`, {
       headers: { Authorization: `Bearer ${token.value}` }
@@ -760,5 +791,5 @@ const generatePDF = async () => {
   }
 }
 
-onMounted(fetchProviders)
+onMounted(() => { fetchProviders(); fetchUsers() })
 </script>
