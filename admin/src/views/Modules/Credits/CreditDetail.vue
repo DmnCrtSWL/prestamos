@@ -2,9 +2,20 @@
   <AdminLayout>
     <div class="mx-auto max-w-270">
       <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 class="text-title-md2 font-bold text-black dark:text-white">
-          Detalles del Crédito
-        </h2>
+        <div class="flex items-center gap-3">
+          <h2 class="text-title-md2 font-bold text-black dark:text-white">
+            Detalles del Crédito
+          </h2>
+          <button
+            v-if="credit?.is_restructured"
+            @click="printPagareRestructurado"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-orange-300 bg-orange-50 px-3 py-1.5 text-sm font-medium text-orange-700 hover:bg-orange-100 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-400 dark:hover:bg-orange-500/20 transition-colors"
+            title="Imprimir Pagaré de Reestructuración"
+          >
+            <FileDown class="h-4 w-4" />
+            Pagaré
+          </button>
+        </div>
         <button
           @click="router.back()"
           class="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-white/10"
@@ -560,12 +571,13 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
-import { FileText, CreditCard, X, Calculator, AlertTriangle, Trash2 } from 'lucide-vue-next'
+import { FileText, CreditCard, X, Calculator, AlertTriangle, Trash2, FileDown } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
+import jsPDF from 'jspdf'
 
 const route = useRoute()
 const router = useRouter()
-const { userName } = useAuth()
+const { userName, isEmpleados } = useAuth()
 const isLoading = ref(true)
 const credit = ref(null)
 const incomes = ref([])
@@ -616,6 +628,256 @@ const formatCurrency = (value) => {
     style: 'currency',
     currency: 'MXN',
   }).format(value || 0)
+}
+
+const numberToWords = (num) => {
+  const ones = ['', 'UN', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE',
+    'DIEZ', 'ONCE', 'DOCE', 'TRECE', 'CATORCE', 'QUINCE', 'DIECISÉIS', 'DIECISIETE', 'DIECIOCHO', 'DIECINUEVE']
+  const tens = ['', '', 'VEINTE', 'TREINTA', 'CUARENTA', 'CINCUENTA', 'SESENTA', 'SETENTA', 'OCHENTA', 'NOVENTA']
+  const hundreds = ['', 'CIEN', 'DOSCIENTOS', 'TRESCIENTOS', 'CUATROCIENTOS', 'QUINIENTOS',
+    'SEISCIENTOS', 'SETECIENTOS', 'OCHOCIENTOS', 'NOVECIENTOS']
+
+  if (num === 0) return 'CERO'
+  const integer = Math.floor(num)
+  const cents = Math.round((num - integer) * 100)
+
+  const convert = (n) => {
+    if (n === 0) return ''
+    if (n < 20) return ones[n]
+    if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' Y ' + ones[n % 10] : '')
+    if (n === 100) return 'CIEN'
+    const h = Math.floor(n / 100)
+    const rest = n % 100
+    let word = hundreds[h]
+    if (h === 1 && rest > 0) word = 'CIENTO'
+    return word + (rest !== 0 ? ' ' + convert(rest) : '')
+  }
+
+  const convertThousands = (n) => {
+    if (n >= 1000) {
+      const th = Math.floor(n / 1000)
+      const rest = n % 1000
+      const thWord = th === 1 ? 'MIL' : convert(th) + ' MIL'
+      return thWord + (rest !== 0 ? ' ' + convert(rest) : '')
+    }
+    return convert(n)
+  }
+
+  return convertThousands(integer) + ' ' + String(cents).padStart(2, '0') + '/100 M.N.'
+}
+
+const printPagareRestructurado = () => {
+  if (!credit.value) return
+
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' })
+  const pageW = doc.internal.pageSize.getWidth()
+  const pageH = doc.internal.pageSize.getHeight()
+
+  const amount = Number(credit.value.loan_amount)
+  const amountWords = numberToWords(amount)
+  const now = new Date()
+  const day = now.getDate()
+  const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
+  const month = months[now.getMonth()]
+  const year = now.getFullYear()
+
+  const PRIMARY  = [0, 0, 0]
+  const DARK     = [20, 20, 20]
+  const GRAY     = [100, 100, 100]
+  const LIGHTBG  = [245, 245, 245]
+  const BORDER   = [200, 200, 200]
+  const LINE     = [170, 170, 170]
+
+  const setFont = (style = 'normal', size = 10, color = DARK) => {
+    doc.setFont('helvetica', style)
+    doc.setFontSize(size)
+    doc.setTextColor(...color)
+  }
+  const hline = (x1, y1, x2, y2, color = LINE, w = 0.3) => {
+    doc.setDrawColor(...color)
+    doc.setLineWidth(w)
+    doc.line(x1, y1, x2, y2)
+  }
+  const fillRect = (x, y, w, h, fill, border) => {
+    if (fill)   doc.setFillColor(...fill)
+    if (border) doc.setDrawColor(...border)
+    else        doc.setDrawColor(255, 255, 255)
+    doc.rect(x, y, w, h, fill && border ? 'FD' : fill ? 'F' : 'D')
+  }
+  const signLine = (x, y, w = 55) => hline(x, y, x + w, y, DARK, 0.4)
+
+  const mx = 16
+  const mr = pageW - mx
+
+  let y = 8
+
+  fillRect(0, y, pageW, 18, PRIMARY, PRIMARY)
+  setFont('bold', 16, [255, 255, 255])
+  doc.text('PAGARÉ', mx, y + 12)
+  setFont('normal', 8, [220, 220, 220])
+  doc.text('Zamora, Michoacán', mr, y + 7, { align: 'right' })
+  setFont('bold', 8, [220, 220, 220])
+  doc.text(`No. ${Date.now().toString().slice(-6)}`, mr, y + 13, { align: 'right' })
+  y += 22
+
+  fillRect(mx, y, pageW - mx * 2, 12, LIGHTBG, BORDER)
+  setFont('bold', 8, GRAY)
+  doc.text('LUGAR Y FECHA', mx + 3, y + 4.5)
+  setFont('normal', 9, DARK)
+  doc.text(`En la ciudad de Zamora, Mich., a ${day} de ${month} de ${year}.`, mx + 3, y + 10)
+  y += 16
+
+  setFont('bold', 9, GRAY)
+  doc.text('BUENO POR:', mx, y)
+  y += 6
+  fillRect(mx, y, pageW - mx * 2, 12, [255, 255, 255], BORDER)
+  const amtFmt = `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
+  setFont('bold', 11, PRIMARY)
+  doc.text(amtFmt, mx + 3, y + 8)
+  setFont('normal', 8.5, DARK)
+  doc.text(`(${amountWords})`, mx + 32, y + 8, { maxWidth: pageW - mx * 2 - 36 })
+  y += 16
+
+  setFont('bold', 9, PRIMARY)
+  doc.text('PROMESA DE PAGO', mx, y)
+  hline(mx, y + 1, mr, y + 1, PRIMARY, 0.5)
+  y += 6
+  setFont('normal', 9, DARK)
+
+  let acreedor = 'FINANCIERA ZAMORA'
+  if (isEmpleados.value) {
+    acreedor = 'MARÍA CRISTINA VERDUZCO ÁLVAREZ'
+  } else {
+    acreedor = userName.value ? userName.value.toUpperCase() : 'FINANCIERA ZAMORA'
+  }
+
+  const promText = `Debo y pagaré incondicionalmente a la orden de ${acreedor}, la cantidad de ${amtFmt} (${amountWords}), en moneda nacional.`
+  const promLines = doc.splitTextToSize(promText, pageW - mx * 2)
+  doc.text(promLines, mx, y)
+  y += promLines.length * 5 + 3
+
+  fillRect(mx, y, pageW - mx * 2, 14, LIGHTBG, BORDER)
+  setFont('bold', 8, GRAY)
+  doc.text('TIPO DE CRÉDITO', mx + 3, y + 4.5)
+  doc.text('PAGO SEMANAL', mx + 80, y + 4.5)
+  doc.text('TOTAL A PAGAR', mx + 140, y + 4.5)
+  setFont('bold', 10, PRIMARY)
+  doc.text(credit.value.loan_type || 'Tradicional', mx + 3, y + 11)
+  doc.text(`$${Number(credit.value.weekly_payment).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`, mx + 80, y + 11)
+  doc.text(`$${Number(credit.value.total_to_pay).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`, mx + 140, y + 11)
+  y += 18
+
+  setFont('bold', 9, PRIMARY)
+  doc.text('INTERESES', mx, y)
+  hline(mx, y + 1, mr, y + 1, PRIMARY, 0.5)
+  y += 6
+  setFont('normal', 9, DARK)
+  const intText = 'La cantidad adeudada causará intereses ordinarios a razón del 20% mensual. En caso de mora, causará intereses moratorios a razón del 20% mensual, desde el día siguiente al vencimiento y hasta la total liquidación.'
+  const intLines = doc.splitTextToSize(intText, pageW - mx * 2)
+  doc.text(intLines, mx, y)
+  y += intLines.length * 5 + 3
+
+  setFont('bold', 9, PRIMARY)
+  doc.text('JURISDICCIÓN', mx, y)
+  hline(mx, y + 1, mr, y + 1, PRIMARY, 0.5)
+  y += 6
+  setFont('normal', 8.5, DARK)
+  const jurText = 'Este pagaré es de naturaleza mercantil conforme a la Ley General de Títulos y Operaciones de Crédito. Para su interpretación y cumplimiento, las partes se someten a las leyes y tribunales competentes de la ciudad de Zamora, Michoacán, renunciando a cualquier otro fuero.'
+  const jurLines = doc.splitTextToSize(jurText, pageW - mx * 2)
+  doc.text(jurLines, mx, y)
+  y += jurLines.length * 4.5 + 5
+
+  signLine(mx, y + 6)
+  setFont('bold', 8, GRAY)
+  doc.text('FIRMA DEL DEUDOR', mx, y + 11)
+  setFont('normal', 8, DARK)
+  doc.text(credit.value.client_name || '', mx, y + 16)
+
+  const divY = 142
+  hline(0, divY, pageW, divY, [150, 150, 150], 0.8)
+  setFont('normal', 7, [180, 180, 180])
+  doc.text('✂  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─', mx, divY + 4)
+
+  let ey = divY + 8
+
+  fillRect(0, ey, pageW, 10, PRIMARY, PRIMARY)
+  setFont('bold', 10, [255, 255, 255])
+  doc.text('DATOS COMPLEMENTARIOS (DEUDOR Y AVAL)', mx, ey + 6.5)
+  ey += 14
+
+  const fieldW = pageW - mx * 2
+
+  setFont('bold', 9, PRIMARY)
+  doc.text('I. DATOS DEL DEUDOR', mx, ey)
+  hline(mx, ey + 1, mx + 40, ey + 1, PRIMARY, 0.4)
+  ey += 6
+
+  const deudorFields = [
+    ['Nombre completo:', credit.value.client_name || ''],
+    ['Domicilio:', credit.value.client_address || ''],
+  ]
+
+  deudorFields.forEach(([label, value]) => {
+    setFont('bold', 7, GRAY)
+    doc.text(label, mx, ey)
+    ey += 4
+    fillRect(mx, ey, fieldW, 7, [255, 255, 255], BORDER)
+    setFont('normal', 8, DARK)
+    doc.text(value, mx + 2, ey + 4.5, { maxWidth: fieldW - 4 })
+    ey += 9
+  })
+
+  setFont('bold', 7, GRAY)
+  doc.text('Teléfono:', mx, ey)
+  doc.text('Firma del Deudor:', mx + 80, ey)
+  ey += 4
+  fillRect(mx, ey, 60, 7, [255, 255, 255], BORDER)
+  setFont('normal', 8, DARK)
+  doc.text(credit.value.client_phone || '', mx + 2, ey + 4.5)
+  signLine(mx + 80, ey + 7, fieldW - 80)
+  ey += 12
+
+  setFont('bold', 9, PRIMARY)
+  doc.text('II. DATOS DEL AVAL', mx, ey)
+  hline(mx, ey + 1, mx + 35, ey + 1, PRIMARY, 0.4)
+  ey += 5
+
+  setFont('italic', 7.5, GRAY)
+  const avalDisclaimer = 'Por medio del presente, el suscrito se constituye como aval solidario, obligándose en los mismos términos que el deudor principal.'
+  const disclaimerLines = doc.splitTextToSize(avalDisclaimer, fieldW)
+  doc.text(disclaimerLines, mx, ey)
+  ey += disclaimerLines.length * 4 + 3
+
+  const avalFields = [
+    ['Nombre completo del Aval:', credit.value.guarantor_name || ''],
+    ['Domicilio del Aval:', credit.value.guarantor_address || ''],
+  ]
+
+  avalFields.forEach(([label, value]) => {
+    setFont('bold', 7, GRAY)
+    doc.text(label, mx, ey)
+    ey += 4
+    fillRect(mx, ey, fieldW, 7, [255, 255, 255], BORDER)
+    setFont('normal', 8, DARK)
+    doc.text(value, mx + 2, ey + 4.5, { maxWidth: fieldW - 4 })
+    ey += 9
+  })
+
+  setFont('bold', 7, GRAY)
+  doc.text('Teléfono Aval:', mx, ey)
+  doc.text('Firma del Aval:', mx + 80, ey)
+  ey += 4
+  fillRect(mx, ey, 60, 7, [255, 255, 255], BORDER)
+  setFont('normal', 8, DARK)
+  doc.text(credit.value.guarantor_phone || '', mx + 2, ey + 4.5)
+  signLine(mx + 80, ey + 7, fieldW - 80)
+
+  hline(mx, pageH - 11, mr, pageH - 11, BORDER, 0.3)
+  setFont('normal', 7, GRAY)
+  doc.text('Documento generado electrónicamente. Válido como título de crédito con valor legal.', pageW / 2, pageH - 6, { align: 'center' })
+
+  doc.autoPrint()
+  window.open(doc.output('bloburl'), '_blank')
 }
 
 /* --- COMPUTADOS PARA 10% SEMANAL --- */

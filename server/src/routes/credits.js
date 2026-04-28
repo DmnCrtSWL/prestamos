@@ -223,8 +223,8 @@ router.post('/restructure', async (req, res) => {
                 client_id, loan_amount, retention_amount, net_received,
                 weekly_payment, total_to_pay, weeks, "user",
                 guarantor_name, guarantor_phone, guarantor_address,
-                payment_schedule, loan_type, status
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                payment_schedule, loan_type, status, is_restructured
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
             RETURNING *`,
             [
                 client_id,
@@ -240,7 +240,8 @@ router.post('/restructure', async (req, res) => {
                 guarantor_address,
                 JSON.stringify(payment_schedule),
                 loan_type || 'Tradicional',
-                'approved'
+                'approved',
+                true
             ]
         );
 
