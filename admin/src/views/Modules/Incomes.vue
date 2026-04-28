@@ -78,6 +78,22 @@
 
     <!-- Removed separate Filter Card -->
 
+    <!-- Client search -->
+    <div class="mb-4">
+      <div class="relative max-w-xs">
+        <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        <input
+          v-model="clientSearch"
+          type="text"
+          placeholder="Buscar por cliente..."
+          class="w-full rounded-full border border-stroke bg-white py-2 pl-9 pr-9 outline-none text-sm transition focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
+        />
+        <button v-if="clientSearch" @click="clientSearch = ''" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <XIcon class="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+
     <!-- Error message -->
     <div v-if="fetchError" class="mb-4 rounded-lg bg-red-50 p-3 dark:bg-red-500/10">
       <p class="text-sm font-medium text-red-800 dark:text-red-400">{{ fetchError }}</p>
@@ -148,9 +164,9 @@
                 <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ formatDate(income.created_at_cdmx || income.created_at) }}</p>
               </td>
             </tr>
-            <tr v-if="incomes.length === 0 && !isLoading">
-                <td colspan="6" class="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
-                    No hay movimientos registrados para este periodo.
+            <tr v-if="filteredIncomes.length === 0 && !isLoading">
+                <td colspan="7" class="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
+                    {{ clientSearch ? `No se encontraron pagos para "${clientSearch}".` : 'No hay movimientos registrados para este periodo.' }}
                 </td>
             </tr>
              <tr v-if="isLoading">
@@ -171,7 +187,7 @@
           <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
             <div>
               <p class="text-sm text-gray-700 dark:text-gray-400">
-                Mostrando <span class="font-medium">{{ (currentPage - 1) * itemsPerPage + 1 }}</span> a <span class="font-medium">{{ Math.min(currentPage * itemsPerPage, incomes.length) }}</span> de <span class="font-medium">{{ incomes.length }}</span> resultados
+                Mostrando <span class="font-medium">{{ (currentPage - 1) * itemsPerPage + 1 }}</span> a <span class="font-medium">{{ Math.min(currentPage * itemsPerPage, filteredIncomes.length) }}</span> de <span class="font-medium">{{ filteredIncomes.length }}</span> resultados
               </p>
             </div>
             <div>
@@ -194,15 +210,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
-import { Plus as PlusIcon, Search as SearchIcon, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from 'lucide-vue-next'
+import { Plus as PlusIcon, Search as SearchIcon, X as XIcon, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from 'lucide-vue-next'
 
 const router = useRouter()
 const incomes = ref([])
 const isLoading = ref(false)
 const fetchError = ref('')
+const clientSearch = ref('')
 
 // Pagination state
 const currentPage = ref(1)
@@ -285,13 +302,21 @@ const applyFilters = () => {
     fetchIncomes()
 }
 
+watch(clientSearch, () => { currentPage.value = 1 })
+
+const filteredIncomes = computed(() => {
+    if (!clientSearch.value.trim()) return incomes.value
+    const q = clientSearch.value.trim().toLowerCase()
+    return incomes.value.filter(i => (i.client_name || '').toLowerCase().includes(q))
+})
+
 // Pagination Logic
-const totalPages = computed(() => Math.ceil(incomes.value.length / itemsPerPage))
+const totalPages = computed(() => Math.ceil(filteredIncomes.value.length / itemsPerPage))
 
 const paginatedIncomes = computed(() => {
     const start = (currentPage.value - 1) * itemsPerPage
     const end = start + itemsPerPage
-    return incomes.value.slice(start, end)
+    return filteredIncomes.value.slice(start, end)
 })
 
 const nextPage = () => {

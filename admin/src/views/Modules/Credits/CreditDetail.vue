@@ -203,6 +203,99 @@
           </div>
         </div>
 
+        <!-- Late-payment diagnostic -->
+        <div v-if="lateDiagnostic" class="rounded-sm border border-orange-300 bg-orange-50 shadow-default dark:border-orange-700 dark:bg-orange-900/20">
+          <div class="border-b border-orange-300 py-4 px-6.5 dark:border-orange-700 flex items-center gap-2">
+            <AlertTriangle class="h-5 w-5 text-orange-600 dark:text-orange-400 shrink-0" />
+            <h3 class="font-medium text-orange-700 dark:text-orange-400">Diagnóstico de Atraso</h3>
+          </div>
+          <div class="p-6.5 space-y-2 text-sm text-orange-800 dark:text-orange-300">
+            <p>
+              El <strong>Pago #{{ lateDiagnostic.weekNumber }}</strong>
+              (vencimiento: <strong>{{ lateDiagnostic.dueDate }}</strong>)
+              es el que activó la extensión a 13 semanas y los recargos.
+            </p>
+            <p>
+              Al cierre de esa fecha se acumulaban
+              <strong>{{ formatCurrency(lateDiagnostic.paidByDue) }}</strong> pagados,
+              pero se esperaban <strong>{{ formatCurrency(lateDiagnostic.expected) }}</strong>
+              — faltaban <strong class="text-red-600">{{ formatCurrency(lateDiagnostic.shortfall) }}</strong>.
+            </p>
+            <p v-if="lateDiagnostic.lateIncome">
+              El siguiente pago registrado fue de
+              <strong>{{ formatCurrency(lateDiagnostic.lateIncome.amount) }}</strong>
+              el <strong>{{ formatDate(lateDiagnostic.lateIncome.created_at_cdmx || lateDiagnostic.lateIncome.created_at) }}</strong>,
+              es decir, <em>después</em> de la fecha de vencimiento del pago #{{ lateDiagnostic.weekNumber }}.
+            </p>
+          </div>
+        </div>
+
+        <!-- Income history with delete -->
+        <div v-if="credit.loan_type !== '10% Semanal' && incomes.length > 0" class="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+          <div class="border-b border-stroke py-4 px-6.5 dark:border-strokedark">
+            <h3 class="font-medium text-black dark:text-white">Pagos Registrados</h3>
+          </div>
+          <div class="p-6.5 overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead>
+                <tr class="border-b border-stroke dark:border-strokedark">
+                  <th class="py-2 px-2 font-medium text-gray-500 dark:text-gray-400">Folio</th>
+                  <th class="py-2 px-2 font-medium text-gray-500 dark:text-gray-400">Fecha</th>
+                  <th class="py-2 px-2 text-right font-medium text-gray-500 dark:text-gray-400">Monto</th>
+                  <th class="py-2 px-2 font-medium text-gray-500 dark:text-gray-400">Método</th>
+                  <th class="py-2 px-2 font-medium text-gray-500 dark:text-gray-400">Usuario</th>
+                  <th class="py-2 px-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="inc in [...incomes].sort((a,b) => new Date(a.created_at) - new Date(b.created_at))"
+                    :key="inc.id"
+                    class="border-b border-stroke dark:border-strokedark last:border-0">
+                  <td class="py-2 px-2 font-mono text-xs text-gray-500 dark:text-gray-400">{{ inc.folio }}</td>
+                  <td class="py-2 px-2 text-black dark:text-white">
+                    <template v-if="editingIncomeId === inc.id">
+                      <div class="flex items-center gap-1">
+                        <input
+                          type="date"
+                          v-model="editingIncomeDate"
+                          class="rounded border border-stroke bg-transparent py-0.5 px-2 text-xs outline-none focus:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
+                        />
+                        <button @click="saveIncomeDate(inc.id)" class="rounded bg-primary px-2 py-0.5 text-xs text-white hover:bg-opacity-90">Guardar</button>
+                        <button @click="editingIncomeId = null" class="rounded px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-meta-4">✕</button>
+                      </div>
+                    </template>
+                    <template v-else>
+                      {{ formatDate(inc.created_at_cdmx || inc.created_at) }}
+                    </template>
+                  </td>
+                  <td class="py-2 px-2 text-right font-medium text-green-600">{{ formatCurrency(inc.amount) }}</td>
+                  <td class="py-2 px-2 text-gray-500 dark:text-gray-400">{{ inc.payment_method === 'cash' ? 'Efectivo' : 'Transferencia' }}</td>
+                  <td class="py-2 px-2 text-gray-500 dark:text-gray-400">{{ inc.user || '-' }}</td>
+                  <td class="py-2 px-2 text-right">
+                    <div class="flex items-center justify-end gap-1">
+                      <button
+                        @click="startEditDate(inc)"
+                        class="inline-flex items-center rounded px-2 py-1 text-xs font-medium text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10"
+                        title="Mover fecha"
+                      >
+                        Mover
+                      </button>
+                      <button
+                        @click="deleteIncome(inc.id)"
+                        :disabled="isDeletingIncome === inc.id"
+                        class="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-40"
+                        title="Eliminar pago"
+                      >
+                        <Trash2 class="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- Payment Schedule -->
         <div v-if="credit.loan_type !== '10% Semanal'" class="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
           <div class="border-b border-stroke py-4 px-6.5 dark:border-strokedark flex justify-between items-center">
@@ -467,7 +560,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
-import { FileText, CreditCard, X, Calculator } from 'lucide-vue-next'
+import { FileText, CreditCard, X, Calculator, AlertTriangle, Trash2 } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 
 const route = useRoute()
@@ -717,7 +810,7 @@ const extendedSchedule = computed(() => {
       return []
     }
   } else {
-    schedule = credit.value.payment_schedule
+    schedule = [...credit.value.payment_schedule]
   }
 
   // Guard: must be a real array (10% Semanal credits store an object, not an array)
@@ -775,43 +868,39 @@ const penaltyAmount = computed(() => {
 
   const sortedIncomes = [...incomes.value].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
 
+  // Find the first past-due date to begin counting
+  const [fy, fm, fd] = schedule[0].date.split('-').map(Number)
+  const firstDueDate = new Date(fy, fm - 1, fd, 23, 59, 59, 999)
+  if (today <= firstDueDate) return 0
+
   let totalPenalty = 0
 
-  // For each payment due date that has already passed, check day-by-day starting
-  // from the day AFTER the due date up to today.
-  for (const payment of schedule) {
-    const [py, pm, pd] = payment.date.split('-').map(Number)
-    const dueDate = new Date(py, pm - 1, pd, 23, 59, 59, 999)
+  // Iterate each calendar day ONCE from the day after the first due date to today.
+  // This avoids double-counting that occurs when looping per-payment.
+  let currentDate = new Date(firstDueDate)
+  currentDate.setDate(currentDate.getDate() + 1)
+  currentDate.setHours(23, 59, 59, 999)
 
-    if (today <= dueDate) break // Future payment — stop
+  while (currentDate <= today) {
+    const expectedAmount = schedule.reduce((sum, p) => {
+      const [py, pm, pd] = p.date.split('-').map(Number)
+      const pDate = new Date(py, pm - 1, pd, 23, 59, 59, 999)
+      return pDate < currentDate ? sum + Number(p.amount) : sum
+    }, 0)
 
-    // Start counting from the day after this payment's due date
-    let currentDate = new Date(dueDate)
-    currentDate.setDate(currentDate.getDate() + 1)
-    currentDate.setHours(23, 59, 59, 999)
+    const actualAmount = sortedIncomes
+      .filter(i => new Date(i.created_at) <= currentDate)
+      .reduce((sum, i) => sum + Number(i.amount), 0)
 
-    while (currentDate <= today) {
-      // Cumulative expected up to (but not including) currentDate
-      const expectedAmount = schedule.reduce((sum, p) => {
-        const [epy, epm, epd] = p.date.split('-').map(Number)
-        const pDate = new Date(epy, epm - 1, epd, 23, 59, 59, 999)
-        return pDate < currentDate ? sum + Number(p.amount) : sum
-      }, 0)
+    const unpaid = expectedAmount - actualAmount
 
-      const actualAmount = sortedIncomes
-        .filter(i => new Date(i.created_at) <= currentDate)
-        .reduce((sum, i) => sum + Number(i.amount), 0)
-
-      const unpaid = expectedAmount - actualAmount
-
-      if (unpaid >= 1000) {
-        totalPenalty += 100
-      } else if (unpaid > 0) {
-        totalPenalty += 50
-      }
-
-      currentDate.setDate(currentDate.getDate() + 1)
+    if (unpaid >= 1000) {
+      totalPenalty += 100
+    } else if (unpaid > 0) {
+      totalPenalty += 50
     }
+
+    currentDate.setDate(currentDate.getDate() + 1)
   }
 
   return totalPenalty
@@ -967,10 +1056,102 @@ const isPdf = (path) => {
 
 const canRestructure = computed(() => {
   if (!scheduleWithPayments.value || scheduleWithPayments.value.length < 5) return false;
-  
+
   const payment5 = scheduleWithPayments.value.find(p => (p.number ?? (scheduleWithPayments.value.indexOf(p) + 1)) === 5) || scheduleWithPayments.value[4];
   if (!payment5) return false;
-  
+
   return payment5.paid >= payment5.amount;
 });
+
+// Identifies which scheduled payment caused the 13-week extension and late fees
+const lateDiagnostic = computed(() => {
+  if (!credit.value || credit.value.loan_type === '10% Semanal') return null;
+
+  let schedule = [];
+  const raw = credit.value.payment_schedule;
+  if (typeof raw === 'string') {
+    try { schedule = JSON.parse(raw); } catch { return null; }
+  } else if (Array.isArray(raw)) {
+    schedule = [...raw];
+  }
+  if (!Array.isArray(schedule) || schedule.length === 0) return null;
+
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+
+  const sortedIncomes = [...incomes.value].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+  let cumulativeExpected = 0;
+
+  for (let i = 0; i < schedule.length; i++) {
+    const payment = schedule[i];
+    const [py, pm, pd] = payment.date.split('-').map(Number);
+    const dueDate = new Date(py, pm - 1, pd, 23, 59, 59, 999);
+    cumulativeExpected += Number(payment.amount);
+
+    if (today > dueDate) {
+      const paidByDue = sortedIncomes
+        .filter(inc => new Date(inc.created_at) <= dueDate)
+        .reduce((sum, inc) => sum + Number(inc.amount), 0);
+
+      if (paidByDue < cumulativeExpected) {
+        // First income registered AFTER this due date is likely the late/missing payment
+        const lateIncome = sortedIncomes.find(inc => new Date(inc.created_at) > dueDate);
+        return {
+          weekNumber: payment.week ?? (i + 1),
+          dueDate: payment.date,
+          paidByDue,
+          expected: cumulativeExpected,
+          shortfall: cumulativeExpected - paidByDue,
+          lateIncome: lateIncome || null,
+        };
+      }
+    }
+  }
+  return null;
+});
+
+const isDeletingIncome = ref(null);
+const editingIncomeId = ref(null);
+const editingIncomeDate = ref('');
+
+const startEditDate = (inc) => {
+  editingIncomeId.value = inc.id;
+  // Pre-fill with the income's current CDMX date
+  const d = new Date(inc.created_at_cdmx || inc.created_at);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  editingIncomeDate.value = `${y}-${m}-${day}`;
+};
+
+const saveIncomeDate = async (incomeId) => {
+  if (!editingIncomeDate.value) return;
+  try {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/incomes/${incomeId}/date`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: editingIncomeDate.value })
+    });
+    if (!res.ok) throw new Error((await res.json()).error || 'Error');
+    editingIncomeId.value = null;
+    await fetchData();
+  } catch (e) {
+    alert('Error al actualizar fecha: ' + e.message);
+  }
+};
+
+const deleteIncome = async (incomeId) => {
+  if (!confirm('¿Eliminar este pago del historial? Esta acción no se puede deshacer.')) return;
+  isDeletingIncome.value = incomeId;
+  try {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/incomes/${incomeId}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error((await res.json()).error || 'Error');
+    await fetchData();
+  } catch (e) {
+    alert('Error al eliminar: ' + e.message);
+  } finally {
+    isDeletingIncome.value = null;
+  }
+};
 </script>

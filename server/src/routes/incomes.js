@@ -104,4 +104,46 @@ router.post('/', async (req, res) => {
     }
 });
 
+// PATCH /api/incomes/:id/date - Move an income to a different date
+router.patch('/:id/date', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { date } = req.body; // expects YYYY-MM-DD
+        if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            return res.status(400).json({ error: 'Fecha inválida. Formato esperado: YYYY-MM-DD' });
+        }
+        // Store as noon UTC so the date lands correctly in CDMX timezone (UTC-6 = 6 AM local)
+        const newTimestamp = `${date}T12:00:00.000Z`;
+        const result = await pool.query(
+            `UPDATE incomes SET created_at = $1 WHERE id = $2 AND deleted_at IS NULL RETURNING id, created_at`,
+            [newTimestamp, id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Ingreso no encontrado' });
+        }
+        res.json({ message: 'Fecha actualizada correctamente', income: result.rows[0] });
+    } catch (error) {
+        console.error('Error updating income date:', error);
+        res.status(500).json({ error: `Error al actualizar fecha: ${error.message}` });
+    }
+});
+
+// DELETE /api/incomes/:id - Soft-delete an income record
+router.delete('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query(
+            `UPDATE incomes SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id`,
+            [id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Ingreso no encontrado o ya eliminado' });
+        }
+        res.json({ message: 'Ingreso eliminado correctamente' });
+    } catch (error) {
+        console.error('Error deleting income:', error);
+        res.status(500).json({ error: `Error al eliminar ingreso: ${error.message}` });
+    }
+});
+
 export default router;
