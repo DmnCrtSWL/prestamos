@@ -1173,15 +1173,32 @@ const scheduleWithPayments = computed(() => {
   let remainingPaid = totalPaidAmount.value
   let penaltyToApply = penaltyAmount.value
 
+  // Find the best index to attach the penalty to avoid "inheriting" it to future unpaid weeks.
+  let tempPaid = totalPaidAmount.value;
+  let targetIdx = 0;
+  for (let i = 0; i < schedule.length; i++) {
+    let required = Number(schedule[i].amount);
+    if (tempPaid >= required) {
+      tempPaid -= required;
+      targetIdx = i;
+    } else {
+      break;
+    }
+  }
+
   const processedSchedule = schedule.map((item, idx) => {
     const originalAmount = Number(item.amount)
     let amountWithPenalty = originalAmount
     
+    if (idx === targetIdx && penaltyToApply > 0) {
+      amountWithPenalty += penaltyToApply;
+    }
+    
     let paid = 0
 
-    if (remainingPaid >= originalAmount) {
-      paid = originalAmount
-      remainingPaid -= originalAmount
+    if (remainingPaid >= amountWithPenalty) {
+      paid = amountWithPenalty
+      remainingPaid -= amountWithPenalty
     } else {
       paid = remainingPaid
       remainingPaid = 0
@@ -1195,14 +1212,6 @@ const scheduleWithPayments = computed(() => {
       paid
     }
   })
-
-  // Apply penalty to the first unpaid payment
-  if (penaltyToApply > 0) {
-    const firstUnpaid = processedSchedule.find(p => p.paid < p.originalAmount)
-    if (firstUnpaid) {
-      firstUnpaid.amount = firstUnpaid.originalAmount + penaltyToApply
-    }
-  }
 
   return processedSchedule
 })
