@@ -513,7 +513,13 @@
         <div class="mb-5 rounded-lg bg-primary/5 border border-primary/20 px-4 py-3">
           <p class="text-xs text-gray-500 dark:text-gray-400">Crédito</p>
           <p class="font-semibold text-black dark:text-white">{{ credit?.client_name }}</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Monto esperado: <span class="font-medium text-black dark:text-white">{{ formatCurrency(selectedPayment?.amount) }}</span></p>
+          <div class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+            <p>Monto esperado: <span class="font-bold text-black dark:text-white">{{ formatCurrency(selectedPayment?.amount) }}</span></p>
+            <div v-if="selectedPayment?.originalAmount && selectedPayment?.amount > selectedPayment?.originalAmount" class="mt-1 flex flex-col gap-0.5 border-l-2 border-primary/30 pl-2 text-xs">
+              <p><span class="font-medium">{{ formatCurrency(selectedPayment?.originalAmount) }}</span> de la semanalidad fija</p>
+              <p class="text-red-500"><span class="font-medium">{{ formatCurrency(selectedPayment?.amount - selectedPayment?.originalAmount) }}</span> de Multa</p>
+            </div>
+          </div>
         </div>
 
         <!-- Form -->
