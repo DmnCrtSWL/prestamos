@@ -123,24 +123,9 @@
                       <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Nombre</p>
                     </div>
                   </th>
-                  <th class="px-5 py-3 text-left sm:px-6">
-                     <div class="flex items-center gap-1.5">
-                      <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Usuario</p>
-                    </div>
-                  </th>
-                  <th class="px-5 py-3 text-left sm:px-6">
-                     <div class="flex items-center gap-1.5">
-                      <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Deuda Total</p>
-                    </div>
-                  </th>
-                  <th class="px-5 py-3 text-left sm:px-6">
-                     <div class="flex items-center gap-1.5">
-                      <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Pago Vencido</p>
-                    </div>
-                  </th>
-                  <th class="px-5 py-3 text-left sm:px-6">
-                     <div class="flex items-center gap-1.5">
-                      <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Acciones</p>
+                  <th class="px-5 py-3 text-right sm:px-6">
+                     <div class="flex items-center justify-end gap-1.5">
+                      <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Monto Vencido</p>
                     </div>
                   </th>
                 </tr>
@@ -154,23 +139,12 @@
                   <td class="px-5 py-4 sm:px-6">
                     <p class="text-gray-500 text-theme-sm dark:text-gray-400 font-medium">{{ client.name }}</p>
                   </td>
-                  <td class="px-5 py-4 sm:px-6">
-                    <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ client.username }}</p>
-                  </td>
-                  <td class="px-5 py-4 sm:px-6">
-                    <p class="text-gray-500 text-theme-sm dark:text-gray-400 font-medium text-red-600">{{ formatCurrency(client.amountOwed) }}</p>
-                  </td>
-                  <td class="px-5 py-4 sm:px-6">
-                    <p class="text-red-500 text-theme-sm dark:text-red-400 font-medium">{{ formatCurrency(client.overduePayment) }}</p>
-                  </td>
-                  <td class="px-5 py-4 sm:px-6">
-                    <button class="hover:text-primary" title="Ver detalles">
-                      <Eye class="w-5 h-5 text-blue-600 transition-colors" />
-                    </button>
+                  <td class="px-5 py-4 text-right sm:px-6">
+                    <p class="text-red-500 text-theme-sm dark:text-red-400 font-medium">{{ formatCurrency(client.amountOwed) }}</p>
                   </td>
                 </tr>
                 <tr v-if="morosos.length === 0">
-                  <td colspan="5" class="px-5 py-8 text-center text-gray-400 text-sm">Sin clientes morosos</td>
+                  <td colspan="2" class="px-5 py-8 text-center text-gray-400 text-sm">Sin clientes morosos</td>
                 </tr>
               </tbody>
             </table>
@@ -185,7 +159,7 @@
             <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
               <div>
                 <p class="text-sm text-gray-700 dark:text-gray-400">
-                  Mostrando <span class="font-medium">{{ (currentPageMorosos - 1) * itemsPerPage + 1 }}</span> a <span class="font-medium">{{ Math.min(currentPageMorosos * itemsPerPage, morosos.length) }}</span> de <span class="font-medium">{{ morosos.length }}</span> resultados
+                  Mostrando <span class="font-medium">{{ (currentPageMorosos - 1) * itemsPerPageMorosos + 1 }}</span> a <span class="font-medium">{{ Math.min(currentPageMorosos * itemsPerPageMorosos, morosos.length) }}</span> de <span class="font-medium">{{ morosos.length }}</span> resultados
                 </p>
               </div>
               <div>
@@ -273,7 +247,7 @@
             <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
               <div>
                 <p class="text-sm text-gray-700 dark:text-gray-400">
-                  Mostrando <span class="font-medium">{{ (currentPageIngresos - 1) * itemsPerPage + 1 }}</span> a <span class="font-medium">{{ Math.min(currentPageIngresos * itemsPerPage, proximosIngresos.length) }}</span> de <span class="font-medium">{{ proximosIngresos.length }}</span> resultados
+                  Mostrando <span class="font-medium">{{ (currentPageIngresos - 1) * itemsPerPageIngresos + 1 }}</span> a <span class="font-medium">{{ Math.min(currentPageIngresos * itemsPerPageIngresos, proximosIngresos.length) }}</span> de <span class="font-medium">{{ proximosIngresos.length }}</span> resultados
                 </p>
               </div>
               <div>
@@ -384,6 +358,7 @@ const fetchCreditosActivosYCobros = async () => {
     // 1. Créditos Activos (sin liquidar), 4. Monto en Circulación y 6. Clientes por cobrar (morosos)
     let activosCount = 0
     let montoCirculacion = 0
+    const morososMap = new Map()
     const morososClientIds = new Set()
 
     const today = new Date()
@@ -400,6 +375,7 @@ const fetchCreditosActivosYCobros = async () => {
         activosCount++
         
         let isMoroso = false
+        let expectedPayment = 0
 
         if (credit.loan_type === '10% Semanal') {
           // Para 10% Semanal, se cobra los sábados
@@ -410,7 +386,6 @@ const fetchCreditosActivosYCobros = async () => {
           currentSat.setDate(currentSat.getDate() + daysUntilNextSaturday)
           currentSat.setHours(0, 0, 0, 0)
 
-          let expectedPayment = 0
           const interestPerWeek = Number(credit.loan_amount || 0) * 0.10
 
           while (currentSat < today) {
@@ -424,7 +399,6 @@ const fetchCreditosActivosYCobros = async () => {
         } else {
           // Para los demás, sumamos los pagos vencidos en su calendario
           if (credit.payment_schedule && Array.isArray(credit.payment_schedule)) {
-            let expectedPayment = 0
             credit.payment_schedule.forEach(pmt => {
               // Asumimos formato YYYY-MM-DD
               const pmtDate = new Date(pmt.date + 'T00:00:00')
@@ -440,6 +414,15 @@ const fetchCreditosActivosYCobros = async () => {
 
         if (isMoroso && credit.client_id) {
           morososClientIds.add(credit.client_id)
+          const overdue = expectedPayment - pagado
+          if (morososMap.has(credit.client_id)) {
+            morososMap.get(credit.client_id).amountOwed += overdue
+          } else {
+            morososMap.set(credit.client_id, {
+              name: credit.client_name || `Cliente #${credit.client_id}`,
+              amountOwed: overdue
+            })
+          }
         }
 
         // Monto en circulación
@@ -454,6 +437,7 @@ const fetchCreditosActivosYCobros = async () => {
     stats.value.creditosActivos = activosCount
     stats.value.montoCirculacion = montoCirculacion
     stats.value.clientesPorCobrar = morososClientIds.size
+    morosos.value = Array.from(morososMap.values()).sort((a, b) => b.amountOwed - a.amountOwed)
 
     // 5. Monto Disponible (Suma del capital disponible de todos los proveedores que puede ver el usuario)
     stats.value.montoDisponible = providers.reduce((acc, current) => acc + Number(current.total_capital || 0), 0)
@@ -485,22 +469,23 @@ const formatDate = (dateString) => {
 }
 
 // ── Pagination ────────────────────────────────────────────────────────────────
-const itemsPerPage = 10
+const itemsPerPageMorosos = 5
+const itemsPerPageIngresos = 10
 const currentPageMorosos = ref(1)
 const currentPageIngresos = ref(1)
 
-const totalPagesMorosos = computed(() => Math.ceil(morosos.value.length / itemsPerPage))
+const totalPagesMorosos = computed(() => Math.ceil(morosos.value.length / itemsPerPageMorosos))
 const paginatedMorosos = computed(() => {
-  const start = (currentPageMorosos.value - 1) * itemsPerPage
-  return morosos.value.slice(start, start + itemsPerPage)
+  const start = (currentPageMorosos.value - 1) * itemsPerPageMorosos
+  return morosos.value.slice(start, start + itemsPerPageMorosos)
 })
 const nextPageMorosos = () => { if (currentPageMorosos.value < totalPagesMorosos.value) currentPageMorosos.value++ }
 const prevPageMorosos = () => { if (currentPageMorosos.value > 1) currentPageMorosos.value-- }
 
-const totalPagesIngresos = computed(() => Math.ceil(proximosIngresos.value.length / itemsPerPage))
+const totalPagesIngresos = computed(() => Math.ceil(proximosIngresos.value.length / itemsPerPageIngresos))
 const paginatedIngresos = computed(() => {
-  const start = (currentPageIngresos.value - 1) * itemsPerPage
-  return proximosIngresos.value.slice(start, start + itemsPerPage)
+  const start = (currentPageIngresos.value - 1) * itemsPerPageIngresos
+  return proximosIngresos.value.slice(start, start + itemsPerPageIngresos)
 })
 const nextPageIngresos = () => { if (currentPageIngresos.value < totalPagesIngresos.value) currentPageIngresos.value++ }
 const prevPageIngresos = () => { if (currentPageIngresos.value > 1) currentPageIngresos.value-- }
