@@ -286,15 +286,18 @@
                     <div class="flex items-center justify-end gap-1">
                       <button
                         @click="startEditDate(inc)"
-                        class="inline-flex items-center rounded px-2 py-1 text-xs font-medium text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10"
+                        :disabled="isLiquidado"
+                        class="inline-flex items-center rounded px-2 py-1 text-xs font-medium transition-colors"
+                        :class="isLiquidado ? 'cursor-not-allowed opacity-50 text-gray-400 dark:text-gray-500' : 'text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10'"
                         title="Mover fecha"
                       >
                         Mover
                       </button>
                       <button
                         @click="deleteIncome(inc.id)"
-                        :disabled="isDeletingIncome === inc.id"
-                        class="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-40"
+                        :disabled="isDeletingIncome === inc.id || isLiquidado"
+                        class="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors"
+                        :class="(isDeletingIncome === inc.id || isLiquidado) ? 'cursor-not-allowed opacity-50 text-gray-400 dark:text-gray-500' : 'text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10'"
                         title="Eliminar pago"
                       >
                         <Trash2 class="h-3.5 w-3.5" />
@@ -357,9 +360,9 @@
                     <div class="flex items-center justify-end gap-2 pr-4 w-full">
                       <button
                         @click="openPayModal(payment, idx)"
-                        :disabled="payment.paid >= payment.amount"
+                        :disabled="payment.paid >= payment.amount || isLiquidado"
                         class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
-                        :class="payment.paid >= payment.amount
+                        :class="(payment.paid >= payment.amount || isLiquidado)
                           ? 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
                           : 'bg-blue-600 text-white hover:bg-blue-700'"
                       >
@@ -370,9 +373,9 @@
                       <button
                         v-if="(payment.number ?? (idx + 1)) >= 5"
                         @click="router.push(`/reestructuracion/${credit.id}`)"
-                        :disabled="!canRestructure"
+                        :disabled="!canRestructure || isLiquidado"
                         class="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
-                        :class="!canRestructure
+                        :class="(!canRestructure || isLiquidado)
                           ? 'cursor-not-allowed bg-orange-500/50 text-white/50 dark:bg-orange-600/50'
                           : 'bg-orange-500 text-white hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700'"
                         title="Reestructuración"
@@ -464,7 +467,9 @@
                       <button
                         v-if="row.isPending"
                         @click="openPayModalSemanal10(row)"
-                        class="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
+                        :disabled="isLiquidado"
+                        class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-colors"
+                        :class="isLiquidado ? 'cursor-not-allowed bg-blue-400/50 dark:bg-blue-600/50 text-white/50' : 'bg-blue-600 hover:bg-blue-700'"
                       >
                         <CreditCard class="h-3.5 w-3.5" /> Pagar
                       </button>
@@ -1061,6 +1066,13 @@ const totalPaidAmount = computed(() => {
   return incomes.value.reduce((sum, income) => sum + Number(income.amount), 0)
 })
 
+const isLiquidado = computed(() => {
+  if (!credit.value) return false
+  if (credit.value.status === 'completed') return true
+  if (credit.value.loan_type === '10% Semanal') return isLiquidadoSemanal10.value
+  return Number(totalPaidAmount.value) >= Number(credit.value.total_to_pay)
+})
+
 const extendedSchedule = computed(() => {
   if (!credit.value || !credit.value.payment_schedule) return []
 
@@ -1088,7 +1100,7 @@ const extendedSchedule = computed(() => {
 
   // Check payments in order. If any due date has passed and cumulative paid < expected, extend once.
   let cumulativeExpected = 0
-  const sortedIncomes = [...incomes.value].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+  const sortedIncomes = [...incomes.value].sort((a, b) => new Date(a.created_at_cdmx || a.created_at) - new Date(b.created_at_cdmx || b.created_at))
 
   for (const payment of schedule) {
     const [py, pm, pd] = payment.date.split('-').map(Number)
@@ -1098,7 +1110,7 @@ const extendedSchedule = computed(() => {
     if (today > dueDate) {
       // How much was paid on or before this due date?
       const paidByDue = sortedIncomes
-        .filter(i => new Date(i.created_at) <= dueDate)
+        .filter(i => new Date(i.created_at_cdmx || i.created_at) <= dueDate)
         .reduce((sum, i) => sum + Number(i.amount), 0)
 
       if (paidByDue < cumulativeExpected) {
@@ -1128,7 +1140,7 @@ const penaltyAmount = computed(() => {
   const today = new Date()
   today.setHours(23, 59, 59, 999)
 
-  const sortedIncomes = [...incomes.value].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+  const sortedIncomes = [...incomes.value].sort((a, b) => new Date(a.created_at_cdmx || a.created_at) - new Date(b.created_at_cdmx || b.created_at))
 
   // Find the first past-due date to begin counting
   const [fy, fm, fd] = schedule[0].date.split('-').map(Number)
@@ -1136,6 +1148,7 @@ const penaltyAmount = computed(() => {
   if (today <= firstDueDate) return 0
 
   let totalPenalty = 0
+  let penaltyInProgress = 0  // penalty accumulated in the current "debt window"
 
   // Iterate each calendar day ONCE from the day after the first due date to today.
   // This avoids double-counting that occurs when looping per-payment.
@@ -1151,15 +1164,24 @@ const penaltyAmount = computed(() => {
     }, 0)
 
     const actualAmount = sortedIncomes
-      .filter(i => new Date(i.created_at) <= currentDate)
+      .filter(i => new Date(i.created_at_cdmx || i.created_at) <= currentDate)
       .reduce((sum, i) => sum + Number(i.amount), 0)
 
-    const unpaid = expectedAmount - actualAmount
+    // unpaid includes outstanding scheduled payments plus any accumulated penalty
+    const unpaid = (expectedAmount + totalPenalty) - actualAmount
 
     if (unpaid >= 1000) {
+      // Client still owes >= $1000 (including accumulated fines): charge $100/day
       totalPenalty += 100
+      penaltyInProgress += 100
     } else if (unpaid > 0) {
+      // Client still has a smaller outstanding balance: charge $50/day
       totalPenalty += 50
+      penaltyInProgress += 50
+    } else {
+      // Client is fully caught up — stop accumulating. Reset the in-progress window.
+      // The penalty already accrued (totalPenalty) remains; we only stop adding more.
+      penaltyInProgress = 0
     }
 
     currentDate.setDate(currentDate.getDate() + 1)
@@ -1173,17 +1195,25 @@ const scheduleWithPayments = computed(() => {
   let remainingPaid = totalPaidAmount.value
   let penaltyToApply = penaltyAmount.value
 
-  // Find the best index to attach the penalty to avoid "inheriting" it to future unpaid weeks.
+  // Find the first week that is NOT fully covered yet (the "frontier" week).
+  // The penalty is attached here so the client's already-paid surplus absorbs it.
+  // Previously, the penalty was attached to the last FULLY-paid week (targetIdx),
+  // which made it impossible for existing payments to cover it because that
+  // week's allocation was already exhausted — causing it to inherit forward.
   let tempPaid = totalPaidAmount.value;
-  let targetIdx = 0;
+  let targetIdx = 0;  // default to first week if nothing has been paid at all
   for (let i = 0; i < schedule.length; i++) {
-    let required = Number(schedule[i].amount);
+    const required = Number(schedule[i].amount);
     if (tempPaid >= required) {
       tempPaid -= required;
-      targetIdx = i;
+      // Keep going — we haven't found the frontier yet
     } else {
+      // i is the first week not fully paid: this is where the penalty belongs
+      targetIdx = i;
       break;
     }
+    // If tempPaid covered everything up to this week, move the target forward
+    targetIdx = i + 1 < schedule.length ? i + 1 : i;
   }
 
   const processedSchedule = schedule.map((item, idx) => {
@@ -1350,7 +1380,7 @@ const lateDiagnostic = computed(() => {
   const today = new Date();
   today.setHours(23, 59, 59, 999);
 
-  const sortedIncomes = [...incomes.value].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  const sortedIncomes = [...incomes.value].sort((a, b) => new Date(a.created_at_cdmx || a.created_at) - new Date(b.created_at_cdmx || b.created_at));
 
   let cumulativeExpected = 0;
 
@@ -1362,12 +1392,12 @@ const lateDiagnostic = computed(() => {
 
     if (today > dueDate) {
       const paidByDue = sortedIncomes
-        .filter(inc => new Date(inc.created_at) <= dueDate)
+        .filter(inc => new Date(inc.created_at_cdmx || inc.created_at) <= dueDate)
         .reduce((sum, inc) => sum + Number(inc.amount), 0);
 
       if (paidByDue < cumulativeExpected) {
         // First income registered AFTER this due date is likely the late/missing payment
-        const lateIncome = sortedIncomes.find(inc => new Date(inc.created_at) > dueDate);
+        const lateIncome = sortedIncomes.find(inc => new Date(inc.created_at_cdmx || inc.created_at) > dueDate);
         return {
           weekNumber: payment.week ?? (i + 1),
           dueDate: payment.date,

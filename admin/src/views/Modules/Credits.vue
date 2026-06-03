@@ -121,7 +121,10 @@
                 <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ formatDate(credit.created_at) }}</p>
               </td>
               <td class="px-5 py-4 sm:px-6">
-                <span
+                <span v-if="isLiquidado(credit)" class="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-500/15 dark:text-blue-500">
+                  Liquidado
+                </span>
+                <span v-else
                   :class="[
                     'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium',
                     credit.status === 'approved' || credit.status === 'active'
@@ -151,7 +154,9 @@
                   <button
                     v-if="isAdmin"
                     @click="editCredit(credit)"
-                    class="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+                    :disabled="isLiquidado(credit)"
+                    class="transition-colors"
+                    :class="isLiquidado(credit) ? 'cursor-not-allowed opacity-50 text-gray-400 dark:text-gray-600' : 'text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'"
                     title="Editar"
                   >
                     <Edit class="h-5 w-5" />
@@ -159,7 +164,9 @@
 
                   <button
                     @click="viewCreditFunding(credit)"
-                    class="text-green-600 hover:text-green-800 dark:text-green-500 dark:hover:text-green-400"
+                    :disabled="isLiquidado(credit)"
+                    class="transition-colors"
+                    :class="isLiquidado(credit) ? 'cursor-not-allowed opacity-50 text-gray-400 dark:text-gray-600' : 'text-green-600 hover:text-green-800 dark:text-green-500 dark:hover:text-green-400'"
                     :title="credit.funded_amount >= credit.loan_amount ? 'Fondeado' : 'Fondear Crédito'"
                   >
                     <Check v-if="credit.funded_amount >= credit.loan_amount" class="h-5 w-5" />
@@ -168,10 +175,10 @@
 
                   <button
                     @click="restructureCredit(credit)"
-                    :disabled="!canRestructureCredit(credit)"
+                    :disabled="!canRestructureCredit(credit) || isLiquidado(credit)"
                     class="transition-colors"
-                    :class="!canRestructureCredit(credit)
-                      ? 'cursor-not-allowed text-gray-400 dark:text-gray-600'
+                    :class="(!canRestructureCredit(credit) || isLiquidado(credit))
+                      ? 'cursor-not-allowed opacity-50 text-gray-400 dark:text-gray-600'
                       : 'text-yellow-600 hover:text-yellow-800 dark:text-yellow-500 dark:hover:text-yellow-400'"
                     title="Reestructuración"
                   >
@@ -341,6 +348,13 @@ const viewCreditFunding = (credit) => {
 
 const restructureCredit = (credit) => {
   router.push(`/reestructuracion/${credit.id}`)
+}
+
+const isLiquidado = (credit) => {
+  if (credit.status === 'completed') return true
+  if (credit.loan_type === '10% Semanal') return credit.status === 'completed'
+  // Para los tradicionales consideramos liquidado cuando el total pagado es mayor o igual al total a pagar
+  return Number(credit.paid_amount || 0) >= Number(credit.total_to_pay || 0)
 }
 
 const canRestructureCredit = (credit) => {

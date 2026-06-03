@@ -16,33 +16,48 @@ router.get('/', async (req, res) => {
 
         // ── Stats en una sola query ───────────────────────────────────────────
         const statsResult = await pool.query(`
-            WITH month_start AS (
-                SELECT date_trunc('month', NOW() AT TIME ZONE '${CDMX_TZ}')::date AS d
-            )
             SELECT
-                -- Créditos activos
+                -- Créditos activos (sin liquidar)
                 (
                     SELECT COUNT(*)
                     FROM credits c
-                    WHERE c.deleted_at IS NULL AND c.status = 'active' ${uc}
+                    WHERE c.deleted_at IS NULL AND c.status IN ('active', 'approved') ${uc}
+                      AND (
+                        c.loan_type = '10% Semanal'
+                        OR c.total_to_pay::numeric > COALESCE((SELECT SUM(amount) FROM incomes WHERE credit_id = c.id AND deleted_at IS NULL), 0)
+                      )
                 ) AS creditos_activos,
 
-                -- Montos cobrados del mes (pagos recibidos en créditos del usuario)
+                -- Montos cobrados TOTALES (histórico)
                 (
                     SELECT COALESCE(SUM(i.amount), 0)
                     FROM incomes i
                     JOIN credits c ON i.credit_id = c.id AND c.deleted_at IS NULL
                     WHERE i.deleted_at IS NULL ${uc}
-                      AND (i.created_at AT TIME ZONE '${CDMX_TZ}')::date >= (SELECT d FROM month_start)
                 ) AS montos_cobrados_mes,
 
-                -- Ganancias netas del mes (porción de interés de los pagos cobrados este mes)
+                -- Ganancias netas (Lo cobrado - Lo prestado)
                 (
-                    SELECT COALESCE(SUM((c.total_to_pay - c.loan_amount) / NULLIF(c.weeks, 0)), 0)
-                    FROM incomes i
-                    JOIN credits c ON i.credit_id = c.id AND c.deleted_at IS NULL
-                    WHERE i.deleted_at IS NULL ${uc}
-                      AND (i.created_at AT TIME ZONE '${CDMX_TZ}')::date >= (SELECT d FROM month_start)
+                    (
+                        SELECT COALESCE(SUM(i.amount), 0)
+                        FROM incomes i
+                        JOIN credits c ON i.credit_id = c.id AND c.deleted_at IS NULL
+                        WHERE i.deleted_at IS NULL ${uc}
+                    )
+                    -
+                    (
+                        SELECT COALESCE(SUM(c.loan_amount), 0)
+                        FROM credits c
+                        WHERE c.deleted_at IS NULL AND c.status NOT IN ('rejected', 'completed') ${uc}
+                        -- wait, if completed it shouldn't be subtracted? "lo que se ha prestado" usually includes all.
+                    )
+                ) AS ganancias_netas_mes_temp,
+
+                -- Ganancia neta real (Total Incomes - Total Loaned)
+                (
+                    (SELECT COALESCE(SUM(i.amount), 0) FROM incomes i JOIN credits c ON i.credit_id = c.id WHERE i.deleted_at IS NULL AND c.deleted_at IS NULL ${uc})
+                    -
+                    (SELECT COALESCE(SUM(c.loan_amount), 0) FROM credits c WHERE c.deleted_at IS NULL AND c.status IN ('active', 'approved', 'completed') ${uc})
                 ) AS ganancias_netas_mes,
 
                 -- Monto en circulación (deuda pendiente de créditos activos)
