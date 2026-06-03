@@ -348,23 +348,19 @@ const fetchCreditosActivosYCobros = async () => {
     // Filtrar por usuario (dueño del crédito)
     const misCreditos = isAdmin.value ? credits : credits.filter(c => c.user === userName.value)
     
-    // 1. Créditos Activos (sin liquidar)
-    stats.value.creditosActivos = misCreditos.filter(c => !isLiquidado(c)).length
-
     // 2. Montos Cobrados (Suma de los ingresos cobrados por este usuario/admin)
     const misIngresos = isAdmin.value ? incomes : incomes.filter(i => i.user === userName.value)
     stats.value.montosCobradosMes = misIngresos.reduce((acc, current) => acc + Number(current.amount || 0), 0)
 
-    // 3. Ganancias Netas (Utilidad: lo cobrado que exceda el dinero prestado)
-    let gananciasTotales = 0
-    const pagosPorCredito = {}
-    
     // Agrupamos todos los pagos históricos por cada crédito
+    const pagosPorCredito = {}
     incomes.forEach(inc => {
       if (!pagosPorCredito[inc.credit_id]) pagosPorCredito[inc.credit_id] = 0
       pagosPorCredito[inc.credit_id] += Number(inc.amount || 0)
     })
 
+    // 3. Ganancias Netas (Utilidad: lo cobrado que exceda el dinero prestado)
+    let gananciasTotales = 0
     // Calculamos ganancia sobre "mis créditos"
     misCreditos.forEach(credit => {
       const pagado = pagosPorCredito[credit.id] || 0
@@ -373,8 +369,34 @@ const fetchCreditosActivosYCobros = async () => {
         gananciasTotales += (pagado - capital) // Todo el excedente es utilidad (interés, recargo, etc)
       }
     })
-
+    
     stats.value.gananciasNetasMes = gananciasTotales
+
+    // 1. Créditos Activos (sin liquidar) y 4. Monto en Circulación
+    let activosCount = 0
+    let montoCirculacion = 0
+
+    misCreditos.forEach(credit => {
+      const pagado = pagosPorCredito[credit.id] || 0
+      const totalAPagar = Number(credit.total_to_pay || 0)
+      
+      // Determinamos si está liquidado usando los pagos reales
+      const isLiquidated = credit.status === 'completed' || pagado >= totalAPagar
+
+      if (!isLiquidated) {
+        activosCount++
+        // Si es 10% semanal y su total a pagar no es representativo, el dinero en circulación es su capital.
+        // Si no, es lo que falta por pagar de su total proyectado.
+        const deudaRestante = credit.loan_type === '10% Semanal'
+          ? Number(credit.loan_amount || 0)
+          : Math.max(0, totalAPagar - pagado)
+          
+        montoCirculacion += deudaRestante
+      }
+    })
+
+    stats.value.creditosActivos = activosCount
+    stats.value.montoCirculacion = montoCirculacion
 
   } catch (err) {
     console.error('Error cargando datos del dashboard:', err)
