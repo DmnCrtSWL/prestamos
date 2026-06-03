@@ -345,6 +345,15 @@ const fetchCreditosActivosYCobros = async () => {
       incomes = await resIncomes.json()
     }
 
+    // Obtener proveedores
+    let providers = []
+    const resProviders = await fetch(`${API_URL}/providers`, {
+      headers: { 'Authorization': `Bearer ${token.value}` }
+    })
+    if (resProviders.ok) {
+      providers = await resProviders.json()
+    }
+
     // Filtrar por usuario (dueño del crédito)
     const misCreditos = isAdmin.value ? credits : credits.filter(c => c.user === userName.value)
     
@@ -397,6 +406,9 @@ const fetchCreditosActivosYCobros = async () => {
 
     stats.value.creditosActivos = activosCount
     stats.value.montoCirculacion = montoCirculacion
+
+    // 5. Monto Disponible (Suma del capital disponible de todos los proveedores que puede ver el usuario)
+    stats.value.montoDisponible = providers.reduce((acc, current) => acc + Number(current.total_capital || 0), 0)
 
   } catch (err) {
     console.error('Error cargando datos del dashboard:', err)
