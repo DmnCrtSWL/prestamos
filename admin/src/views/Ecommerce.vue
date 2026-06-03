@@ -326,29 +326,56 @@ const isLiquidado = (credit) => {
 
 const fetchCreditosActivosYCobros = async () => {
   try {
-    // Obtener créditos para "Créditos Activos"
+    let credits = []
+    let incomes = []
+
+    // Obtener créditos
     const resCredits = await fetch(`${API_URL}/credits`, {
       headers: { 'Authorization': `Bearer ${token.value}` }
     })
     if (resCredits.ok) {
-      const credits = await resCredits.json()
-      const filtered = isAdmin.value
-        ? credits
-        : credits.filter(c => c.user === userName.value)
-      stats.value.creditosActivos = filtered.filter(c => !isLiquidado(c)).length
+      credits = await resCredits.json()
     }
 
-    // Obtener ingresos para "Montos Cobrados"
+    // Obtener ingresos
     const resIncomes = await fetch(`${API_URL}/incomes`, {
       headers: { 'Authorization': `Bearer ${token.value}` }
     })
     if (resIncomes.ok) {
-      const incomes = await resIncomes.json()
-      const filteredIncomes = isAdmin.value
-        ? incomes
-        : incomes.filter(i => i.user === userName.value)
-      stats.value.montosCobradosMes = filteredIncomes.reduce((acc, current) => acc + Number(current.amount || 0), 0)
+      incomes = await resIncomes.json()
     }
+
+    // Filtrar por usuario (dueño del crédito)
+    const misCreditos = isAdmin.value ? credits : credits.filter(c => c.user === userName.value)
+    
+    // 1. Créditos Activos (sin liquidar)
+    stats.value.creditosActivos = misCreditos.filter(c => !isLiquidado(c)).length
+
+    // 2. Montos Cobrados (Suma de los ingresos cobrados por este usuario/admin)
+    const misIngresos = isAdmin.value ? incomes : incomes.filter(i => i.user === userName.value)
+    stats.value.montosCobradosMes = misIngresos.reduce((acc, current) => acc + Number(current.amount || 0), 0)
+
+    // 3. Ganancias Netas (Utilidad: lo cobrado que exceda el dinero prestado)
+    let gananciasTotales = 0
+    const pagosPorCredito = {}
+    
+    // Agrupamos todos los pagos históricos por cada crédito
+    incomes.forEach(inc => {
+      if (!pagosPorCredito[inc.credit_id]) pagosPorCredito[inc.credit_id] = 0
+      pagosPorCredito[inc.credit_id] += Number(inc.amount || 0)
+    })
+
+    // Calculamos ganancia sobre "mis créditos"
+    misCreditos.forEach(credit => {
+      const pagado = pagosPorCredito[credit.id] || 0
+      const capital = Number(credit.loan_amount || 0)
+      if (pagado > capital) {
+        gananciasTotales += (pagado - capital) // Todo el excedente es utilidad (interés, recargo, etc)
+      }
+    })
+
+    stats.value.gananciasNetasMes = gananciasTotales
+
   } catch (err) {
     console.error('Error cargando datos del dashboard:', err)
   }
