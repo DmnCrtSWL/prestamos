@@ -324,24 +324,37 @@ const isLiquidado = (credit) => {
   return Number(credit.paid_amount || 0) >= Number(credit.total_to_pay || 0)
 }
 
-const fetchCreditosActivos = async () => {
+const fetchCreditosActivosYCobros = async () => {
   try {
-    const res = await fetch(`${API_URL}/credits`, {
+    // Obtener créditos para "Créditos Activos"
+    const resCredits = await fetch(`${API_URL}/credits`, {
       headers: { 'Authorization': `Bearer ${token.value}` }
     })
-    if (!res.ok) throw new Error('Error al cargar créditos')
-    const credits = await res.json()
-    // Filtrar por usuario si no es admin
-    const filtered = isAdmin.value
-      ? credits
-      : credits.filter(c => c.user === userName.value)
-    stats.value.creditosActivos = filtered.filter(c => !isLiquidado(c)).length
+    if (resCredits.ok) {
+      const credits = await resCredits.json()
+      const filtered = isAdmin.value
+        ? credits
+        : credits.filter(c => c.user === userName.value)
+      stats.value.creditosActivos = filtered.filter(c => !isLiquidado(c)).length
+    }
+
+    // Obtener ingresos para "Montos Cobrados"
+    const resIncomes = await fetch(`${API_URL}/incomes`, {
+      headers: { 'Authorization': `Bearer ${token.value}` }
+    })
+    if (resIncomes.ok) {
+      const incomes = await resIncomes.json()
+      const filteredIncomes = isAdmin.value
+        ? incomes
+        : incomes.filter(i => i.user === userName.value)
+      stats.value.montosCobradosMes = filteredIncomes.reduce((acc, current) => acc + Number(current.amount || 0), 0)
+    }
   } catch (err) {
-    console.error('Error cargando créditos activos:', err)
+    console.error('Error cargando datos del dashboard:', err)
   }
 }
 
-onMounted(fetchCreditosActivos)
+onMounted(fetchCreditosActivosYCobros)
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const formatCurrency = (value) => {
