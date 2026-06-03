@@ -381,9 +381,13 @@ const fetchCreditosActivosYCobros = async () => {
     
     stats.value.gananciasNetasMes = gananciasTotales
 
-    // 1. Créditos Activos (sin liquidar) y 4. Monto en Circulación
+    // 1. Créditos Activos (sin liquidar), 4. Monto en Circulación y 6. Clientes por cobrar (morosos)
     let activosCount = 0
     let montoCirculacion = 0
+    const morososClientIds = new Set()
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
 
     misCreditos.forEach(credit => {
       const pagado = pagosPorCredito[credit.id] || 0
@@ -394,8 +398,51 @@ const fetchCreditosActivosYCobros = async () => {
 
       if (!isLiquidated) {
         activosCount++
-        // Si es 10% semanal y su total a pagar no es representativo, el dinero en circulación es su capital.
-        // Si no, es lo que falta por pagar de su total proyectado.
+        
+        let isMoroso = false
+
+        if (credit.loan_type === '10% Semanal') {
+          // Para 10% Semanal, se cobra los sábados
+          const startDate = new Date(credit.created_at)
+          let currentSat = new Date(startDate)
+          const dayOfWeek = currentSat.getDay()
+          const daysUntilNextSaturday = dayOfWeek === 6 ? 7 : (6 - dayOfWeek)
+          currentSat.setDate(currentSat.getDate() + daysUntilNextSaturday)
+          currentSat.setHours(0, 0, 0, 0)
+
+          let expectedPayment = 0
+          const interestPerWeek = Number(credit.loan_amount || 0) * 0.10
+
+          while (currentSat < today) {
+            expectedPayment += interestPerWeek
+            currentSat.setDate(currentSat.getDate() + 7)
+          }
+
+          if (pagado < expectedPayment - 0.01) { // 0.01 de tolerancia
+            isMoroso = true
+          }
+        } else {
+          // Para los demás, sumamos los pagos vencidos en su calendario
+          if (credit.payment_schedule && Array.isArray(credit.payment_schedule)) {
+            let expectedPayment = 0
+            credit.payment_schedule.forEach(pmt => {
+              // Asumimos formato YYYY-MM-DD
+              const pmtDate = new Date(pmt.date + 'T00:00:00')
+              if (pmtDate < today) {
+                expectedPayment += Number(pmt.amount || 0)
+              }
+            })
+            if (pagado < expectedPayment - 0.01) {
+              isMoroso = true
+            }
+          }
+        }
+
+        if (isMoroso && credit.client_id) {
+          morososClientIds.add(credit.client_id)
+        }
+
+        // Monto en circulación
         const deudaRestante = credit.loan_type === '10% Semanal'
           ? Number(credit.loan_amount || 0)
           : Math.max(0, totalAPagar - pagado)
@@ -406,6 +453,7 @@ const fetchCreditosActivosYCobros = async () => {
 
     stats.value.creditosActivos = activosCount
     stats.value.montoCirculacion = montoCirculacion
+    stats.value.clientesPorCobrar = morososClientIds.size
 
     // 5. Monto Disponible (Suma del capital disponible de todos los proveedores que puede ver el usuario)
     stats.value.montoDisponible = providers.reduce((acc, current) => acc + Number(current.total_capital || 0), 0)
