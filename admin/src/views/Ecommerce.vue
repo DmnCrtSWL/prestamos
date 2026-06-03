@@ -302,7 +302,7 @@ import { ref, computed, onMounted } from 'vue'
 import { DollarSign, HandCoins, TrendingUp, Activity, Briefcase, User, ChevronLeft, ChevronRight, Eye } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 
-const { isAdmin, userName } = useAuth()
+const { isAdmin, userName, token } = useAuth()
 const API_URL = import.meta.env.VITE_API_URL
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
@@ -318,31 +318,30 @@ const stats = ref({
 const morosos = ref([])
 const proximosIngresos = ref([])
 
-const fetchDashboard = async () => {
+// Misma lógica que Credits.vue
+const isLiquidado = (credit) => {
+  if (credit.status === 'completed') return true
+  return Number(credit.paid_amount || 0) >= Number(credit.total_to_pay || 0)
+}
+
+const fetchCreditosActivos = async () => {
   try {
-    const url = new URL(`${API_URL}/dashboard`)
-    if (!isAdmin.value) {
-      url.searchParams.set('user', userName.value)
-    }
-    const res = await fetch(url.toString())
-    if (!res.ok) throw new Error('Error al cargar dashboard')
-    const data = await res.json()
-    stats.value = {
-      creditosActivos: data.creditosActivos,
-      montosCobradosMes: data.montosCobradosMes,
-      gananciasNetasMes: data.gananciasNetasMes,
-      montoCirculacion: data.montoCirculacion,
-      montoDisponible: data.montoDisponible,
-      clientesPorCobrar: data.clientesPorCobrar
-    }
-    morosos.value = data.morosos
-    proximosIngresos.value = data.proximosIngresos
+    const res = await fetch(`${API_URL}/credits`, {
+      headers: { 'Authorization': `Bearer ${token.value}` }
+    })
+    if (!res.ok) throw new Error('Error al cargar créditos')
+    const credits = await res.json()
+    // Filtrar por usuario si no es admin
+    const filtered = isAdmin.value
+      ? credits
+      : credits.filter(c => c.user === userName.value)
+    stats.value.creditosActivos = filtered.filter(c => !isLiquidado(c)).length
   } catch (err) {
-    console.error('Dashboard error:', err)
+    console.error('Error cargando créditos activos:', err)
   }
 }
 
-onMounted(fetchDashboard)
+onMounted(fetchCreditosActivos)
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const formatCurrency = (value) => {
