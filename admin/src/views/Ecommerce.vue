@@ -360,6 +360,7 @@ const fetchCreditosActivosYCobros = async () => {
     let montoCirculacion = 0
     const morososMap = new Map()
     const morososClientIds = new Set()
+    const ingresosArray = []
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -376,11 +377,12 @@ const fetchCreditosActivosYCobros = async () => {
         
         let isMoroso = false
         let expectedPayment = 0
+        let currentSat = null
 
         if (credit.loan_type === '10% Semanal') {
           // Para 10% Semanal, se cobra los sábados
           const startDate = new Date(credit.created_at)
-          let currentSat = new Date(startDate)
+          currentSat = new Date(startDate)
           const dayOfWeek = currentSat.getDay()
           const daysUntilNextSaturday = dayOfWeek === 6 ? 7 : (6 - dayOfWeek)
           currentSat.setDate(currentSat.getDate() + daysUntilNextSaturday)
@@ -423,6 +425,34 @@ const fetchCreditosActivosYCobros = async () => {
               amountOwed: overdue
             })
           }
+        } else if (!isLiquidated) {
+          // Cliente regular (no moroso): buscamos su próximo pago esperado
+          if (credit.loan_type === '10% Semanal') {
+            const interestPerWeek = Number(credit.loan_amount || 0) * 0.10
+            ingresosArray.push({
+              name: credit.client_name || `Cliente #${credit.client_id}`,
+              paymentDate: currentSat.toISOString().split('T')[0],
+              amount: interestPerWeek,
+              status: 'Al corriente'
+            })
+          } else {
+            if (credit.payment_schedule && Array.isArray(credit.payment_schedule)) {
+              let runningExpected = 0
+              for (const pmt of credit.payment_schedule) {
+                runningExpected += Number(pmt.amount || 0)
+                if (runningExpected > pagado + 0.01) {
+                  // Primer pago que no está cubierto por el saldo total abonado
+                  ingresosArray.push({
+                    name: credit.client_name || `Cliente #${credit.client_id}`,
+                    paymentDate: pmt.date,
+                    amount: Number(pmt.amount || 0),
+                    status: 'Al corriente'
+                  })
+                  break
+                }
+              }
+            }
+          }
         }
 
         // Monto en circulación
@@ -438,6 +468,7 @@ const fetchCreditosActivosYCobros = async () => {
     stats.value.montoCirculacion = montoCirculacion
     stats.value.clientesPorCobrar = morososClientIds.size
     morosos.value = Array.from(morososMap.values()).sort((a, b) => b.amountOwed - a.amountOwed)
+    proximosIngresos.value = ingresosArray.sort((a, b) => new Date(a.paymentDate) - new Date(b.paymentDate))
 
     // 5. Monto Disponible (Suma del capital disponible de todos los proveedores que puede ver el usuario)
     stats.value.montoDisponible = providers.reduce((acc, current) => acc + Number(current.total_capital || 0), 0)
@@ -470,7 +501,7 @@ const formatDate = (dateString) => {
 
 // ── Pagination ────────────────────────────────────────────────────────────────
 const itemsPerPageMorosos = 5
-const itemsPerPageIngresos = 10
+const itemsPerPageIngresos = 5
 const currentPageMorosos = ref(1)
 const currentPageIngresos = ref(1)
 
