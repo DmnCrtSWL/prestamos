@@ -44,11 +44,11 @@
                   <ArrowUpDown class="h-4 w-4 text-gray-400" />
                 </div>
               </th>
-              <th class="px-5 py-3 text-left sm:px-6">
-                <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Tipo</p>
-              </th>
-              <th class="px-5 py-3 text-left sm:px-6">
-                <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Proveedor</p>
+              <th class="px-5 py-3 text-left sm:px-6 cursor-pointer" @click="sortBy('statusInfo.sortValue')">
+                <div class="flex items-center gap-1.5">
+                  <p class="font-medium text-gray-500 text-theme-xs dark:text-gray-400">Por Pagar</p>
+                  <ArrowUpDown class="h-4 w-4 text-gray-400" />
+                </div>
               </th>
               <th class="px-5 py-3 text-left sm:px-6 cursor-pointer" @click="sortBy('weeklyPayment')">
                 <div class="flex items-center gap-1.5">
@@ -98,18 +98,26 @@
                 <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ formatCurrency(credit.loan_amount) }}</p>
               </td>
               <td class="px-5 py-4 sm:px-6">
-                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                  :class="credit.loan_type === '10% Semanal'
-                    ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
-                    : credit.loan_type === 'Personalizado'
-                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
-                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'"
-                >
-                  {{ credit.loan_type || 'Tradicional' }}
-                </span>
-              </td>
-              <td class="px-5 py-4 sm:px-6">
-                <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ credit.provider_names || '-' }}</p>
+                <div class="flex flex-col gap-1">
+                  <span class="font-medium"
+                    :class="[
+                      credit.statusInfo.color === 'red' ? 'text-red-600 dark:text-red-400' : 
+                      credit.statusInfo.color === 'yellow' ? 'text-yellow-600 dark:text-yellow-400' : 
+                      'text-gray-600 dark:text-gray-400'
+                    ]"
+                  >
+                    {{ formatCurrency(credit.statusInfo.debt) }}
+                  </span>
+                  <span class="text-[10px] uppercase font-bold"
+                    :class="[
+                      credit.statusInfo.color === 'red' ? 'text-red-500' : 
+                      credit.statusInfo.color === 'yellow' ? 'text-yellow-500' : 
+                      'text-gray-400'
+                    ]"
+                  >
+                    {{ credit.statusInfo.label }}
+                  </span>
+                </div>
               </td>
               <td class="px-5 py-4 sm:px-6">
                 <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ formatCurrency(credit.weekly_payment) }}</p>
@@ -144,6 +152,14 @@
               </td>
               <td class="px-5 py-4 sm:px-6">
                 <div class="flex items-center gap-2">
+                  <button
+                    @click="openPayModal(credit)"
+                    :disabled="isLiquidado(credit)"
+                    class="rounded bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="Registrar Pago"
+                  >
+                    Pagar
+                  </button>
                   <button
                     @click="viewCredit(credit)"
                     class="text-blue-600 hover:text-blue-800 dark:text-blue-500 dark:hover:text-blue-400"
@@ -191,6 +207,66 @@
         </table>
       </div>
     </div>
+
+    <!-- Payment Modal -->
+    <div
+      v-if="showPayModal"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    >
+      <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800">
+        <h3 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">Registrar Pago</h3>
+        
+        <form @submit.prevent="submitPayment" class="space-y-4">
+          <div>
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Monto a Pagar
+            </label>
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+              <input
+                v-model="payForm.amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                class="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-8 pr-4 text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Método de Pago
+            </label>
+            <select
+              v-model="payForm.payment_method"
+              class="w-full rounded-lg border border-gray-300 bg-white py-2.5 px-4 text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            >
+              <option value="cash">Efectivo</option>
+              <option value="transfer">Transferencia</option>
+              <option value="card">Tarjeta</option>
+            </select>
+          </div>
+
+          <div class="mt-6 flex justify-end gap-3">
+            <button
+              type="button"
+              @click="showPayModal = false"
+              class="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              :disabled="isSubmittingPay"
+              class="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+            >
+              {{ isSubmittingPay ? 'Procesando...' : 'Confirmar Pago' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </AdminLayout>
 </template>
 
@@ -211,6 +287,61 @@ const credits = ref([])
 const providers = ref([])
 const selectedProvider = ref('')
 const isLoading = ref(false)
+
+// Pay Modal variables
+const showPayModal = ref(false)
+const selectedCredit = ref(null)
+const payForm = ref({
+  payment_method: 'cash',
+  amount: 0
+})
+const isSubmittingPay = ref(false)
+
+const getCreditStatus = (credit) => {
+  if (isLiquidado(credit)) return { color: 'gray', label: 'Al corriente', sortValue: 3, debt: 0 }
+  if (!credit.payment_schedule) return { color: 'gray', label: 'Sin calendario', sortValue: 3, debt: 0 }
+  
+  let schedule = []
+  try {
+    schedule = typeof credit.payment_schedule === 'string' ? JSON.parse(credit.payment_schedule) : credit.payment_schedule
+  } catch (e) {
+    return { color: 'gray', label: 'Error', sortValue: 3, debt: 0 }
+  }
+
+  if (!Array.isArray(schedule) || schedule.length === 0) return { color: 'gray', label: 'Sin pagos', sortValue: 3, debt: 0 }
+
+  const today = new Date()
+  today.setHours(23, 59, 59, 999)
+
+  const paid = Number(credit.paid_amount || 0)
+  let expectedToDate = 0
+  let nextPaymentAmount = 0
+  let nextPaymentDate = null
+
+  for (const payment of schedule) {
+    const [py, pm, pd] = payment.date.split('-').map(Number)
+    const dueDate = new Date(py, pm - 1, pd, 23, 59, 59, 999)
+
+    if (dueDate <= today) {
+      expectedToDate += Number(payment.amount)
+    } else {
+      if (!nextPaymentDate) {
+        nextPaymentDate = dueDate
+        nextPaymentAmount = Number(payment.amount)
+      }
+    }
+  }
+
+  if (paid < expectedToDate) {
+    return { color: 'red', label: 'Atrasado', sortValue: 1, debt: expectedToDate - paid }
+  }
+
+  if (paid < expectedToDate + nextPaymentAmount) {
+    return { color: 'yellow', label: 'En periodo de pago', sortValue: 2, debt: (expectedToDate + nextPaymentAmount) - paid }
+  }
+
+  return { color: 'gray', label: 'Al corriente', sortValue: 3, debt: 0 }
+}
 
 // Fetch credits from API
 const fetchCredits = async () => {
@@ -254,7 +385,12 @@ onMounted(() => {
 })
 
 const filteredCredits = computed(() => {
-  let result = credits.value
+  let result = credits.value.map(credit => {
+    return {
+      ...credit,
+      statusInfo: getCreditStatus(credit)
+    }
+  })
 
   // Filter by provider
   if (selectedProvider.value) {
@@ -281,8 +417,8 @@ const sortedCredits = computed(() => {
   const sorted = [...filteredCredits.value]
   
   sorted.sort((a, b) => {
-    let aVal = a[sortColumn.value]
-    let bVal = b[sortColumn.value]
+    let aVal = sortColumn.value.includes('.') ? sortColumn.value.split('.').reduce((o, i) => o[i], a) : a[sortColumn.value]
+    let bVal = sortColumn.value.includes('.') ? sortColumn.value.split('.').reduce((o, i) => o[i], b) : b[sortColumn.value]
     
     if (typeof aVal === 'string') {
       aVal = aVal.toLowerCase()
@@ -361,5 +497,75 @@ const canRestructureCredit = (credit) => {
   // 10% Semanal cannot be restructured (business rule)
   if (credit.loan_type === '10% Semanal') return false
   return Number(credit.paid_amount || 0) >= (Number(credit.weekly_payment || 0) * 5)
+}
+
+const openPayModal = (credit) => {
+  if (Number(credit.funded_amount) <= 0) {
+    const goToFunding = confirm('Crédito no fondeado, favor de asignar fondos.\n\n¿Deseas ir a la pantalla de fondeo ahora?')
+    if (goToFunding) {
+      router.push(`/creditos/${credit.id}/fondear`)
+    }
+    return
+  }
+  selectedCredit.value = credit
+  payForm.value = {
+    payment_method: 'cash',
+    amount: credit.statusInfo.debt > 0 ? credit.statusInfo.debt : credit.weekly_payment
+  }
+  showPayModal.value = true
+}
+
+const submitPayment = async () => {
+  let payAmount = Number(payForm.value.amount);
+  if (!payAmount || payAmount <= 0) {
+    alert('Por favor ingresa un monto válido')
+    return
+  }
+
+  isSubmittingPay.value = true
+  try {
+    const payload = {
+      credit_id: selectedCredit.value.id,
+      client_id: selectedCredit.value.client_id,
+      payment_method: payForm.value.payment_method,
+      amount: payAmount,
+      user: selectedCredit.value.user || 'admin'
+    }
+
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/incomes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Error al registrar pago')
+    }
+    
+    if (selectedCredit.value.loan_type === '10% Semanal') {
+      const currentBalance = Number(selectedCredit.value.loan_amount) - Number(selectedCredit.value.paid_amount)
+      const currentInterest = currentBalance * 0.1;
+      const amountToCapital = Math.max(0, payAmount - currentInterest);
+      const newBalance = Math.max(0, currentBalance - amountToCapital);
+      
+      if (newBalance <= 0.01 && selectedCredit.value.status !== 'completed') {
+        const updateParams = new FormData();
+        updateParams.append('status', 'completed');
+        await fetch(`${import.meta.env.VITE_API_URL}/credits/${selectedCredit.value.id}`, {
+          method: 'PUT',
+          body: updateParams
+        });
+      }
+    }
+
+    showPayModal.value = false
+    await fetchCredits() // refresh table
+  } catch (error) {
+    console.error('Error submitting payment:', error)
+    alert('Error al registrar pago: ' + error.message)
+  } finally {
+    isSubmittingPay.value = false
+  }
 }
 </script>
