@@ -30,17 +30,23 @@ function getSaturdaysInRange(startDate, endDate) {
 router.get('/', async (req, res) => {
     try {
         const { provider_id, start_date, end_date, user_id } = req.query;
-        const { rol } = req.user;
+        const { rol, id: requesterId, nombre: requesterNombre } = req.user;
 
-        if (rol !== 'Administrador') {
-            return res.status(403).json({ error: 'Acceso restringido a Administradores' });
+        // Solo admins y empleados pueden acceder
+        if (rol !== 'Administrador' && rol !== 'Empleado') {
+            return res.status(403).json({ error: 'Acceso no autorizado' });
         }
 
         if (!start_date || !end_date) {
             return res.status(400).json({ error: 'Se requieren start_date y end_date' });
         }
 
-        const effectiveUserId = user_id ? parseInt(user_id) : null;
+        const isEmpleado = rol === 'Empleado';
+
+        // Empleados solo pueden ver sus propios movimientos — forzar user_id
+        let effectiveUserId = isEmpleado
+            ? requesterId
+            : (user_id ? parseInt(user_id) : null);
 
         // Get providers
         let providersQuery = 'SELECT id, name FROM providers WHERE deleted_at IS NULL';
@@ -183,7 +189,12 @@ router.get('/', async (req, res) => {
         };
         summary.net_yield = summary.total_expected_return - summary.total_commission - summary.total_salary;
 
-        res.json({ providers: providerReports, summary });
+        res.json({
+            providers: providerReports,
+            summary,
+            is_empleado_view: isEmpleado,
+            empleado_nombre: isEmpleado ? requesterNombre : null,
+        });
     } catch (error) {
         console.error('Error fetching corte:', error);
         res.status(500).json({ error: 'Error al obtener corte: ' + error.message });

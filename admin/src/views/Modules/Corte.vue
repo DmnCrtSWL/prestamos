@@ -22,7 +22,8 @@
     <!-- Filtros -->
     <div class="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
       <div class="flex flex-wrap items-end gap-4">
-        <div class="flex flex-col gap-1.5">
+        <!-- Filtro de proveedor: solo admins -->
+        <div v-if="isAdmin" class="flex flex-col gap-1.5">
           <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Proveedor</label>
           <select
             v-model="selectedProvider"
@@ -86,8 +87,8 @@
 
     <!-- Resultados -->
     <template v-if="report">
-      <!-- Resumen global -->
-      <div v-if="!selectedProvider" class="mb-6 rounded-xl border border-brand-200 bg-brand-50 p-5 dark:border-brand-800 dark:bg-brand-900/20">
+      <!-- Resumen global (solo admin, todos los proveedores) -->
+      <div v-if="!selectedProvider && !report.is_empleado_view" class="mb-6 rounded-xl border border-brand-200 bg-brand-50 p-5 dark:border-brand-800 dark:bg-brand-900/20">
         <h3 class="mb-4 text-sm font-bold text-brand-800 dark:text-brand-300">Resumen General — Todos los Proveedores</h3>
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div class="rounded-lg bg-white p-3 shadow-theme-xs dark:bg-gray-900">
@@ -146,8 +147,8 @@
         <div v-if="expanded[pReport.provider.id]" class="rounded-b-xl border border-t-0 border-gray-200 bg-white dark:border-gray-700 dark:bg-white/[0.03]">
           <div class="divide-y divide-gray-100 dark:divide-gray-700">
 
-            <!-- 1. Aportaciones -->
-            <div class="p-5">
+            <!-- 1. Aportaciones (solo admin) -->
+            <div v-if="!report.is_empleado_view" class="p-5">
               <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">1. Aportaciones en el Período</h4>
               <div v-if="pReport.contributions.length === 0" class="text-sm italic text-gray-400">Sin aportaciones registradas en este período.</div>
               <template v-else>
@@ -176,8 +177,8 @@
               </template>
             </div>
 
-            <!-- 2. Salarios -->
-            <div class="p-5">
+            <!-- 2. Salarios (solo admin) -->
+            <div v-if="!report.is_empleado_view" class="p-5">
               <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">2. Salarios en el Período (cada sábado $3,000)</h4>
               <div v-if="pReport.salary_weeks.length === 0" class="text-sm italic text-gray-400">Sin sábados en este período.</div>
               <template v-else>
@@ -195,8 +196,8 @@
 
             <!-- 3. Créditos -->
             <div class="p-5">
-              <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">3. Cartera de Créditos Fondeados</h4>
-              <div v-if="pReport.credits.length === 0" class="text-sm italic text-gray-400">Sin créditos fondeados por este proveedor.</div>
+              <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">{{ report.is_empleado_view ? 'Créditos Registrados' : '3. Cartera de Créditos Fondeados' }}</h4>
+              <div v-if="pReport.credits.length === 0" class="text-sm italic text-gray-400">Sin créditos registrados en este período.</div>
               <template v-else>
                 <div class="overflow-x-auto">
                   <table class="min-w-full text-sm">
@@ -204,9 +205,9 @@
                       <tr class="border-b border-gray-100 dark:border-gray-700">
                         <th class="pb-2 text-left text-xs font-medium text-gray-400">Cliente</th>
                         <th class="pb-2 text-left text-xs font-medium text-gray-400">Tipo</th>
-                        <th class="pb-2 text-right text-xs font-medium text-gray-400">Fondeado</th>
-                        <th class="pb-2 text-right text-xs font-medium text-gray-400">A Recuperar</th>
-                        <th class="pb-2 text-right text-xs font-medium text-gray-400">G. Admin</th>
+                        <th class="pb-2 text-right text-xs font-medium text-gray-400">Prestado</th>
+                        <th v-if="!report.is_empleado_view" class="pb-2 text-right text-xs font-medium text-gray-400">A Recuperar</th>
+                        <th v-if="!report.is_empleado_view" class="pb-2 text-right text-xs font-medium text-gray-400">G. Admin</th>
                         <th class="pb-2 text-right text-xs font-medium text-gray-400">Cobrado</th>
                         <th class="pb-2 text-center text-xs font-medium text-gray-400">Estatus</th>
                       </tr>
@@ -216,8 +217,8 @@
                         <td class="py-2 text-gray-700 dark:text-gray-300">{{ c.client_name }}</td>
                         <td class="py-2 text-xs text-gray-500 dark:text-gray-400">{{ c.loan_type }}</td>
                         <td class="py-2 text-right font-medium text-gray-800 dark:text-white">{{ formatCurrency(c.funded_amount) }}</td>
-                        <td class="py-2 text-right font-medium text-green-700 dark:text-green-400">{{ formatCurrency(c.expected_return) }}</td>
-                        <td class="py-2 text-right text-gray-500 dark:text-gray-400">{{ formatCurrency(c.retention_share) }}</td>
+                        <td v-if="!report.is_empleado_view" class="py-2 text-right font-medium text-green-700 dark:text-green-400">{{ formatCurrency(c.expected_return) }}</td>
+                        <td v-if="!report.is_empleado_view" class="py-2 text-right text-gray-500 dark:text-gray-400">{{ formatCurrency(c.retention_share) }}</td>
                         <td class="py-2 text-right text-blue-600 dark:text-blue-400">{{ formatCurrency(c.paid_amount) }}</td>
                         <td class="py-2 text-center">
                           <span :class="statusClass(c.status)" class="inline-block rounded-full px-2 py-0.5 text-xs font-medium">
@@ -230,8 +231,8 @@
                       <tr class="border-t-2 border-gray-200 text-sm font-semibold dark:border-gray-600">
                         <td class="pt-3 text-gray-600 dark:text-gray-300" colspan="2">Totales</td>
                         <td class="pt-3 text-right text-gray-800 dark:text-white">{{ formatCurrency(pReport.total_funded) }}</td>
-                        <td class="pt-3 text-right text-green-700 dark:text-green-400">{{ formatCurrency(pReport.total_expected_return) }}</td>
-                        <td class="pt-3 text-right text-gray-500 dark:text-gray-400">{{ formatCurrency(pReport.total_retention) }}</td>
+                        <td v-if="!report.is_empleado_view" class="pt-3 text-right text-green-700 dark:text-green-400">{{ formatCurrency(pReport.total_expected_return) }}</td>
+                        <td v-if="!report.is_empleado_view" class="pt-3 text-right text-gray-500 dark:text-gray-400">{{ formatCurrency(pReport.total_retention) }}</td>
                         <td class="pt-3 text-right text-blue-600 dark:text-blue-400">{{ formatCurrency(pReport.total_collected) }}</td>
                         <td></td>
                       </tr>
@@ -241,8 +242,8 @@
               </template>
             </div>
 
-            <!-- 4. Rendimiento -->
-            <div class="p-5">
+            <!-- 4. Rendimiento (solo admin) -->
+            <div v-if="!report.is_empleado_view" class="p-5">
               <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">4. Rendimiento Estimado</h4>
               <div class="max-w-sm space-y-2 text-sm">
                 <div class="flex justify-between">
@@ -289,7 +290,7 @@ import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { ChevronDownIcon } from '@/icons'
 import { useAuth } from '@/composables/useAuth'
 
-const { token, user, isAdmin } = useAuth()
+const { token, user, isAdmin, isEmpleados } = useAuth()
 const API_URL = import.meta.env.VITE_API_URL
 
 const providers = ref([])
@@ -342,6 +343,7 @@ const fetchCorte = async () => {
   try {
     const params = new URLSearchParams({ start_date: startDate.value, end_date: endDate.value })
     if (selectedProvider.value) params.append('provider_id', selectedProvider.value)
+    // Admin puede filtrar por usuario; empleado usa su propio id (forzado por el server)
     if (isAdmin.value && selectedUser.value) params.append('user_id', selectedUser.value)
 
     const res = await fetch(`${API_URL}/corte?${params}`, {
@@ -528,8 +530,8 @@ const generatePDF = async () => {
     // Draw first page header
     drawPageHeader()
 
-    // ── SUMMARY (when all providers) ─────────────────────────────────────────
-    if (!selectedProvider.value && report.value.providers.length > 1) {
+    // ── SUMMARY (when all providers, admin only) ─────────────────────────────
+    if (!selectedProvider.value && report.value.providers.length > 1 && !report.value.is_empleado_view) {
       const s = report.value.summary
 
       // Banner
@@ -603,184 +605,225 @@ const generatePDF = async () => {
       doc.setTextColor(...WHITE)
       doc.text(pr.provider.name, M + 4, currentY + 6.2)
 
-      // Net yield badge right side
-      const badge = `Rendimiento: ${currency(pr.net_yield)}`
-      doc.setFontSize(8.5)
-      doc.setTextColor(...(pr.net_yield >= 0 ? [134, 239, 172] : [252, 165, 165]))
-      doc.text(badge, PW - M - 3, currentY + 6.2, { align: 'right' })
+      // Net yield badge right side (solo admin)
+      if (!report.value.is_empleado_view) {
+        const badge = `Rendimiento: ${currency(pr.net_yield)}`
+        doc.setFontSize(8.5)
+        doc.setTextColor(...(pr.net_yield >= 0 ? [134, 239, 172] : [252, 165, 165]))
+        doc.text(badge, PW - M - 3, currentY + 6.2, { align: 'right' })
+      }
       doc.setTextColor(0, 0, 0)
       currentY += 13
 
-      // ── 1. Aportaciones ──────────────────────────────────────────────────
-      sectionLabel('1. Aportaciones en el Periodo')
+      // ── 1 & 2. Aportaciones y Salarios (solo admin) ──────────────────────
+      if (!report.value.is_empleado_view) {
+        // ── 1. Aportaciones ────────────────────────────────────────────────
+        sectionLabel('1. Aportaciones en el Periodo')
 
-      if (pr.contributions.length === 0) {
-        ensureSpace(7)
-        doc.setFontSize(8)
-        doc.setFont('helvetica', 'italic')
-        doc.setTextColor(...GRAY_L)
-        doc.text('Sin aportaciones registradas en este periodo.', M + 2, currentY + 4)
-        currentY += 8
-      } else {
-        const contribBody = pr.contributions.map(c => [
-          formatDate(c.effective_date || c.payment_date),
-          c.note || '—',
-          { content: currency(c.amount), styles: { halign: 'right' } },
-          { content: `-${currency(c.amount * 0.09)}`, styles: { halign: 'right', textColor: ORANGE } },
-        ])
-        // Totals row
-        contribBody.push([
-          { content: 'TOTALES', colSpan: 2, styles: { fontStyle: 'bold', fillColor: BLUE_L, textColor: NAVY } },
-          { content: currency(pr.total_contributions), styles: { halign: 'right', fontStyle: 'bold', fillColor: BLUE_L } },
-          { content: `-${currency(pr.commission)}`, styles: { halign: 'right', fontStyle: 'bold', textColor: ORANGE, fillColor: BLUE_L } },
-        ])
+        if (pr.contributions.length === 0) {
+          ensureSpace(7)
+          doc.setFontSize(8)
+          doc.setFont('helvetica', 'italic')
+          doc.setTextColor(...GRAY_L)
+          doc.text('Sin aportaciones registradas en este periodo.', M + 2, currentY + 4)
+          currentY += 8
+        } else {
+          const contribBody = pr.contributions.map(c => [
+            formatDate(c.effective_date || c.payment_date),
+            c.note || '—',
+            { content: currency(c.amount), styles: { halign: 'right' } },
+            { content: `-${currency(c.amount * 0.09)}`, styles: { halign: 'right', textColor: ORANGE } },
+          ])
+          contribBody.push([
+            { content: 'TOTALES', colSpan: 2, styles: { fontStyle: 'bold', fillColor: BLUE_L, textColor: NAVY } },
+            { content: currency(pr.total_contributions), styles: { halign: 'right', fontStyle: 'bold', fillColor: BLUE_L } },
+            { content: `-${currency(pr.commission)}`, styles: { halign: 'right', fontStyle: 'bold', textColor: ORANGE, fillColor: BLUE_L } },
+          ])
 
-        autoTable(doc, {
-          ...tableBase(),
-          startY: currentY,
-          head: [['Fecha', 'Nota / Concepto', 'Monto', 'Comision (9%)']],
-          body: contribBody,
-          columnStyles: {
-            0: { cellWidth: 30 },
-            1: { cellWidth: 'auto' },
-            2: { cellWidth: 36, halign: 'right' },
-            3: { cellWidth: 36, halign: 'right' },
-          },
-        })
-        currentY = doc.lastAutoTable.finalY + 5
-      }
+          autoTable(doc, {
+            ...tableBase(),
+            startY: currentY,
+            head: [['Fecha', 'Nota / Concepto', 'Monto', 'Comision (9%)']],
+            body: contribBody,
+            columnStyles: {
+              0: { cellWidth: 30 },
+              1: { cellWidth: 'auto' },
+              2: { cellWidth: 36, halign: 'right' },
+              3: { cellWidth: 36, halign: 'right' },
+            },
+          })
+          currentY = doc.lastAutoTable.finalY + 5
+        }
 
-      // ── 2. Salarios ──────────────────────────────────────────────────────
-      sectionLabel('2. Salarios en el Periodo (cada sabado $3,000)')
+        // ── 2. Salarios ────────────────────────────────────────────────────
+        sectionLabel('2. Salarios en el Periodo (cada sabado $3,000)')
 
-      if (pr.salary_weeks.length === 0) {
-        ensureSpace(7)
-        doc.setFontSize(8)
-        doc.setFont('helvetica', 'italic')
-        doc.setTextColor(...GRAY_L)
-        doc.text('Sin sabados en este periodo.', M + 2, currentY + 4)
-        currentY += 8
-      } else {
-        const salBody = pr.salary_weeks.map(w => [
-          formatDate(w.date),
-          'Salario semanal del encargado',
-          { content: `-${currency(w.amount)}`, styles: { halign: 'right', textColor: ORANGE } },
-        ])
-        salBody.push([
-          { content: `${pr.salary_weeks.length} semana(s)`, styles: { fontStyle: 'bold', fillColor: [255, 247, 237], textColor: ORANGE } },
-          { content: 'TOTAL SALARIOS', styles: { fontStyle: 'bold', fillColor: [255, 247, 237], textColor: ORANGE } },
-          { content: `-${currency(pr.total_salary)}`, styles: { halign: 'right', fontStyle: 'bold', fillColor: [255, 247, 237], textColor: ORANGE } },
-        ])
+        if (pr.salary_weeks.length === 0) {
+          ensureSpace(7)
+          doc.setFontSize(8)
+          doc.setFont('helvetica', 'italic')
+          doc.setTextColor(...GRAY_L)
+          doc.text('Sin sabados en este periodo.', M + 2, currentY + 4)
+          currentY += 8
+        } else {
+          const salBody = pr.salary_weeks.map(w => [
+            formatDate(w.date),
+            'Salario semanal del encargado',
+            { content: `-${currency(w.amount)}`, styles: { halign: 'right', textColor: ORANGE } },
+          ])
+          salBody.push([
+            { content: `${pr.salary_weeks.length} semana(s)`, styles: { fontStyle: 'bold', fillColor: [255, 247, 237], textColor: ORANGE } },
+            { content: 'TOTAL SALARIOS', styles: { fontStyle: 'bold', fillColor: [255, 247, 237], textColor: ORANGE } },
+            { content: `-${currency(pr.total_salary)}`, styles: { halign: 'right', fontStyle: 'bold', fillColor: [255, 247, 237], textColor: ORANGE } },
+          ])
 
-        autoTable(doc, {
-          ...tableBase(),
-          startY: currentY,
-          head: [['Sabado', 'Concepto', 'Monto']],
-          body: salBody,
-          columnStyles: {
-            0: { cellWidth: 36 },
-            1: { cellWidth: 'auto' },
-            2: { cellWidth: 40, halign: 'right' },
-          },
-        })
-        currentY = doc.lastAutoTable.finalY + 5
-      }
+          autoTable(doc, {
+            ...tableBase(),
+            startY: currentY,
+            head: [['Sabado', 'Concepto', 'Monto']],
+            body: salBody,
+            columnStyles: {
+              0: { cellWidth: 36 },
+              1: { cellWidth: 'auto' },
+              2: { cellWidth: 40, halign: 'right' },
+            },
+          })
+          currentY = doc.lastAutoTable.finalY + 5
+        }
+      } // fin bloque solo-admin
 
       // ── 3. Cartera de créditos ───────────────────────────────────────────
-      sectionLabel('3. Cartera de Creditos Fondeados')
+      sectionLabel(report.value.is_empleado_view ? 'Creditos Registrados' : '3. Cartera de Creditos Fondeados')
 
       if (pr.credits.length === 0) {
         ensureSpace(7)
         doc.setFontSize(8)
         doc.setFont('helvetica', 'italic')
         doc.setTextColor(...GRAY_L)
-        doc.text('Sin creditos fondeados por este proveedor.', M + 2, currentY + 4)
+        doc.text('Sin creditos registrados en este periodo.', M + 2, currentY + 4)
         currentY += 8
       } else {
-        const creditBody = pr.credits.map(c => [
-          c.client_name,
-          c.loan_type || '—',
-          { content: currency(c.funded_amount), styles: { halign: 'right' } },
-          { content: currency(c.expected_return), styles: { halign: 'right', textColor: GREEN } },
-          { content: currency(c.retention_share), styles: { halign: 'right' } },
-          { content: currency(c.paid_amount), styles: { halign: 'right', textColor: [37, 99, 235] } },
-          { content: statusLabel(c.status), styles: { halign: 'center' } },
-        ])
-        creditBody.push([
-          { content: 'TOTALES', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [240, 250, 240], textColor: NAVY } },
-          { content: currency(pr.total_funded), styles: { halign: 'right', fontStyle: 'bold', fillColor: [240, 250, 240] } },
-          { content: currency(pr.total_expected_return), styles: { halign: 'right', fontStyle: 'bold', textColor: GREEN, fillColor: [240, 250, 240] } },
-          { content: currency(pr.total_retention), styles: { halign: 'right', fontStyle: 'bold', fillColor: [240, 250, 240] } },
-          { content: currency(pr.total_collected), styles: { halign: 'right', fontStyle: 'bold', textColor: [37, 99, 235], fillColor: [240, 250, 240] } },
-          { content: '', styles: { fillColor: [240, 250, 240] } },
-        ])
+        if (report.value.is_empleado_view) {
+          // Vista simplificada: solo Prestado y Cobrado
+          const creditBody = pr.credits.map(c => [
+            c.client_name,
+            c.loan_type || '—',
+            { content: currency(c.funded_amount), styles: { halign: 'right' } },
+            { content: currency(c.paid_amount), styles: { halign: 'right', textColor: [37, 99, 235] } },
+            { content: statusLabel(c.status), styles: { halign: 'center' } },
+          ])
+          creditBody.push([
+            { content: 'TOTALES', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [240, 250, 240], textColor: NAVY } },
+            { content: currency(pr.total_funded), styles: { halign: 'right', fontStyle: 'bold', fillColor: [240, 250, 240] } },
+            { content: currency(pr.total_collected), styles: { halign: 'right', fontStyle: 'bold', textColor: [37, 99, 235], fillColor: [240, 250, 240] } },
+            { content: '', styles: { fillColor: [240, 250, 240] } },
+          ])
+
+          autoTable(doc, {
+            ...tableBase(),
+            startY: currentY,
+            head: [['Cliente', 'Tipo', 'Prestado', 'Cobrado', 'Estatus']],
+            body: creditBody,
+            columnStyles: {
+              0: { cellWidth: 'auto' },
+              1: { cellWidth: 28 },
+              2: { cellWidth: 38, halign: 'right' },
+              3: { cellWidth: 38, halign: 'right' },
+              4: { cellWidth: 28, halign: 'center' },
+            },
+          })
+        } else {
+          // Vista admin completa
+          const creditBody = pr.credits.map(c => [
+            c.client_name,
+            c.loan_type || '—',
+            { content: currency(c.funded_amount), styles: { halign: 'right' } },
+            { content: currency(c.expected_return), styles: { halign: 'right', textColor: GREEN } },
+            { content: currency(c.retention_share), styles: { halign: 'right' } },
+            { content: currency(c.paid_amount), styles: { halign: 'right', textColor: [37, 99, 235] } },
+            { content: statusLabel(c.status), styles: { halign: 'center' } },
+          ])
+          creditBody.push([
+            { content: 'TOTALES', colSpan: 2, styles: { fontStyle: 'bold', fillColor: [240, 250, 240], textColor: NAVY } },
+            { content: currency(pr.total_funded), styles: { halign: 'right', fontStyle: 'bold', fillColor: [240, 250, 240] } },
+            { content: currency(pr.total_expected_return), styles: { halign: 'right', fontStyle: 'bold', textColor: GREEN, fillColor: [240, 250, 240] } },
+            { content: currency(pr.total_retention), styles: { halign: 'right', fontStyle: 'bold', fillColor: [240, 250, 240] } },
+            { content: currency(pr.total_collected), styles: { halign: 'right', fontStyle: 'bold', textColor: [37, 99, 235], fillColor: [240, 250, 240] } },
+            { content: '', styles: { fillColor: [240, 250, 240] } },
+          ])
+
+          autoTable(doc, {
+            ...tableBase(),
+            startY: currentY,
+            head: [['Cliente', 'Tipo', 'Fondeado', 'A Recuperar', 'G. Admin', 'Cobrado', 'Estatus']],
+            body: creditBody,
+            columnStyles: {
+              0: { cellWidth: 'auto' },
+              1: { cellWidth: 22 },
+              2: { cellWidth: 29, halign: 'right' },
+              3: { cellWidth: 30, halign: 'right' },
+              4: { cellWidth: 23, halign: 'right' },
+              5: { cellWidth: 29, halign: 'right' },
+              6: { cellWidth: 22, halign: 'center' },
+            },
+          })
+        }
+        currentY = doc.lastAutoTable.finalY + 5
+      }
+
+      // ── 4. Rendimiento neto (solo admin) ─────────────────────────────────
+      if (!report.value.is_empleado_view) {
+        sectionLabel('4. Rendimiento Estimado')
+        ensureSpace(40)
+
+        const isPositive = pr.net_yield >= 0
+        const yieldFill = isPositive ? [220, 252, 231] : [254, 226, 226]
+        const yieldColor = isPositive ? GREEN : [185, 28, 28]
 
         autoTable(doc, {
           ...tableBase(),
           startY: currentY,
-          head: [['Cliente', 'Tipo', 'Fondeado', 'A Recuperar', 'G. Admin', 'Cobrado', 'Estatus']],
-          body: creditBody,
+          body: [
+            [
+              { content: 'Total esperado a recuperar (con intereses)', styles: { fontStyle: 'bold', textColor: GRAY_D } },
+              { content: currency(pr.total_expected_return), styles: { halign: 'right', textColor: GREEN, fontStyle: 'bold' } },
+            ],
+            [
+              { content: 'Menos: Comision del encargado (9% sobre aportaciones)', styles: { textColor: GRAY_D } },
+              { content: `-${currency(pr.commission)}`, styles: { halign: 'right', textColor: ORANGE } },
+            ],
+            [
+              { content: 'Menos: Salarios en el periodo', styles: { textColor: GRAY_D } },
+              { content: `-${currency(pr.total_salary)}`, styles: { halign: 'right', textColor: ORANGE } },
+            ],
+            [
+              { content: 'RENDIMIENTO NETO ESTIMADO', styles: { fontStyle: 'bold', fontSize: 9, fillColor: yieldFill, textColor: yieldColor } },
+              { content: currency(pr.net_yield), styles: { halign: 'right', fontStyle: 'bold', fontSize: 10, fillColor: yieldFill, textColor: yieldColor } },
+            ],
+            [
+              { content: '(Referencia) Cobrado hasta ahora', styles: { fontSize: 7, textColor: GRAY_L } },
+              { content: currency(pr.total_collected), styles: { halign: 'right', fontSize: 7, textColor: [37, 99, 235] } },
+            ],
+          ],
           columnStyles: {
-            0: { cellWidth: 'auto' },
-            1: { cellWidth: 22 },
-            2: { cellWidth: 29, halign: 'right' },
-            3: { cellWidth: 30, halign: 'right' },
-            4: { cellWidth: 23, halign: 'right' },
-            5: { cellWidth: 29, halign: 'right' },
-            6: { cellWidth: 22, halign: 'center' },
+            0: { cellWidth: CW * 0.72 },
+            1: { cellWidth: CW * 0.28, halign: 'right' },
           },
         })
-        currentY = doc.lastAutoTable.finalY + 5
+        currentY = doc.lastAutoTable.finalY + 6
       }
-
-      // ── 4. Rendimiento neto ──────────────────────────────────────────────
-      sectionLabel('4. Rendimiento Estimado')
-      ensureSpace(40)
-
-      const isPositive = pr.net_yield >= 0
-      const yieldFill = isPositive ? [220, 252, 231] : [254, 226, 226]
-      const yieldColor = isPositive ? GREEN : [185, 28, 28]
-
-      autoTable(doc, {
-        ...tableBase(),
-        startY: currentY,
-        body: [
-          [
-            { content: 'Total esperado a recuperar (con intereses)', styles: { fontStyle: 'bold', textColor: GRAY_D } },
-            { content: currency(pr.total_expected_return), styles: { halign: 'right', textColor: GREEN, fontStyle: 'bold' } },
-          ],
-          [
-            { content: 'Menos: Comision del encargado (9% sobre aportaciones)', styles: { textColor: GRAY_D } },
-            { content: `-${currency(pr.commission)}`, styles: { halign: 'right', textColor: ORANGE } },
-          ],
-          [
-            { content: 'Menos: Salarios en el periodo', styles: { textColor: GRAY_D } },
-            { content: `-${currency(pr.total_salary)}`, styles: { halign: 'right', textColor: ORANGE } },
-          ],
-          [
-            { content: 'RENDIMIENTO NETO ESTIMADO', styles: { fontStyle: 'bold', fontSize: 9, fillColor: yieldFill, textColor: yieldColor } },
-            { content: currency(pr.net_yield), styles: { halign: 'right', fontStyle: 'bold', fontSize: 10, fillColor: yieldFill, textColor: yieldColor } },
-          ],
-          [
-            { content: '(Referencia) Cobrado hasta ahora', styles: { fontSize: 7, textColor: GRAY_L } },
-            { content: currency(pr.total_collected), styles: { halign: 'right', fontSize: 7, textColor: [37, 99, 235] } },
-          ],
-        ],
-        columnStyles: {
-          0: { cellWidth: CW * 0.72 },
-          1: { cellWidth: CW * 0.28, halign: 'right' },
-        },
-      })
-      currentY = doc.lastAutoTable.finalY + 6
     }
 
     // ── Page footers (two-pass) ───────────────────────────────────────────────
     drawFooters()
 
     // ── Save ─────────────────────────────────────────────────────────────────
-    const filename = selectedProvider.value
-      ? `corte-proveedor-${startDate.value}-${endDate.value}.pdf`
-      : `corte-general-${startDate.value}-${endDate.value}.pdf`
+    const empleadoNombre = report.value.empleado_nombre
+    const filename = report.value.is_empleado_view
+      ? `corte-empleado-${empleadoNombre ? empleadoNombre.replace(/\s+/g, '-') + '-' : ''}${startDate.value}-${endDate.value}.pdf`
+      : selectedProvider.value
+        ? `corte-proveedor-${startDate.value}-${endDate.value}.pdf`
+        : `corte-general-${startDate.value}-${endDate.value}.pdf`
     doc.save(filename)
 
   } catch (e) {

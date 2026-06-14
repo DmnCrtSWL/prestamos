@@ -162,8 +162,7 @@ router.post('/restructure', async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        // 1. Create the income to liquidate the old credit
-        // Generate random alphanumeric folio XXXX-XXXX-XXXX
+        // Helper to generate random alphanumeric folio XXXX-XXXX-XXXX
         const generateFolio = () => {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             let folio = '';
@@ -174,22 +173,25 @@ router.post('/restructure', async (req, res) => {
             return folio;
         };
 
-        let folioStr = generateFolio();
-        let folioExists = true;
-        while (folioExists) {
-            const check = await client.query('SELECT id FROM incomes WHERE folio = $1', [folioStr]);
-            if (check.rows.length === 0) {
-                folioExists = false;
-            } else {
-                folioStr = generateFolio();
+        // 1. Create the income to liquidate the old credit (only if there's actual debt)
+        if (Number(old_debt) > 0) {
+            let folioStr = generateFolio();
+            let folioExists = true;
+            while (folioExists) {
+                const check = await client.query('SELECT id FROM incomes WHERE folio = $1', [folioStr]);
+                if (check.rows.length === 0) {
+                    folioExists = false;
+                } else {
+                    folioStr = generateFolio();
+                }
             }
-        }
 
-        await client.query(
-            `INSERT INTO incomes (folio, credit_id, client_id, payment_method, amount, "user")
-             VALUES ($1, $2, $3, $4, $5, $6)`,
-            [folioStr, old_credit_id, client_id, 'cash', old_debt, user]
-        );
+            await client.query(
+                `INSERT INTO incomes (folio, credit_id, client_id, payment_method, amount, "user")
+                 VALUES ($1, $2, $3, $4, $5, $6)`,
+                [folioStr, old_credit_id, client_id, 'cash', old_debt, user]
+            );
+        }
 
         // 2. Mark old credit as completed (liquidated)
         await client.query(

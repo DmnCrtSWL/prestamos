@@ -216,7 +216,10 @@
                   El monto solicitado no cubre la retención ni la deuda anterior.
                 </p>
                 <div v-if="isValidRestructure" class="mt-4 bg-blue-50 dark:bg-blue-900/20 p-3 rounded text-sm text-blue-800 dark:text-blue-300">
-                  La **caja** fondeará el monto total de {{ formatCurrency(newLoanAmount) }} y automáticamente registrará el ingreso por {{ formatCurrency(oldDebt) }} para saldar el anterior.
+                  La caja fondeará el monto total de {{ formatCurrency(newLoanAmount) }} y automáticamente registrará el ingreso por {{ formatCurrency(oldDebt) }} para saldar el anterior.
+                </div>
+                <div v-if="isCreditPaidOff && newLoanAmount > 0" class="mt-4 bg-green-50 dark:bg-green-900/20 p-3 rounded text-sm text-green-800 dark:text-green-300 border border-green-200 dark:border-green-700">
+                  ✅ Este crédito ya está liquidado. La reestructuración generará un nuevo crédito sin necesidad de saldar deuda anterior.
                 </div>
               </div>
             </div>
@@ -398,7 +401,8 @@ const penaltyAmount = computed(() => {
 const oldDebt = computed(() => {
   if (!credit.value) return 0
   const expectedTotal = Number(credit.value.total_to_pay) + penaltyAmount.value
-  return expectedTotal - totalPaidAmount.value
+  // Never return negative — if paid more than expected, debt is 0
+  return Math.max(0, expectedTotal - totalPaidAmount.value)
 })
 
 const newRetention = computed(() => newLoanAmount.value * 0.1)
@@ -409,6 +413,9 @@ const isValidRestructure = computed(() => netToReceive.value > 0)
 
 const newTotalToPay = computed(() => newLoanAmount.value * (1 + (currentInterestRate.value / 100)))
 const newWeeklyPayment = computed(() => currentWeeks.value > 0 ? newTotalToPay.value / currentWeeks.value : 0)
+
+// True if credit has no remaining debt (already paid off or nearly)
+const isCreditPaidOff = computed(() => oldDebt.value <= 0)
 
 const numberToWords = (num) => {
   const ones = ['', 'UN', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE',
@@ -701,7 +708,7 @@ const submitRestructure = async () => {
     router.push(`/creditos/${data.new_credit.id}`)
   } catch (error) {
     console.error('Error submitting restructure:', error)
-    alert('Error: ' + error.message)
+    alert(`Error al procesar la reestructuración:\n${error.message}`)
   } finally {
     isSubmittingRestructure.value = false
   }
