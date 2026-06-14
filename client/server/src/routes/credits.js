@@ -581,7 +581,7 @@ router.put('/:id', upload.fields([
         }
 
         // Handle file uploads to Cloudinary
-        if (req.files['guarantor_ine_front']) {
+        if (req.files && req.files['guarantor_ine_front']) {
             const result = await uploadToCloudinary(
                 req.files['guarantor_ine_front'][0].buffer,
                 req.files['guarantor_ine_front'][0].mimetype
@@ -591,7 +591,7 @@ router.put('/:id', upload.fields([
             paramCount++;
         }
 
-        if (req.files['guarantor_ine_back']) {
+        if (req.files && req.files['guarantor_ine_back']) {
             const result = await uploadToCloudinary(
                 req.files['guarantor_ine_back'][0].buffer,
                 req.files['guarantor_ine_back'][0].mimetype
@@ -601,7 +601,7 @@ router.put('/:id', upload.fields([
             paramCount++;
         }
 
-        if (req.files['guarantor_address_proof']) {
+        if (req.files && req.files['guarantor_address_proof']) {
             const result = await uploadToCloudinary(
                 req.files['guarantor_address_proof'][0].buffer,
                 req.files['guarantor_address_proof'][0].mimetype
@@ -636,6 +636,38 @@ router.put('/:id', upload.fields([
     } catch (error) {
         console.error('Error updating credit:', error);
         res.status(500).json({ error: 'Error al actualizar crédito: ' + error.message });
+    }
+});
+
+// PUT /api/credits/:id/user - Update only the user (fast reassignment)
+router.put('/:id/user', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { user } = req.body;
+
+        if (!user) {
+            return res.status(400).json({ error: 'El campo "user" es requerido' });
+        }
+
+        const query = `
+            UPDATE credits 
+            SET "user" = $1, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $2 
+            RETURNING *
+        `;
+        const result = await pool.query(query, [user, id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Crédito no encontrado' });
+        }
+
+        res.json({
+            message: 'Usuario actualizado exitosamente',
+            credit: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Error updating credit user:', error);
+        res.status(500).json({ error: 'Error al actualizar usuario del crédito' });
     }
 });
 
