@@ -535,7 +535,8 @@ router.put('/:id', upload.fields([
             guarantor_name,
             guarantor_phone,
             guarantor_address,
-            payment_schedule
+            payment_schedule,
+            user // Added support for updating the assigned user
         } = req.body;
 
         // Build dynamic update query
@@ -570,6 +571,12 @@ router.put('/:id', upload.fields([
         if (payment_schedule) {
             updates.push(`payment_schedule = $${paramCount}`);
             values.push(JSON.stringify(payment_schedule));
+            paramCount++;
+        }
+
+        if (user) {
+            updates.push(`"user" = $${paramCount}`);
+            values.push(user);
             paramCount++;
         }
 
