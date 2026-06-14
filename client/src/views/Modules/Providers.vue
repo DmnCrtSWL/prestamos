@@ -101,7 +101,7 @@
 
 <script setup>
 import AdminLayout from '@/components/layout/AdminLayout.vue'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { CircleDollarSign, Eye, Pencil, Trash2, ArrowUpDown, Search } from 'lucide-vue-next'
 
 const formatCurrency = (value) => {
@@ -113,56 +113,25 @@ const formatCurrency = (value) => {
   }).format(value)
 }
 
-const getRandomDate = (start, end) => {
-  const date = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()))
-  const day = String(date.getDate()).padStart(2, '0')
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const year = date.getFullYear()
-  return `${day}-${month}-${year}`
-}
+const providers = ref([])
+const loading = ref(false)
 
-const generateRandomRemaining = () => {
-    return Math.floor(Math.random() * 490000) + 1000
-}
-
-const providers = ref([
-  {
-    name: 'Proveedor 1',
-    lastContributionAmount: 500000.00,
-    lastContributionDate: '10-01-2026',
-    remainingAmount: 480000.00
-  },
-  {
-    name: 'Proveedor 2',
-    lastContributionAmount: 495000.50,
-    lastContributionDate: '05-12-2025',
-    remainingAmount: 450000.00
-  },
-  {
-    name: 'Proveedor 3',
-    lastContributionAmount: 520000.00,
-    lastContributionDate: '20-11-2025',
-    remainingAmount: 510000.00
-  },
-  {
-    name: 'Proveedor 4',
-    lastContributionAmount: 480000.00,
-    lastContributionDate: '15-01-2026',
-    remainingAmount: 300000.00
-  },
-  {
-    name: 'Proveedor 5',
-    lastContributionAmount: 510000.25,
-    lastContributionDate: '01-12-2025',
-    remainingAmount: 505000.00
-  },
-  {
-    name: 'Proveedor 6',
-    lastContributionAmount: 490000.00,
-    lastContributionDate: '12-01-2026',
-    remainingAmount: 475000.00
+const fetchProviders = async () => {
+  loading.value = true
+  try {
+    const response = await fetch('/api/providers')
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    providers.value = await response.json()
+  } catch (error) {
+    console.error('Error al cargar proveedores:', error)
+  } finally {
+    loading.value = false
   }
-])
+}
+
+onMounted(() => {
+  fetchProviders()
+})
 
 const sortKey = ref('')
 const sortOrder = ref('asc')

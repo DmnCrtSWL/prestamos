@@ -106,7 +106,7 @@
 
 <script setup>
 import AdminLayout from '@/components/layout/AdminLayout.vue'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Eye, Pencil, Trash2, ArrowUpDown, Search, Calculator } from 'lucide-vue-next'
 
 const formatCurrency = (value) => {
@@ -131,48 +131,25 @@ const getStatusClass = (status) => {
   }
 }
 
-const generateRandomAmount = () => {
-    return Math.floor(Math.random() * 49000) + 1000
+const clients = ref([])
+const loading = ref(false)
+
+const fetchClients = async () => {
+  loading.value = true
+  try {
+    const response = await fetch('/api/clients')
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    clients.value = await response.json()
+  } catch (error) {
+    console.error('Error al cargar clientes:', error)
+  } finally {
+    loading.value = false
+  }
 }
 
-const clients = ref([
-  {
-    name: 'Cliente Ejemplo 1',
-    phone: '555-123-4567',
-    remainingAmount: generateRandomAmount(),
-    status: 'En tiempo'
-  },
-  {
-    name: 'Cliente Ejemplo 2',
-    phone: '555-987-6543',
-    remainingAmount: generateRandomAmount(),
-    status: 'Moroso'
-  },
-   {
-    name: 'Cliente Ejemplo 3',
-    phone: '555-111-2222',
-    remainingAmount: 0,
-    status: 'Inactivo'
-  },
-  {
-    name: 'Cliente Ejemplo 4',
-    phone: '555-333-4444',
-    remainingAmount: generateRandomAmount(),
-    status: 'En tiempo'
-  },
-  {
-    name: 'Cliente Ejemplo 5',
-    phone: '555-555-5555',
-    remainingAmount: generateRandomAmount(),
-    status: 'En tiempo'
-  },
-  {
-    name: 'Cliente Ejemplo 6',
-    phone: '555-666-7777',
-    remainingAmount: generateRandomAmount(),
-    status: 'Moroso'
-  }
-])
+onMounted(() => {
+  fetchClients()
+})
 
 const sortKey = ref('')
 const sortOrder = ref('asc')
