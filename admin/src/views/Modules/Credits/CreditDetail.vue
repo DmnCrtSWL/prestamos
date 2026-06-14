@@ -352,7 +352,7 @@
                     {{ formatCurrency(payment.paid) }}
                   </td>
                   <td class="py-3 px-2 text-center">
-                    <span v-if="payment.paid >= payment.amount" class="inline-flex rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-500/15 dark:text-green-400">Pagado</span>
+                    <span v-if="payment.paid >= payment.amount && (payment.amount > 0 || isLiquidado)" class="inline-flex rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-500/15 dark:text-green-400">Pagado</span>
                     <span v-else-if="payment.paid > 0" class="inline-flex rounded-full bg-yellow-50 px-2 py-0.5 text-xs font-medium text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400">Parcial</span>
                     <span v-else class="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">Pendiente</span>
                   </td>
@@ -1076,7 +1076,8 @@ const isLiquidado = computed(() => {
   if (!credit.value) return false
   if (credit.value.status === 'completed') return true
   if (credit.value.loan_type === '10% Semanal') return isLiquidadoSemanal10.value
-  return Number(totalPaidAmount.value) >= Number(credit.value.total_to_pay)
+  const expectedWithPenalties = Number(credit.value.total_to_pay) + penaltyAmount.value
+  return Number(totalPaidAmount.value) >= expectedWithPenalties
 })
 
 const extendedSchedule = computed(() => {
@@ -1127,7 +1128,8 @@ const extendedSchedule = computed(() => {
         lastDate.setDate(lastDate.getDate() + 7)
         const pad = (n) => n.toString().padStart(2, '0')
         schedule.push({
-          amount: lastPayment.amount,
+          amount: 0,
+          originalAmount: 0,
           date: `${lastDate.getFullYear()}-${pad(lastDate.getMonth() + 1)}-${pad(lastDate.getDate())}`,
           week: schedule.length + 1
         })
